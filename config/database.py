@@ -26,18 +26,32 @@ def find_database_url():
     """Return (variable name, URL) for the first usable connection string, or (None, None)."""
     wrong = []
     for name in URL_VARIABLES:
-        value = os.environ.get(name, "").strip()
+        value = tidy(os.environ.get(name, ""), name)
         if not value:
             continue
         if value.startswith(("postgres://", "postgresql://")):
             return name, value
-        wrong.append(f"{name} starts with {value.split('//')[0]}//")
+        if value.startswith("http"):
+            wrong.append(f"{name} starts with {value.split('//')[0]}// (that's the Supabase Project URL, "
+                         "not the database connection string)")
+        else:
+            wrong.append(f"{name} starts with {value[:12]!r}")
     if wrong:
         raise ImproperlyConfigured(
-            f"The database setting is wrong: {', '.join(wrong)}, but it must start with postgresql://. "
-            f"You probably pasted the Supabase Project URL (https://...supabase.co). {HOW_TO_GET_IT}"
+            f"The database setting is wrong: {'; '.join(wrong)}. It must start with postgresql:// "
+            f"and have nothing before it. {HOW_TO_GET_IT}"
         )
     return None, None
+
+
+def tidy(value, name):
+    """Forgive common copy-paste extras: spaces, surrounding quotes or brackets, and a NAME= prefix."""
+    value = value.strip()
+    if value.upper().startswith(f"{name}="):
+        value = value[len(name) + 1:].strip()
+    while len(value) > 1 and value[0] + value[-1] in ('""', "''", "[]", "<>", "``"):
+        value = value[1:-1].strip()
+    return value
 
 
 def clean_url(url):

@@ -87,3 +87,8 @@ class SupabaseConnectionStringTest(TestCase):
         with self.assertRaisesMessage(ImproperlyConfigured, "letters and numbers"):
             database_settings(self.POOLER.replace("secret123", "ab#c"), serverless=True)
         self.assertEqual(self.find(), (None, None))
+
+    def test_forgives_copy_paste_extras(self):
+        for pasted in (f'"{self.POOLER}"', f"'{self.POOLER}'", f"  {self.POOLER}\n", f"DATABASE_URL={self.POOLER}",
+                       f'DATABASE_URL="{self.POOLER}"', f"[{self.POOLER}]"):
+            self.assertEqual(self.find(DATABASE_URL=pasted), ("DATABASE_URL", self.POOLER), pasted)
