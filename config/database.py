@@ -34,8 +34,12 @@ def find_database_url():
         if value.startswith("http"):
             wrong.append(f"{name} starts with {value.split('//')[0]}// (that's the Supabase Project URL, "
                          "not the database connection string)")
+        elif "://" in value:
+            wrong.append(f"{name} has extra text before postgresql://")
         else:
-            wrong.append(f"{name} starts with {value[:12]!r}")
+            # never echo the value: people sometimes paste a password here by mistake
+            wrong.append(f"{name} doesn't contain a connection string at all (it looks like a password or key "
+                         "was pasted instead)")
     if wrong:
         raise ImproperlyConfigured(
             f"The database setting is wrong: {'; '.join(wrong)}. It must start with postgresql:// "
