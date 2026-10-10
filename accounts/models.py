@@ -63,3 +63,31 @@ class User(AbstractUser):
         if self.can_see_all_ministries:
             return Ministry.objects.all()
         return Ministry.objects.filter(leaders=self)
+
+    def editable_ministries(self):
+        """Ministries this person can add activities, events and resources to."""
+        from ministries.models import Ministry
+
+        if self.is_church_admin:
+            return Ministry.objects.all()
+        return Ministry.objects.filter(leaders=self)
+
+    @property
+    def is_leadership(self):
+        """Anyone serving in leadership: pastor, finance, elders, ministry leaders."""
+        return self.is_superuser or self.role != self.Role.MEMBER or self.led_ministries.exists()
+
+    @property
+    def can_create_churchwide_events(self):
+        return self.is_church_admin or self.role == self.Role.ELDER
+
+    @property
+    def can_create_events(self):
+        return self.can_create_churchwide_events or self.led_ministries.exists()
+
+    def can_edit_event(self, event):
+        if self.is_church_admin or event.created_by_id == self.pk:
+            return True
+        if event.ministry_id is None:
+            return self.role == self.Role.ELDER
+        return self.can_edit_ministry(event.ministry)

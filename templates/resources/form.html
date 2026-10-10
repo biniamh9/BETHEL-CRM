@@ -1,0 +1,20 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}{% if resource %}Edit resource{% else %}Add resource{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Resources</span><h1>{% if resource %}Edit {{ resource.title }}{% else %}Add a resource{% endif %}</h1></div></div>
+<form method="post" enctype="multipart/form-data" class="form-panel">{% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="panel"><div class="panel-body">
+    {% form_fields form "title" %}
+    <div class="form-row">{% form_fields form "category,ministry" %}</div>
+    {% form_fields form "audience" %}
+  </div></div>
+  <div class="panel"><div class="panel-head"><h3>File or link</h3><span class="small muted">PDF, Word, Excel, PowerPoint, images, audio, video · up to 25 MB</span></div><div class="panel-body">
+    {% form_fields form "file,url,description,pinned" %}
+  </div></div>
+  <div class="form-actions"><button class="btn btn-primary">Save</button><a class="btn btn-ghost" href="{% url 'resources:list' %}">Cancel</a></div>
+</form>
+{% if resource %}
+<form method="post" action="{% url 'resources:delete' resource.pk %}" onsubmit="return confirm('Delete this resource?')" style="margin-top:16px">{% csrf_token %}<button class="btn btn-danger btn-sm">Delete resource</button></form>
+{% endif %}
+{% endblock %}

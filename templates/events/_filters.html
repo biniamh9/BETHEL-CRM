@@ -1,0 +1,8 @@
+<form class="filters" method="get">
+  <select name="ministry" onchange="this.form.submit()">
+    <option value="">All ministries</option>
+    <option value="church" {% if slug == 'church' %}selected{% endif %}>Church-wide only</option>
+    {% for m in ministries %}<option value="{{ m.slug }}" {% if slug == m.slug %}selected{% endif %}>{{ m.name }}</option>{% endfor %}
+  </select>
+  {% block extra %}{% endblock %}
+</form>

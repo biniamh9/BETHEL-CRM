@@ -23,6 +23,18 @@
 
 {% if my_gifts_total %}<p>Thank you — you've given <b>{{ my_gifts_total|usd:True }}</b>. See the details on <a href="{% url 'accounts:profile' %}">your profile</a>.</p>{% endif %}
 
+<div class="panel">
+  <div class="panel-head"><h3>Next two weeks</h3><span><a class="small" href="{% url 'events:calendar' %}">Calendar</a> · <a class="small" href="{% url 'events:upcoming' %}">All upcoming →</a></span></div>
+  {% if upcoming %}
+  <div class="next-strip">{% for o in upcoming %}
+    <a class="next-card c-{{ o.event.color }}" href="{{ o.event.get_absolute_url }}">
+      <div class="next-date"><b>{{ o.start|date:"j" }}</b><span>{{ o.start|date:"M" }}</span><span>{{ o.start|date:"D" }}</span></div>
+      <div><b>{{ o.event.title }}</b><div class="small muted">{% if o.event.all_day %}All day{% else %}{{ o.start|time:"g:i A" }}{% endif %} · {{ o.event.ministry.name|default:"Church-wide" }}</div></div>
+    </a>
+  {% endfor %}</div>
+  {% else %}<div class="empty">Nothing scheduled in the next two weeks.{% if user.can_create_events %} <a href="{% url 'events:new' %}">Add an event.</a>{% endif %}</div>{% endif %}
+</div>
+
 {% if ministries %}
 <div class="cols">
   <div class="panel">

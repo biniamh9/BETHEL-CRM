@@ -1,0 +1,20 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}{% if event %}Edit event{% else %}New event{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Events</span><h1>{% if event %}Edit {{ event.title }}{% else %}New event{% endif %}</h1></div></div>
+<form method="post" class="form-panel">{% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="panel"><div class="panel-head"><h3>What</h3></div><div class="panel-body">
+    {% form_fields form "title" %}
+    <div class="form-row">{% form_fields form "kind,ministry" %}</div>
+    {% form_fields form "location,description" %}
+  </div></div>
+  <div class="panel"><div class="panel-head"><h3>When</h3></div><div class="panel-body">
+    <div class="form-row">{% form_fields form "date,end_date,start_time,end_time" %}</div>
+    {% form_fields form "all_day" %}
+    <div class="form-row">{% form_fields form "repeat,repeat_until" %}</div>
+  </div></div>
+  <div class="panel"><div class="panel-body">{% form_fields form "is_public" %}</div></div>
+  <div class="form-actions"><button class="btn btn-primary">Save event</button><a class="btn btn-ghost" href="{% if event %}{{ event.get_absolute_url }}{% else %}{% url 'events:upcoming' %}{% endif %}">Cancel</a></div>
+</form>
+{% endblock %}

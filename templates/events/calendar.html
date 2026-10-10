@@ -1,0 +1,40 @@
+{% extends "base_portal.html" %}
+{% block page_title %}Calendar{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Calendar</span><h1>{{ month_start|date:"F Y" }}</h1></div>
+  <div class="actions">
+    <a class="btn btn-ghost btn-sm" href="{{ prev_url }}" aria-label="Previous month">← Prev</a>
+    <a class="btn btn-ghost btn-sm" href="{{ today_url }}">Today</a>
+    <a class="btn btn-ghost btn-sm" href="{{ next_url }}" aria-label="Next month">Next →</a>
+    {% if user.can_create_events %}<a class="btn btn-primary btn-sm" href="{% url 'events:new' %}">+ New event</a>{% endif %}
+  </div>
+</div>
+<div class="panel">
+  {% include "events/_filters.html" %}
+  <div class="filters" style="border-top:0;padding-top:0;margin-top:-8px;background:#fdfbf7">
+    <a class="small" href="?{% if slug %}ministry={{ slug }}&{% endif %}activities={% if show_activities %}0{% else %}1{% endif %}">{% if show_activities %}Hide recorded activities{% else %}Also show recorded activities{% endif %}</a>
+  </div>
+  <div class="cal">
+    <div class="cal-head">{% for w in weekdays %}<div>{{ w }}</div>{% endfor %}</div>
+    {% for week in weeks %}<div class="cal-week">
+      {% for day in week %}
+      <div class="cal-day{% if day.other %} other{% endif %}{% if day.today %} today{% endif %}">
+        <div class="cal-num">
+          <span>{{ day.date.day }}</span>
+          {% if user.can_create_events and not day.other %}<a class="cal-add" href="{% url 'events:new' %}?date={{ day.date|date:'Y-m-d' }}" title="Add event on {{ day.date|date:'M j' }}">+</a>{% endif %}
+        </div>
+        {% for item in day.items %}
+          {% if item.type == "event" %}
+            <a class="cal-item c-{{ item.occ.event.color }}" href="{{ item.occ.event.get_absolute_url }}" title="{{ item.occ.event.title }}{% if item.occ.event.location %} · {{ item.occ.event.location }}{% endif %}">{% if not item.occ.event.all_day %}<time>{{ item.occ.start|time:"g:iA"|lower }}</time> {% endif %}{{ item.occ.event.title }}</a>
+          {% else %}
+            <a class="cal-item act c-{{ item.a.ministry.color }}" href="{{ item.a.ministry.get_absolute_url }}" title="Recorded activity: {{ item.a.title }}">✓ {{ item.a.title }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>{% endfor %}
+  </div>
+</div>
+<p class="small muted">Colors match each ministry. Maroon events are church-wide. Click any day's + to add an event on that date.</p>
+{% endblock %}

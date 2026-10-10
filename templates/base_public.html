@@ -9,6 +9,7 @@
     <nav class="nav">
       <a class="hide-sm" href="{% url 'core:home' %}#about">About</a>
       <a class="hide-sm" href="{% url 'core:home' %}#ministries">Ministries</a>
+      <a class="hide-sm" href="{% url 'events:public' %}">Events</a>
       {% if user.is_authenticated %}
         <a href="{% url 'core:portal' %}">My portal</a>
       {% else %}

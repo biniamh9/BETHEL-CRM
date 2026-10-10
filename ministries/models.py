@@ -91,7 +91,7 @@ class Activity(models.Model):
 
     ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="activities")
     title = models.CharField(max_length=150)
-    kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.MEETING)
+    kind = models.CharField("Type", max_length=12, choices=Kind.choices, default=Kind.MEETING)
     date = models.DateField()
     start_time = models.TimeField(null=True, blank=True)
     location = models.CharField(max_length=150, blank=True)

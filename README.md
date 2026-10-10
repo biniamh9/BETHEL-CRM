@@ -5,6 +5,23 @@ A Django website for Bethel Eritrean Alliance Church Atlanta with three parts:
 1. **Public website and giving page** — church story, ministries, eldership, and a live building fund page with a progress ring, online giving (Stripe), pledges, and Zelle / check instructions.
 2. **Building fund portal** for the Pastor and CFO — record every gift (cash, check, Zelle, online), track pledges, print tax receipts and year-end statements, export to CSV.
 3. **Ministry portals** — each ministry leader logs in and records activities (attendance, volunteer hours, notes, follow-ups) and keeps a roster for their ministry only.
+4. **Activities, Calendar, Upcoming events and Resources** for the whole church (see below).
+
+## Portal menu
+
+| Menu | What it does |
+|---|---|
+| Dashboard | Fund progress, the next two weeks of events, ministry summary, latest activity |
+| Ministries ▸ | Expands to list every ministry; each opens its portal (activity log, roster, upcoming events, resources) |
+| Activities | Every recorded activity across the ministries you can see, with filters (ministry, type, period, needs follow-up) and CSV export |
+| Calendar | Month view of all events, color-coded by ministry; optionally overlays recorded activities. Click + on a day to add an event |
+| Upcoming events | The next 30 or 90 days as a list, filterable by ministry |
+| Resources | Shared files and links (lessons, forms, policies, song lists, minutes) with access levels |
+| Building fund ▸ | Overview, Donations, Donors, Pledges (Pastor and Finance); elders see the overview only |
+
+**Events** can repeat every week, every 2 weeks or every month (e.g. Sunday service, choir rehearsal, elders' meeting). Tick *Show on the public website* to list an event on the public Events page and home page, with an "Add to calendar" button. The Pastor and elders can create church-wide events; ministry leaders create events for their own ministries.
+
+**Resources** have three access levels: everyone with a login, leadership only, or only that ministry's leaders (plus the Pastor and elders). Files are never publicly linked; every download checks the person's access.
 
 ## Who can see what
 
@@ -65,10 +82,13 @@ Railway or Fly.io work the same way (`gunicorn config.wsgi:application`).
 
 Until Stripe keys are set, the giving page shows Zelle / check / cash instructions and the pledge form.
 
-### 4. Church details and email
+### 4. File storage for Resources
+Locally, uploads go to the `media/` folder. Render's disk is wiped on every deploy, so in production store files in a **private** Supabase Storage bucket: Supabase → Storage → New bucket `resources` (private) → Storage settings → S3 access keys. Then set the `SUPABASE_S3_*` variables from `.env.example`. Until then, add Google Drive or YouTube links as resources instead of uploading files.
+
+### 5. Church details and email
 Set `CHURCH_EIN`, `CHURCH_ZELLE`, `CHURCH_MAILING_ADDRESS`, etc. (see `.env.example`). Configure SMTP so online donors get emailed receipts and leaders can reset passwords.
 
-### 5. The building fund goal
+### 6. The building fund goal
 The goal is seeded at **$1,500,000** as a placeholder with the **$200,000** members have already saved counted as the opening balance. Change both on **Building fund → Edit campaign** once you know the purchase price.
 
 ## Project layout
@@ -76,7 +96,9 @@ The goal is seeded at **$1,500,000** as a placeholder with the **$200,000** memb
 ```
 config/        settings and URLs
 accounts/      users, roles, login/registration, Team & logins page
-ministries/    ministries, activity log, rosters
+ministries/    ministries, activity log, rosters, all-activities page
+events/        events, repeats, calendar, upcoming list, public events page
+resources/     shared files and links with access levels
 fundraising/   campaigns, donors, pledges, donations, Stripe, receipts
 core/          home page, portal dashboard, seed_church command, template helpers
 templates/     all HTML
@@ -88,4 +110,4 @@ static/        CSS and the church logo
 - Automatic pledge reminder emails
 - SMS updates to members (Twilio)
 - Membership directory and family records
-- Event calendar and sign-ups per ministry
+- RSVPs / volunteer sign-ups on events

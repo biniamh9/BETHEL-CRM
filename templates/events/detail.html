@@ -1,0 +1,31 @@
+{% extends "base_portal.html" %}
+{% block page_title %}{{ event.title }}{% endblock %}
+{% block content %}
+<div class="page-head c-{{ event.color }}">
+  <div><span class="eyebrow" style="color:var(--c)">{{ event.ministry.name|default:"Church-wide event" }} · {{ event.get_kind_display }}</span><h1>{{ event.title }}</h1></div>
+  <div class="actions">
+    <a class="btn btn-ghost btn-sm" href="{{ gcal }}" target="_blank" rel="noopener">Add to Google Calendar</a>
+    {% if can_edit %}<a class="btn btn-primary btn-sm" href="{% url 'events:edit' event.pk %}">Edit</a>{% endif %}
+  </div>
+</div>
+<div class="cols">
+  <div class="panel"><div class="panel-body">
+    <table><tbody>
+      <tr><td class="muted">When</td><td>{% if event.all_day %}{{ event.start|date:"l, F j, Y" }}{% if event.end and event.end.date != event.start.date %} – {{ event.end|date:"l, F j" }}{% endif %} (all day){% else %}{{ event.start|date:"l, F j, Y · g:i A" }}{% if event.end %} – {% if event.end.date != event.start.date %}{{ event.end|date:"M j, g:i A" }}{% else %}{{ event.end|date:"g:i A" }}{% endif %}{% endif %}{% endif %}</td></tr>
+      {% if event.repeat != 'none' %}<tr><td class="muted">Repeats</td><td>{{ event.get_repeat_display }}{% if event.repeat_until %} until {{ event.repeat_until|date:"F j, Y" }}{% endif %}</td></tr>{% endif %}
+      {% if event.location %}<tr><td class="muted">Where</td><td>{{ event.location }}</td></tr>{% endif %}
+      <tr><td class="muted">Visibility</td><td>{% if event.is_public %}Public website and portal{% else %}Portal only{% endif %}</td></tr>
+      <tr><td class="muted">Added by</td><td>{{ event.created_by|default:"—" }}</td></tr>
+    </tbody></table>
+    {% if event.description %}<div style="margin-top:16px">{{ event.description|linebreaks }}</div>{% endif %}
+  </div></div>
+  {% if event.repeat != 'none' %}
+  <div class="panel"><div class="panel-head"><h3>Next dates</h3></div>
+    <ul class="feed">{% for o in upcoming_dates %}<li><time>{{ o.start|date:"D" }}</time><div>{{ o.start|date:"F j, Y" }}{% if not event.all_day %} · {{ o.start|time:"g:i A" }}{% endif %}</div></li>{% empty %}<li class="empty">No upcoming dates.</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+</div>
+{% if can_edit %}
+<form method="post" action="{% url 'events:delete' event.pk %}" onsubmit="return confirm('Delete this event{% if event.repeat != 'none' %} and all its repeats{% endif %}?')">{% csrf_token %}<button class="btn btn-danger btn-sm">Delete event</button></form>
+{% endif %}
+{% endblock %}

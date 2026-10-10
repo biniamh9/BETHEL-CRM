@@ -1,0 +1,33 @@
+{% extends "base_portal.html" %}
+{% block page_title %}Resources{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Library</span><h1>Resources</h1><p class="muted small" style="margin:.4em 0 0">Shared documents, forms, lessons, songs and links.</p></div>
+  {% if can_add %}<div class="actions"><a class="btn btn-primary btn-sm" href="{% url 'resources:new' %}">+ Add resource</a></div>{% endif %}
+</div>
+<div class="panel">
+  <form class="filters" method="get">
+    <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search resources">
+    <select name="category"><option value="">All categories</option>{% for v, l in categories %}<option value="{{ v }}" {% if request.GET.category == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="ministry"><option value="">All ministries</option><option value="church" {% if slug == 'church' %}selected{% endif %}>Church-wide</option>{% for m in ministries %}<option value="{{ m.slug }}" {% if slug == m.slug %}selected{% endif %}>{{ m.name }}</option>{% endfor %}</select>
+    <button class="btn btn-navy btn-sm">Filter</button>
+  </form>
+  <ul class="res-list">
+    {% for r in resources %}
+    <li class="c-{{ r.ministry.color|default:'navy' }}">
+      <div class="res-icon">{% if r.file %}{{ r.extension|default:"FILE"|slice:":4" }}{% else %}LINK{% endif %}</div>
+      <div class="res-body">
+        <b>{{ r.title }}</b>{% if r.pinned %} <span class="badge active">Pinned</span>{% endif %}
+        <div class="small muted"><span class="dot"></span>{{ r.ministry.name|default:"Church-wide" }} · {{ r.get_category_display }}{% if r.audience != 'members' %} · <span title="{{ r.get_audience_display }}">🔒 {% if r.audience == 'leaders' %}Leadership{% else %}Ministry leaders{% endif %}</span>{% endif %} · added {{ r.created_at|date:"M j, Y" }}{% if r.uploaded_by %} by {{ r.uploaded_by }}{% endif %}</div>
+        {% if r.description %}<div class="small" style="margin-top:4px">{{ r.description|truncatewords:35 }}</div>{% endif %}
+      </div>
+      <div class="res-actions">
+        {% if r.file %}<a class="btn btn-ghost btn-sm" href="{% url 'resources:download' r.pk %}?view=1" target="_blank">Open</a><a class="btn btn-ghost btn-sm" href="{% url 'resources:download' r.pk %}">Download</a>{% endif %}
+        {% if r.url %}<a class="btn btn-ghost btn-sm" href="{{ r.url }}" target="_blank" rel="noopener">Open link ↗</a>{% endif %}
+        {% if r.editable %}<a class="small" href="{% url 'resources:edit' r.pk %}">Edit</a>{% endif %}
+      </div>
+    </li>
+    {% empty %}<li class="empty" style="display:block">No resources yet.{% if can_add %} <a href="{% url 'resources:new' %}">Add the first one.</a>{% endif %}</li>{% endfor %}
+  </ul>
+</div>
+{% endblock %}

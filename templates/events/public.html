@@ -1,0 +1,16 @@
+{% extends "base_public.html" %}
+{% block title %}Events · {{ church.short_name }}{% endblock %}
+{% block content %}
+<section class="hero" style="padding-bottom:28px">
+  <div class="wrap"><span class="eyebrow">Join us</span><h1>Upcoming events</h1><p class="lead">Worship, fellowship and community events at {{ church.short_name }}. Everyone is welcome.</p></div>
+</section>
+<section class="wrap" style="padding-bottom:72px">
+  <div class="panel">
+    {% for day, occs in groups %}
+      <div class="day-group"><div class="day-label"><b>{{ day|date:"l" }}</b><span>{{ day|date:"F j" }}</span></div>
+        <ul class="event-list">{% for occ in occs %}{% include "events/_event_row.html" with public=True %}{% endfor %}</ul>
+      </div>
+    {% empty %}<div class="empty">No public events are scheduled right now. Please check back soon.</div>{% endfor %}
+  </div>
+</section>
+{% endblock %}

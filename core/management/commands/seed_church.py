@@ -136,4 +136,63 @@ class Command(BaseCommand):
                     ministry=m, title=f"Weekly {m.name.split()[0]} gathering", kind=Activity.Kind.MEETING,
                     date=date.today() - timedelta(days=7 * w), attendance=rng.randint(8, 40),
                     summary="Sample record created by seed_church --demo.", created_by=m.leaders.first())
-        self.stdout.write(self.style.WARNING("Added demo donors, gifts and activities. Don't use --demo on the live site."))
+        self._demo_events_and_resources(users)
+        self.stdout.write(self.style.WARNING("Added demo donors, gifts, activities, events and resources. Don't use --demo on the live site."))
+
+    def _demo_events_and_resources(self, users):
+        from datetime import datetime, time
+
+        from django.utils import timezone
+
+        from events.models import Event
+        from resources.models import Resource
+
+        tz = timezone.get_current_timezone()
+        today = date.today()
+
+        def next_weekday(wd):  # Monday=0 ... Sunday=6
+            return today + timedelta(days=(wd - today.weekday()) % 7)
+
+        def at(d, h, m=0):
+            return timezone.make_aware(datetime.combine(d, time(h, m)), tz)
+
+        M = {m.name: m for m in Ministry.objects.all()}
+        weekly = [
+            ("Sunday Worship Service", Event.Kind.SERVICE, None, 6, 11, 0, 13, 30, True),
+            ("Wednesday Prayer Night", Event.Kind.PRAYER, "Prayer Ministry", 2, 19, 0, 20, 30, True),
+            ("Youth Gathering", Event.Kind.YOUTH, "Youth & Kids Ministry", 4, 18, 30, 20, 30, False),
+            ("Choir Rehearsal", Event.Kind.REHEARSAL, "Choir Ministry", 5, 16, 0, 18, 0, False),
+            ("Bible Study", Event.Kind.BIBLE, "Bible Study", 1, 19, 0, 20, 30, True),
+        ]
+        for title, kind, mname, wd, sh, sm, eh, em, public in weekly:
+            d = next_weekday(wd) - timedelta(weeks=8)
+            Event.objects.get_or_create(title=title, defaults={
+                "kind": kind, "ministry": M.get(mname), "start": at(d, sh, sm), "end": at(d, eh, em),
+                "repeat": Event.Repeat.WEEKLY, "is_public": public, "location": "Church hall",
+                "created_by": users["abraham"]})
+        d = next_weekday(5) + timedelta(weeks=3)
+        Event.objects.get_or_create(title="Building Fund Fellowship Dinner", defaults={
+            "kind": Event.Kind.FUNDRAISER, "start": at(d, 18), "end": at(d, 21), "is_public": True,
+            "location": "Church hall", "created_by": users["nahom"],
+            "description": "An evening of food, worship and testimonies to support our new church building."})
+        Event.objects.get_or_create(title="Elders' Monthly Meeting", defaults={
+            "kind": Event.Kind.MEETING, "start": at(today.replace(day=min(today.day, 28)) - timedelta(days=30), 19),
+            "repeat": Event.Repeat.MONTHLY, "created_by": users["girmay"]})
+        d = next_weekday(4) + timedelta(weeks=5)
+        Event.objects.get_or_create(title="Youth Winter Retreat", defaults={
+            "kind": Event.Kind.CONFERENCE, "ministry": M["Youth & Kids Ministry"], "all_day": True,
+            "start": at(d, 0), "end": at(d + timedelta(days=2), 23, 59), "created_by": users["biniam"]})
+
+        demo_resources = [
+            ("Building fund one-page summary", Resource.Category.DOCUMENT, None, Resource.Audience.MEMBERS),
+            ("Child safety & check-in policy", Resource.Category.POLICY, "Youth & Kids Ministry", Resource.Audience.LEADERS),
+            ("Sunday school lesson plans — Fall", Resource.Category.CURRICULUM, "Youth & Kids Ministry", Resource.Audience.MINISTRY),
+            ("Worship song list (Tigrinya & English)", Resource.Category.SONG, "Choir Ministry", Resource.Audience.MEMBERS),
+            ("Livestream setup checklist", Resource.Category.FORM, "Media Ministry", Resource.Audience.MINISTRY),
+            ("Elders' meeting minutes folder", Resource.Category.POLICY, None, Resource.Audience.LEADERS),
+        ]
+        for title, cat, mname, aud in demo_resources:
+            Resource.objects.get_or_create(title=title, defaults={
+                "category": cat, "ministry": M.get(mname), "audience": aud,
+                "url": "https://drive.google.com/", "uploaded_by": users["abraham"],
+                "description": "Sample resource created by seed_church --demo."})

@@ -1,0 +1,71 @@
+from datetime import datetime, time, timedelta
+
+from django import forms
+from django.utils import timezone
+
+from .models import Event
+
+
+class EventForm(forms.ModelForm):
+    """Date and times are separate inputs (easier on phones); combined into start/end on save."""
+
+    date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+    start_time = forms.TimeField(required=False, widget=forms.TimeInput(attrs={"type": "time"}))
+    end_time = forms.TimeField(required=False, widget=forms.TimeInput(attrs={"type": "time"}))
+    end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}),
+                               help_text="Only for events that run over several days (e.g. a retreat).")
+
+    class Meta:
+        model = Event
+        fields = ("title", "kind", "ministry", "all_day", "location", "description", "repeat", "repeat_until", "is_public")
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 4}),
+            "repeat_until": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    field_order = ("title", "kind", "ministry", "date", "start_time", "end_time", "end_date", "all_day",
+                   "location", "description", "repeat", "repeat_until", "is_public")
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.fields["ministry"].queryset = user.editable_ministries()
+        if not user.can_create_churchwide_events:
+            self.fields["ministry"].required = True
+            self.fields["ministry"].empty_label = None
+            self.fields["ministry"].help_text = ""
+        if self.instance.pk:
+            s = timezone.localtime(self.instance.start)
+            self.initial.update(date=s.date(), start_time=None if self.instance.all_day else s.time())
+            if self.instance.end:
+                e = timezone.localtime(self.instance.end)
+                self.initial["end_time"] = None if self.instance.all_day else e.time()
+                if e.date() != s.date():
+                    self.initial["end_date"] = e.date()
+
+    def clean(self):
+        data = super().clean()
+        d = data.get("date")
+        if not d:
+            return data
+        if not data.get("all_day") and not data.get("start_time"):
+            self.add_error("start_time", "Add a start time, or tick 'All day'.")
+            return data
+        tz = timezone.get_current_timezone()
+        start = timezone.make_aware(datetime.combine(d, time(0, 0) if data.get("all_day") else data["start_time"]), tz)
+        end = None
+        end_d = data.get("end_date") or d
+        if data.get("all_day"):
+            if data.get("end_date"):
+                end = timezone.make_aware(datetime.combine(end_d, time(23, 59)), tz)
+        elif data.get("end_time"):
+            end = timezone.make_aware(datetime.combine(end_d, data["end_time"]), tz)
+            if end <= start:
+                self.add_error("end_time", "The end must be after the start.")
+                end = None
+        if data.get("repeat") != Event.Repeat.NONE and data.get("end_date") and end_d - d > timedelta(days=6):
+            self.add_error("end_date", "Repeating events can't run longer than a week.")
+        if data.get("repeat_until") and data["repeat_until"] < d:
+            self.add_error("repeat_until", "Must be on or after the first date.")
+        self.instance.start, self.instance.end = start, end
+        return data

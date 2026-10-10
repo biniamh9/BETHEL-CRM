@@ -5,12 +5,15 @@ from django.db.models import Count, Q, Sum
 from django.shortcuts import render
 
 from accounts.models import User
+from events.models import Event
 from fundraising.models import Campaign, Donation
 from ministries.models import Activity, Ministry
 
 
 def home(request):
+    today = date.today()
     return render(request, "core/home.html", {
+        "events": Event.occurrences_between(today, today + timedelta(days=45), Event.objects.filter(is_public=True))[:6],
         "campaign": Campaign.objects.filter(is_active=True, is_public=True).first(),
         "ministries": Ministry.objects.all(),
         "elders": User.objects.filter(is_active=True, role__in=[User.Role.ADMIN, User.Role.ELDER]).order_by("role", "first_name"),
@@ -33,6 +36,7 @@ def portal(request):
         "feed": feed,
         "campaign": Campaign.objects.filter(is_active=True).first(),
         "month_activities": Activity.objects.filter(ministry__in=user.visible_ministries(), date__gte=since).count(),
+        "upcoming": Event.occurrences_between(date.today(), date.today() + timedelta(days=14))[:8],
     }
     if user.role == User.Role.MEMBER and not user.is_superuser:
         ctx["my_gifts_total"] = Donation.objects.filter(

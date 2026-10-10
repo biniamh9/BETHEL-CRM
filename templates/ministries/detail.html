@@ -36,12 +36,24 @@
     </table></div>
   </div>
 
+  <div>
+  <div class="panel">
+    <div class="panel-head"><h3>Coming up</h3>{% if can_edit %}<a class="small" href="{% url 'events:new' %}?ministry={{ ministry.slug }}">+ Event</a>{% endif %}</div>
+    <ul class="feed">{% for o in upcoming %}<li><time>{{ o.start|date:"M j" }}</time><div><a href="{{ o.event.get_absolute_url }}"><b>{{ o.event.title }}</b></a><div class="small muted">{% if o.event.all_day %}All day{% else %}{{ o.start|date:"D g:i A" }}{% endif %}{% if o.event.location %} · {{ o.event.location }}{% endif %}</div></div></li>
+    {% empty %}<li class="empty">Nothing scheduled in the next 30 days.</li>{% endfor %}</ul>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Resources</h3><span><a class="small" href="{% url 'resources:list' %}?ministry={{ ministry.slug }}">All</a>{% if can_edit %} · <a class="small" href="{% url 'resources:new' %}?ministry={{ ministry.slug }}">+ Add</a>{% endif %}</span></div>
+    <ul class="feed">{% for r in resources %}<li><time>{% if r.file %}{{ r.extension|slice:":4" }}{% else %}LINK{% endif %}</time><div>{% if r.file %}<a href="{% url 'resources:download' r.pk %}?view=1" target="_blank">{{ r.title }}</a>{% else %}<a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.title }} ↗</a>{% endif %}<div class="small muted">{{ r.get_category_display }}</div></div></li>
+    {% empty %}<li class="empty">No resources yet.</li>{% endfor %}</ul>
+  </div>
   <div class="panel" id="people">
     <div class="panel-head"><h3>People</h3>{% if inactive_count %}<span class="small muted">{{ inactive_count }} inactive hidden</span>{% endif %}</div>
     <div class="table-wrap"><table><tbody>
       {% for p in participants %}<tr><td><b>{{ p }}</b> <span class="muted small">· {{ p.get_kind_display }}</span>{% if p.phone %}<div class="small muted">{{ p.phone }}</div>{% endif %}{% if p.guardian_name %}<div class="small muted">Guardian: {{ p.guardian_name }} {{ p.guardian_phone }}</div>{% endif %}</td><td class="num">{% if can_edit %}<a href="{% url 'ministries:participant_edit' ministry.slug p.pk %}">Edit</a>{% endif %}</td></tr>
       {% empty %}<tr><td class="empty">No one on the roster yet.</td></tr>{% endfor %}
     </tbody></table></div>
+  </div>
   </div>
 </div>
 {% endblock %}

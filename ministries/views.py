@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -30,6 +30,45 @@ def ministry_list(request):
 
 
 @login_required
+def all_activities(request):
+    """Every recorded activity across the ministries this person can see."""
+    visible = request.user.visible_ministries()
+    qs = Activity.objects.filter(ministry__in=visible).select_related("ministry", "created_by")
+    slug = request.GET.get("ministry")
+    if slug:
+        qs = qs.filter(ministry__slug=slug)
+    if request.GET.get("kind"):
+        qs = qs.filter(kind=request.GET["kind"])
+    q = request.GET.get("q", "").strip()
+    if q:
+        qs = qs.filter(Q(title__icontains=q) | Q(summary__icontains=q) | Q(follow_up__icontains=q))
+    period = request.GET.get("period", "90")
+    if period != "all":
+        qs = qs.filter(date__gte=date.today() - timedelta(days=int(period) if period.isdigit() else 90))
+    if request.GET.get("followups") == "1":
+        qs = qs.exclude(follow_up="")
+    totals = qs.aggregate(attendance=Sum("attendance"), hours=Sum("volunteer_hours"))
+    if request.GET.get("export") == "csv":
+        return _activities_csv(qs, "all-activities")
+    return render(request, "ministries/activities.html", {
+        "activities": qs[:200], "count": qs.count(), "totals": totals,
+        "ministries": visible, "editable": request.user.editable_ministries(),
+        "kinds": Activity.Kind.choices, "period": period,
+    })
+
+
+def _activities_csv(qs, name):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{name}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Date", "Ministry", "Title", "Type", "Location", "Attendance", "Volunteer hours", "Summary", "Follow-up", "Recorded by"])
+    for a in qs:
+        writer.writerow([a.date, a.ministry.name, a.title, a.get_kind_display(), a.location, a.attendance,
+                         a.volunteer_hours, a.summary, a.follow_up, a.created_by or ""])
+    return response
+
+
+@login_required
 def ministry_detail(request, slug):
     ministry = _get_ministry(request, slug)
     activities = ministry.activities.all()
@@ -40,7 +79,12 @@ def ministry_detail(request, slug):
     recent = ministry.activities.filter(date__gte=since)
     stats = recent.aggregate(total_attendance=Sum("attendance"), hours=Sum("volunteer_hours"))
     stats["count"] = recent.count()
+    from events.models import Event
+    from resources.models import Resource
+
     return render(request, "ministries/detail.html", {
+        "upcoming": Event.occurrences_between(date.today(), date.today() + timedelta(days=30), ministry.events.all())[:6],
+        "resources": Resource.visible_to(request.user).filter(ministry=ministry)[:6],
         "ministry": ministry,
         "activities": activities.prefetch_related("attendees")[:50],
         "participants": ministry.participants.filter(is_active=True),
@@ -107,11 +151,4 @@ def participant_edit(request, slug, pk=None):
 @login_required
 def activity_export(request, slug):
     ministry = _get_ministry(request, slug)
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = f'attachment; filename="{ministry.slug}-activities.csv"'
-    writer = csv.writer(response)
-    writer.writerow(["Date", "Title", "Type", "Location", "Attendance", "Volunteer hours", "Summary", "Follow-up", "Recorded by"])
-    for a in ministry.activities.select_related("created_by"):
-        writer.writerow([a.date, a.title, a.get_kind_display(), a.location, a.attendance,
-                         a.volunteer_hours, a.summary, a.follow_up, a.created_by or ""])
-    return response
+    return _activities_csv(ministry.activities.select_related("ministry", "created_by"), f"{ministry.slug}-activities")

@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     "accounts",
     "ministries",
     "fundraising",
+    "events",
+    "resources",
     "core",
 ]
 
@@ -109,6 +111,33 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Uploaded resource files. They're never served publicly: downloads go through a
+# permission-checked view. Locally they live in ./media. In production, hosts like
+# Render wipe the disk on each deploy, so set the SUPABASE_S3_* variables to store
+# files in a private Supabase Storage bucket instead (needs `pip install django-storages boto3`).
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 30 * 1024 * 1024
+
+if os.environ.get("SUPABASE_S3_BUCKET"):
+    _storages = globals().get("STORAGES", {"staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}})
+    _storages["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": os.environ["SUPABASE_S3_BUCKET"],
+            "endpoint_url": os.environ["SUPABASE_S3_ENDPOINT"],  # https://<project>.supabase.co/storage/v1/s3
+            "region_name": os.environ.get("SUPABASE_S3_REGION", "us-east-1"),
+            "access_key": os.environ["SUPABASE_S3_ACCESS_KEY"],
+            "secret_key": os.environ["SUPABASE_S3_SECRET_KEY"],
+            "default_acl": None,
+            "querystring_auth": True,  # private bucket, short-lived signed links
+            "querystring_expire": 300,
+            "file_overwrite": False,
+        },
+    }
+    STORAGES = _storages
 
 # Email (password resets, receipts). Console backend prints to the terminal locally.
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")

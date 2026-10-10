@@ -55,6 +55,26 @@
   </div>
 </section>
 
+{% if events %}
+<section class="section" id="events">
+  <div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
+      <div><span class="eyebrow">Join us</span><h2>Upcoming events</h2><hr class="divider"></div>
+      <a class="btn btn-ghost btn-sm" href="{% url 'events:public' %}">See all events</a>
+    </div>
+    <div class="grid-3" style="margin-top:12px">
+      {% for o in events %}
+      <div class="card next-card c-{{ o.event.color }}" style="align-items:flex-start">
+        <div class="next-date"><b>{{ o.start|date:"j" }}</b><span>{{ o.start|date:"M" }}</span><span>{{ o.start|date:"D" }}</span></div>
+        <div><b>{{ o.event.title }}</b><div class="small muted">{% if o.event.all_day %}All day{% else %}{{ o.start|time:"g:i A" }}{% endif %}{% if o.event.location %} · {{ o.event.location }}{% endif %}</div>
+        <a class="small" href="{{ o.google_url }}" target="_blank" rel="noopener">Add to calendar</a></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 {% if elders %}
 <section class="section">
   <div class="wrap">
