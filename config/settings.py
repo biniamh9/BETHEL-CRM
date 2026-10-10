@@ -117,6 +117,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 # On Vercel use Supabase's *Transaction pooler* URL (port 6543): serverless functions open
 # many short-lived connections, and Supabase's direct connection is IPv6-only.
 DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+if DATABASE_URL and not DATABASE_URL.startswith(("postgres://", "postgresql://")):
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        f"DATABASE_URL must be a Postgres connection string starting with postgresql://, "
+        f"but it starts with {DATABASE_URL.split('//')[0]}//. "
+        "In Supabase click Connect -> Transaction pooler and copy that URI "
+        "(not the https://...supabase.co Project URL)."
+    )
 if DATABASE_URL:
     import dj_database_url
 
