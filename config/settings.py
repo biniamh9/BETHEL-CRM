@@ -79,7 +79,7 @@ try:  # serve static files in production without a separate server
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+        "staticfiles": {"BACKEND": "core.storage.FallbackStaticFilesStorage"},
     }
 except ImportError:
     pass
@@ -149,6 +149,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# If the collected files/manifest aren't bundled into the Vercel function, fall back to
+# serving straight from ./static with plain names instead of failing every page with a 500.
+WHITENOISE_USE_FINDERS = ON_VERCEL
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

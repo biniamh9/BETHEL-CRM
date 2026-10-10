@@ -1,7 +1,7 @@
 """Vercel build step: create/update database tables and load the church structure.
 
-Vercel runs this after installing requirements (see vercel.json "buildCommand") and
-then runs collectstatic itself. It only touches the database for production
+Vercel runs this after installing requirements (see vercel.json "buildCommand").
+It collects static files, then touches the database only for production
 deployments, so preview deployments can't change live data.
 """
 import os
@@ -15,6 +15,7 @@ def run(*args):
 
 
 def main():
+    run("collectstatic", "--noinput")
     env = os.environ.get("VERCEL_ENV", "local")
     if not (os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")):
         print("DATABASE_URL is not set: skipping migrations. Add it in Vercel -> Settings -> Environment Variables, then redeploy.")

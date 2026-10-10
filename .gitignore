@@ -9,3 +9,4 @@ venv/
 media/
 .env.local
 .vercel/
+*.patch
