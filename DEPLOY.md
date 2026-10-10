@@ -17,8 +17,8 @@ You need **two values**. Write them down as you go:
 1. Go to <https://supabase.com/dashboard> and open your project.
 2. Click the **Connect** button at the top of the page.
 3. Under **Connection string**, keep **Type: URI**.
-4. Scroll to **Transaction pooler** (port **6543**) and copy that string.
-   ❗ Not "Direct connection" and not the "Project URL" (`https://....supabase.co`). Those don't work.
+4. Scroll to **Transaction pooler** (port **6543**). If you see a choice between **Shared pooler** and **Dedicated pooler**, pick **Shared pooler**. Copy that string.
+   ❗ Not "Direct connection", not "Dedicated pooler" and not the "Project URL" (`https://....supabase.co`). Vercel can't reach those.
 5. Paste it into a note. Replace `[YOUR-PASSWORD]` **including the square brackets** with your database password.
 
    Before: `postgresql://postgres.abcdefgh:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres`
@@ -27,7 +27,19 @@ You need **two values**. Write them down as you go:
 **Forgot the database password, or it has symbols like `# / ? % @`?**
 Supabase → **Project Settings** (gear icon) → **Database** → **Reset database password**. Choose one with only letters and numbers, then redo step 1.
 
-Check value A: it starts with `postgresql://`, contains `pooler.supabase.com:6543`, and has no `[` `]`.
+Check value A, piece by piece:
+
+```
+postgresql://postgres.hhblpunmbaiifxqazufa:YourPassword@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+└─ starts ─┘ └──── user: postgres.<id> ─┘ └ password ┘ └──── host ends in pooler.supabase.com ────┘
+  exactly                                               (NOT db.xxxx.supabase.co)
+  like this (2 slashes)
+```
+
+- starts with exactly `postgresql://` (two slashes, nothing before it, no quotes)
+- the user name has a dot: `postgres.<your-project-id>`
+- the host ends in `pooler.supabase.com` and the port is `6543`
+- no `[` `]` left anywhere
 
 ## Step 2 — Make a secret key (value B)
 

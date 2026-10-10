@@ -86,6 +86,12 @@ def database_settings(url, serverless):
             "Reset database password, choose one with only letters and numbers, then paste the new "
             "connection string into Vercel."
         ) from None
+    if not config.get("HOST") or any(c in config.get("NAME", "") for c in "@:/"):
+        raise ImproperlyConfigured(
+            "The database connection string is garbled (for example an extra / after postgresql://). "
+            "It must look exactly like postgresql://postgres.<project-id>:<password>@aws-0-<region>"
+            f".pooler.supabase.com:6543/postgres. {HOW_TO_GET_IT}"
+        )
     # Supabase's Transaction pooler can't keep server-side cursors open between queries.
     config["DISABLE_SERVER_SIDE_CURSORS"] = True
     return config

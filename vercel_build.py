@@ -50,14 +50,25 @@ def load_settings():
         fail(str(e))
 
 
+def redact(text, settings_dict):
+    """Never let the database password reach the build log."""
+    password = settings_dict.get("PASSWORD") or ""
+    return text.replace(password, "<password hidden>") if password else text
+
+
 def check_connection():
     """Connect once and translate the usual Supabase mistakes into plain words."""
-    from django.db import OperationalError, connection
+    from django.db import connection
 
+    host = connection.settings_dict.get("HOST", "")
+    if host.startswith("db.") and host.endswith(".supabase.co"):
+        fail(f"DATABASE_URL uses Supabase's direct address ({host}), which Vercel can't reach. "
+             "In Supabase click Connect, choose 'Transaction pooler' (shared pooler) and copy that URI instead: "
+             "its host ends in pooler.supabase.com and its user name looks like postgres.<project-id>.")
     try:
         connection.ensure_connection()
-    except OperationalError as e:
-        text = str(e)
+    except Exception as e:  # noqa: BLE001 - every failure gets a plain, password-free message
+        text = redact(str(e), connection.settings_dict)
         if "password authentication failed" in text:
             fail("Supabase rejected the database password. Check the password in DATABASE_URL, or reset it in "
                  "Supabase -> Project Settings -> Database and paste the new connection string.")

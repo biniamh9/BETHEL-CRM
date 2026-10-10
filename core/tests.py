@@ -92,3 +92,14 @@ class SupabaseConnectionStringTest(TestCase):
         for pasted in (f'"{self.POOLER}"', f"'{self.POOLER}'", f"  {self.POOLER}\n", f"DATABASE_URL={self.POOLER}",
                        f'DATABASE_URL="{self.POOLER}"', f"[{self.POOLER}]"):
             self.assertEqual(self.find(DATABASE_URL=pasted), ("DATABASE_URL", self.POOLER), pasted)
+
+    def test_garbled_url_is_explained_without_the_password(self):
+        from django.core.exceptions import ImproperlyConfigured
+
+        from config.database import database_settings
+
+        garbled = "postgresql:///postgres:Secret99@db.abcd.supabase.co:6543/postgres"
+        with self.assertRaises(ImproperlyConfigured) as cm:
+            database_settings(garbled, serverless=True)
+        self.assertIn("garbled", str(cm.exception))
+        self.assertNotIn("Secret99", str(cm.exception))
