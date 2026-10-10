@@ -1,0 +1,99 @@
+{% extends "base_public.html" %}{% load church %}
+{% block title %}{{ campaign.name }} · {{ church.short_name }}{% endblock %}
+{% block description %}{{ campaign.tagline }}{% endblock %}
+{% block content %}
+<section class="hero" style="padding-bottom:32px">
+  <div class="wrap">
+    <span class="eyebrow">{{ church.short_name }} · Atlanta</span>
+    <h1>{{ campaign.name }}</h1>
+    {% if campaign.tagline %}<p class="lead">{{ campaign.tagline }}</p>{% endif %}
+  </div>
+</section>
+
+<section class="wrap give-layout" style="padding-bottom:72px">
+  <div>
+    {% include "partials/fund_card.html" %}
+
+    <div class="story" style="margin-top:36px">
+      <h2>Why we're building</h2>
+      <hr class="divider">
+      {% for p in paragraphs %}<p>{{ p }}</p>{% endfor %}
+    </div>
+
+    <h3 style="margin-top:28px">What the new building will hold</h3>
+    <ul class="uses">
+      <li>Main sanctuary for worship</li><li>Classrooms for 32 children</li>
+      <li>Youth center for 42 students</li><li>Family counseling rooms</li>
+      <li>Community meeting rooms</li><li>Workshop and learning spaces</li>
+    </ul>
+
+    {% if wall %}
+    <h3 style="margin-top:32px">Recent givers</h3>
+    <div class="wall">{% for d in wall %}<span>{{ d.donor.public_name }}</span>{% endfor %}</div>
+    {% endif %}
+  </div>
+
+  <aside class="sticky">
+    <div class="card" id="give" style="padding:24px">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-tab="t-give">Give</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="t-pledge" id="pledge">Pledge</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="t-other">Zelle / check</button>
+      </div>
+
+      <div id="t-give" class="tab-panel">
+        {% if stripe_enabled %}
+        <form method="post" action="{% url 'fundraising:donate' campaign.slug %}">{% csrf_token %}
+          <label class="field" style="display:block;font-weight:600;color:var(--navy);font-size:.88rem;margin-bottom:6px">Choose an amount</label>
+          <div class="amounts">{% for a in presets %}<button type="button" data-amt="{{ a }}">${{ a }}</button>{% endfor %}</div>
+          {% form_fields gift_form "amount" %}
+          <div class="form-row">{% form_fields gift_form "first_name,last_name" %}</div>
+          {% form_fields gift_form "email,phone,show_on_wall,public_message" %}
+          <button class="btn btn-primary btn-block">Continue to secure payment</button>
+          <p class="muted small center" style="margin:.8em 0 0">Card, bank account, Apple Pay or Google Pay through Stripe. You'll get an emailed tax receipt.</p>
+        </form>
+        {% else %}
+        <p><b>Online giving is coming soon.</b> In the meantime you can give by Zelle, check or cash, or make a pledge and our finance team will follow up.</p>
+        <button type="button" class="btn btn-ghost btn-block" data-go="t-other">See Zelle and check details</button>
+        {% endif %}
+      </div>
+
+      <div id="t-pledge" class="tab-panel" hidden>
+        <p class="small muted">Commit an amount you'll give over time. We'll record it and send gentle reminders.</p>
+        <form method="post" action="{% url 'fundraising:pledge' campaign.slug %}">{% csrf_token %}
+          <div class="form-row">{% form_fields pledge_form "first_name,last_name" %}</div>
+          {% form_fields pledge_form "email,phone,total_amount,frequency,target_date,notes" %}
+          <button class="btn btn-navy btn-block">Make my pledge</button>
+        </form>
+      </div>
+
+      <div id="t-other" class="tab-panel offline" hidden>
+        {% if church.zelle %}<div><b>Zelle</b><br>Send to <strong>{{ church.zelle }}</strong> with the memo "Building Fund".</div>{% endif %}
+        <div><b>Check</b><br>Payable to <strong>{{ church.check_payable_to }}</strong>, memo "Building Fund".{% if church.mailing_address %}<br>Mail to {{ church.mailing_address }}{% else %} Hand it to the finance team on Sunday.{% endif %}</div>
+        <div><b>Cash</b><br>Use a giving envelope marked "Building Fund" with your name so we can send a receipt.</div>
+        <p class="small muted" style="margin:0">Every gift is recorded by our finance team and receipted for your taxes.</p>
+      </div>
+    </div>
+  </aside>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const tabs = document.querySelectorAll('[data-tab]');
+  function show(id) {
+    tabs.forEach(t => t.setAttribute('aria-selected', t.dataset.tab === id));
+    document.querySelectorAll('.tab-panel').forEach(p => p.hidden = p.id !== id);
+  }
+  tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.tab)));
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
+  if (location.hash === '#pledge') show('t-pledge');
+  {% if pledge_form.errors %}show('t-pledge');{% endif %}
+  const amt = document.getElementById('id_amount');
+  document.querySelectorAll('[data-amt]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-amt]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); if (amt) { amt.value = b.dataset.amt; }
+  }));
+})();
+</script>
+{% endblock %}

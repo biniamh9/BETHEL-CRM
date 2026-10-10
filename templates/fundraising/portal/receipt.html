@@ -1,0 +1,22 @@
+{% extends "base_portal.html" %}{% load static church %}
+{% block page_title %}Receipt {{ d.receipt_number }}{% endblock %}
+{% block content %}
+<div class="page-head no-print"><h1>Receipt</h1><div class="actions"><button class="btn btn-primary btn-sm" onclick="window.print()">Print / save as PDF</button><a class="btn btn-ghost btn-sm" href="{% url 'fundraising:donations' %}">Back</a></div></div>
+<div class="receipt">
+  <div class="receipt-head">
+    <div><h2 style="margin:0">{{ church.name }}</h2><div class="ethiopic muted small">{{ church.tigrinya_name }}</div><div class="small">{{ church.address }}{% if church.ein %}<br>EIN {{ church.ein }}{% endif %}</div></div>
+    <img src="{% static 'img/logo-mark.png' %}" alt="">
+  </div>
+  <h3>Contribution receipt</h3>
+  <table>
+    <tr><td>Receipt number</td><td><b>{{ d.receipt_number }}</b></td></tr>
+    <tr><td>Donor</td><td>{% if d.donor %}{{ d.donor }}{% if d.donor.address %}<br>{{ d.donor.address }}, {{ d.donor.city }} {{ d.donor.state }} {{ d.donor.postal_code }}{% endif %}{% else %}Anonymous{% endif %}</td></tr>
+    <tr><td>Date received</td><td>{{ d.received_on|date:"F j, Y" }}</td></tr>
+    <tr><td>Designation</td><td>{{ d.campaign.name }}</td></tr>
+    <tr><td>Method</td><td>{{ d.get_method_display }}{% if d.reference %} ({{ d.reference }}){% endif %}</td></tr>
+    <tr><td>Amount</td><td><b>{{ d.amount|usd:True }}</b></td></tr>
+  </table>
+  <p style="margin-top:24px">{{ church.name }} is a registered 501(c)(3) nonprofit organization. No goods or services were provided in exchange for this contribution. Please retain this receipt for your tax records.</p>
+  <p class="muted small">Thank you for helping us build a permanent home for our community.</p>
+</div>
+{% endblock %}

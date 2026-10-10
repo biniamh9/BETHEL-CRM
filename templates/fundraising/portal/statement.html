@@ -1,0 +1,19 @@
+{% extends "base_portal.html" %}{% load static church %}
+{% block page_title %}{{ year }} statement · {{ donor }}{% endblock %}
+{% block content %}
+<div class="page-head no-print"><h1>{{ year }} giving statement</h1><div class="actions"><button class="btn btn-primary btn-sm" onclick="window.print()">Print / save as PDF</button><a class="btn btn-ghost btn-sm" href="{{ donor.get_absolute_url }}">Back</a></div></div>
+<div class="receipt">
+  <div class="receipt-head">
+    <div><h2 style="margin:0">{{ church.name }}</h2><div class="small">{{ church.address }}{% if church.ein %}<br>EIN {{ church.ein }}{% endif %}</div></div>
+    <img src="{% static 'img/logo-mark.png' %}" alt="">
+  </div>
+  <p><b>{{ donor }}</b>{% if donor.address %}<br>{{ donor.address }}<br>{{ donor.city }} {{ donor.state }} {{ donor.postal_code }}{% endif %}</p>
+  <h3>Contributions received January 1 – December 31, {{ year }}</h3>
+  <table>
+    <thead><tr><th>Date</th><th>Receipt</th><th>Designation</th><th>Method</th><th class="num">Amount</th></tr></thead>
+    <tbody>{% for g in gifts %}<tr><td>{{ g.received_on|date:"M j, Y" }}</td><td>{{ g.receipt_number }}</td><td>{{ g.campaign.name }}</td><td>{{ g.get_method_display }}</td><td class="num">{{ g.amount|usd:True }}</td></tr>{% endfor %}
+    <tr><td colspan="4"><b>Total</b></td><td class="num"><b>{{ total|usd:True }}</b></td></tr></tbody>
+  </table>
+  <p style="margin-top:24px">No goods or services were provided in exchange for these contributions. {{ church.name }} is a registered 501(c)(3) nonprofit organization.</p>
+</div>
+{% endblock %}

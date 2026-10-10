@@ -1,0 +1,24 @@
+{% load church %}
+<div class="fund-card">
+  <div class="fund-top">
+    {% progress_ring campaign.percent %}
+    <div>
+      <span class="eyebrow">{{ campaign.name }}</span>
+      <div class="raised">{{ campaign.raised|usd }}</div>
+      <div class="of-goal">raised of our {{ campaign.goal_amount|usd }} goal</div>
+      <div class="bar"><i style="width:{{ campaign.percent }}%"></i></div>
+      <div class="muted small">{{ campaign.remaining|usd }} still needed</div>
+    </div>
+  </div>
+  <div class="fund-stats">
+    <div><b>{{ campaign.opening_balance|usd }}</b><span>{{ campaign.opening_balance_label }}</span></div>
+    <div><b>{{ campaign.donated|usd }}</b><span>given since the campaign began</span></div>
+    <div><b>{{ campaign.donor_count }}</b><span>giving households</span></div>
+  </div>
+  {% if show_buttons %}
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="{{ campaign.get_absolute_url }}#give">Give now</a>
+    <a class="btn btn-ghost" href="{{ campaign.get_absolute_url }}#pledge">Make a pledge</a>
+  </div>
+  {% endif %}
+</div>

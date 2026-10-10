@@ -1,0 +1,13 @@
+{% load church %}Dear {{ d.donor.first_name }},
+
+Thank you for your generous gift to the {{ d.campaign.name }}.
+
+Receipt number: {{ d.receipt_number }}
+Date: {{ d.received_on|date:"F j, Y" }}
+Amount: {{ d.amount|usd:True }}
+Method: {{ d.get_method_display }}
+
+{{ church.name }} is a registered 501(c)(3) nonprofit organization{% if church.ein %} (EIN {{ church.ein }}){% endif %}. No goods or services were provided in exchange for this contribution. Please keep this email for your tax records.
+
+With gratitude,
+{{ church.name }}

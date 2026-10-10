@@ -1,0 +1,25 @@
+{% extends "base_public.html" %}{% load church %}
+{% block title %}Thank you · {{ church.short_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="wrap center" style="max-width:640px">
+    <span class="eyebrow">Thank you</span>
+    {% if pledge %}
+      <h1>Your pledge is recorded</h1>
+      <p class="lead">Thank you, {{ pledge.donor.first_name }}. You pledged <strong>{{ pledge.total_amount|usd }}</strong> ({{ pledge.get_frequency_display|lower }}) toward the {{ pledge.campaign.name }}. Our finance team will reach out with next steps.</p>
+    {% elif donation and donation.status == 'succeeded' %}
+      <h1>God bless you, {{ donation.donor.first_name }}</h1>
+      <p class="lead">We received your gift of <strong>{{ donation.amount|usd:True }}</strong>. A receipt (number {{ donation.receipt_number }}) has been emailed to {{ donation.donor.email }}.</p>
+    {% elif donation %}
+      <h1>Your gift is processing</h1>
+      <p class="lead">Bank payments can take a few days to clear. We'll email your receipt once it does.</p>
+    {% else %}
+      <h1>Thank you for your generosity</h1>
+      <p class="lead">Your support helps us build a permanent home for our families.</p>
+    {% endif %}
+    <hr class="divider">
+    {% if campaign %}<div style="text-align:left;margin-top:28px">{% include "partials/fund_card.html" %}</div>{% endif %}
+    <p style="margin-top:28px"><a class="btn btn-ghost" href="{% url 'core:home' %}">Back to the home page</a></p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base_portal.html" %}
+{% block page_title %}{{ ministry.name }}{% endblock %}
+{% block content %}
+<div class="page-head c-{{ ministry.color }}">
+  <div><span class="eyebrow" style="color:var(--c)">Ministry portal</span><h1>{{ ministry.name }}</h1>
+    <div class="muted small">Led by {{ ministry.leader_display|default:"—" }}{% with ls=ministry.leaders.all %}{% if ls %} · Portal access: {{ ls|join:", " }}{% endif %}{% endwith %}</div></div>
+  <div class="actions">
+    {% if can_edit %}
+      <a class="btn btn-primary btn-sm" href="{% url 'ministries:activity_new' ministry.slug %}">+ Record activity</a>
+      <a class="btn btn-ghost btn-sm" href="{% url 'ministries:participant_new' ministry.slug %}">+ Add person</a>
+    {% endif %}
+    <a class="btn btn-ghost btn-sm" href="{% url 'ministries:activity_export' ministry.slug %}">Export CSV</a>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><span>Activities · 90 days</span><b>{{ stats.count }}</b></div>
+  <div class="kpi"><span>Attendance · 90 days</span><b>{{ stats.total_attendance|default:0 }}</b></div>
+  <div class="kpi"><span>Volunteer hours</span><b>{{ stats.hours|default:0 }}</b></div>
+  <div class="kpi"><span>Active people</span><b>{{ participants|length }}</b></div>
+</div>
+
+<div class="cols">
+  <div class="panel">
+    <div class="panel-head"><h3>Activity log</h3>
+      <form method="get"><select name="kind" onchange="this.form.submit()" style="padding:.4em .7em"><option value="">All types</option>{% for v, l in kinds %}<option value="{{ v }}" {% if current_kind == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></form>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Activity</th><th class="num">Present</th><th></th></tr></thead>
+      <tbody>{% for a in activities %}
+        <tr><td style="white-space:nowrap">{{ a.date|date:"M j, Y" }}</td>
+        <td><b>{{ a.title }}</b> <span class="badge">{{ a.get_kind_display }}</span>{% if a.location %}<div class="small muted">{{ a.location }}</div>{% endif %}{% if a.summary %}<div class="small" style="margin-top:4px">{{ a.summary|truncatewords:30 }}</div>{% endif %}{% if a.follow_up %}<div class="small" style="color:var(--warn)">Follow-up: {{ a.follow_up|truncatewords:20 }}</div>{% endif %}</td>
+        <td class="num">{{ a.attendance }}</td>
+        <td class="num">{% if can_edit %}<a href="{% url 'ministries:activity_edit' ministry.slug a.pk %}">Edit</a>{% endif %}</td></tr>
+      {% empty %}<tr><td colspan="4" class="empty">No activities recorded yet.{% if can_edit %} <a href="{% url 'ministries:activity_new' ministry.slug %}">Record the first one.</a>{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+
+  <div class="panel" id="people">
+    <div class="panel-head"><h3>People</h3>{% if inactive_count %}<span class="small muted">{{ inactive_count }} inactive hidden</span>{% endif %}</div>
+    <div class="table-wrap"><table><tbody>
+      {% for p in participants %}<tr><td><b>{{ p }}</b> <span class="muted small">· {{ p.get_kind_display }}</span>{% if p.phone %}<div class="small muted">{{ p.phone }}</div>{% endif %}{% if p.guardian_name %}<div class="small muted">Guardian: {{ p.guardian_name }} {{ p.guardian_phone }}</div>{% endif %}</td><td class="num">{% if can_edit %}<a href="{% url 'ministries:participant_edit' ministry.slug p.pk %}">Edit</a>{% endif %}</td></tr>
+      {% empty %}<tr><td class="empty">No one on the roster yet.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+</div>
+{% endblock %}

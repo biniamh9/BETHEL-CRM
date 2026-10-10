@@ -1,0 +1,80 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}Building fund{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Building fund</span><h1>{{ campaign.name|default:"No campaign yet" }}</h1></div>
+  <div class="actions">
+    {% if campaigns|length > 1 %}
+    <form method="get"><select name="campaign" onchange="this.form.submit()">{% for c in campaigns %}<option value="{{ c.slug }}" {% if c == campaign %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></form>
+    {% endif %}
+    {% if user.can_manage_finance %}
+      <a class="btn btn-primary btn-sm" href="{% url 'fundraising:donation_new' %}">+ Record a gift</a>
+      <a class="btn btn-ghost btn-sm" href="{% url 'fundraising:pledge_new' %}">+ Pledge</a>
+      {% if campaign %}<a class="btn btn-ghost btn-sm" href="{% url 'fundraising:campaign_edit' campaign.pk %}">Edit campaign</a>{% else %}<a class="btn btn-ghost btn-sm" href="{% url 'fundraising:campaign_new' %}">New campaign</a>{% endif %}
+    {% endif %}
+    {% if campaign %}<a class="btn btn-ghost btn-sm" href="{{ campaign.get_absolute_url }}" target="_blank">Public page ↗</a>{% endif %}
+  </div>
+</div>
+
+{% if campaign %}
+<div class="kpis">
+  <div class="kpi accent"><span>Raised</span><b>{{ campaign.raised|usd }}</b><div class="mini-bar"><i style="width:{{ campaign.percent }}%"></i></div></div>
+  <div class="kpi"><span>Goal</span><b>{{ campaign.goal_amount|usd }}</b><div class="small muted">{{ campaign.percent }}% reached</div></div>
+  <div class="kpi"><span>Still needed</span><b>{{ campaign.remaining|usd }}</b></div>
+  <div class="kpi"><span>This month</span><b>{{ month_total|usd }}</b></div>
+  <div class="kpi"><span>Open pledges</span><b>{{ campaign.pledged_outstanding|usd }}</b><div class="small muted">promised, not yet given</div></div>
+  <div class="kpi"><span>Givers</span><b>{{ campaign.donor_count }}</b></div>
+</div>
+
+<div class="cols">
+  <div>
+    <div class="panel">
+      <div class="panel-head"><h3>Gifts by month</h3><span class="small muted">last 12 months, received only</span></div>
+      <div class="panel-body">
+        {% if monthly %}
+        <div class="bars">{% for r in monthly %}<div title="{{ r.total|usd }}"><span>{{ r.total|usd }}</span><i style="height:{{ r.height }}%"></i><span>{{ r.m|date:"M y" }}</span></div>{% endfor %}</div>
+        {% else %}<div class="empty">No gifts recorded yet.</div>{% endif %}
+      </div>
+    </div>
+
+    {% if show_names %}
+    <div class="panel">
+      <div class="panel-head"><h3>Latest gifts</h3><a class="small" href="{% url 'fundraising:donations' %}">All donations →</a></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Donor</th><th>Method</th><th>Status</th><th class="num">Amount</th></tr></thead>
+        <tbody>{% for d in recent %}
+          <tr><td>{{ d.received_on|date:"M j" }}</td><td>{% if d.donor %}<a href="{{ d.donor.get_absolute_url }}">{{ d.donor.full_name }}</a>{% else %}Anonymous{% endif %}</td>
+          <td>{{ d.get_method_display }}</td><td><span class="badge {{ d.status }}">{{ d.get_status_display }}</span></td><td class="num">{{ d.amount|usd:True }}</td></tr>
+        {% empty %}<tr><td colspan="5" class="empty">No gifts yet. <a href="{% url 'fundraising:donation_new' %}">Record the first one.</a></td></tr>{% endfor %}</tbody>
+      </table></div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-head"><h3>How people give</h3></div>
+      <div class="table-wrap"><table><tbody>
+        <tr><td>{{ campaign.opening_balance_label }}</td><td class="num">{{ campaign.opening_balance|usd }}</td></tr>
+        {% for r in by_method %}<tr><td>{{ r.label }} <span class="muted small">· {{ r.n }} gift{{ r.n|pluralize }}</span></td><td class="num">{{ r.total|usd }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+
+    {% if show_names %}
+    <div class="panel">
+      <div class="panel-head"><h3>Active pledges</h3><a class="small" href="{% url 'fundraising:pledges' %}">All →</a></div>
+      <div class="table-wrap"><table><tbody>
+        {% for p in pledges %}<tr><td><a href="{{ p.donor.get_absolute_url }}">{{ p.donor.full_name }}</a><div class="mini-bar" style="margin-top:6px"><i style="width:{{ p.percent }}%"></i></div></td><td class="num">{{ p.fulfilled|usd }} <span class="muted small">/ {{ p.total_amount|usd }}</span></td></tr>
+        {% empty %}<tr><td class="empty">No active pledges.</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+    {% else %}
+    <div class="panel"><div class="panel-body small muted">Individual donor names and amounts are visible only to the Pastor and the finance team.</div></div>
+    {% endif %}
+    {% if pending_online and show_names %}<p class="small muted">{{ pending_online }} online payment{{ pending_online|pluralize }} still pending (bank transfers can take a few days, abandoned checkouts stay pending).</p>{% endif %}
+  </div>
+</div>
+{% else %}
+<div class="panel"><div class="empty">No campaign yet. {% if user.can_manage_finance %}<a href="{% url 'fundraising:campaign_new' %}">Create the building fund campaign</a> or run <code>python manage.py seed_church</code>.{% endif %}</div></div>
+{% endif %}
+{% endblock %}

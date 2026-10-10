@@ -1,0 +1,72 @@
+{% extends "base_public.html" %}{% load static church %}
+{% block content %}
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Serving Metro Atlanta since {{ church.founded }}</span>
+      <div class="ethiopic">{{ church.tigrinya_name }}</div>
+      <h1>A home for our families, and for the next generation.</h1>
+      <p class="lead">Bethel Eritrean Alliance Church strengthens immigrant families, raises young leaders and preserves our culture and faith. We are now raising funds to buy a permanent church building.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'fundraising:give' %}">Give to the building fund</a>
+        <a class="btn btn-ghost" href="#about">Who we are</a>
+      </div>
+    </div>
+    <img class="hero-logo" src="{% static 'img/logo-full.png' %}" alt="Bethel Eritrean Church of Atlanta logo">
+  </div>
+</section>
+
+{% if campaign %}
+<section class="wrap" style="margin-top:-12px">
+  {% include "partials/fund_card.html" with show_buttons=True %}
+</section>
+{% endif %}
+
+<section class="section" id="about">
+  <div class="wrap grid-2">
+    <div>
+      <span class="eyebrow">About us</span>
+      <h2>An anchor for Eritrean and East African families</h2>
+      <hr class="divider">
+      <p>For more than a decade we have been a place where families grow spiritually, children receive steady formation, young people find mentors, and newcomers find their first trusted community in a new country.</p>
+      <p>We serve families across Atlanta, Tucker, Stone Mountain, Clarkston, Lilburn and Decatur, offering family and marriage counseling, crisis support, new immigrant support, and weekly programs for children and youth.</p>
+    </div>
+    <div class="grid-2" style="gap:20px;align-content:center">
+      <div class="card stat-big"><b>100+</b><span>active members</span></div>
+      <div class="card stat-big"><b>74</b><span>children, youth and young adults each week</span></div>
+      <div class="card stat-big"><b>{{ ministries|length }}</b><span>ministries led by volunteers</span></div>
+      <div class="card stat-big"><b>2011</b><span>serving Atlanta since</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="ministries">
+  <div class="wrap">
+    <div class="center"><span class="eyebrow">Ministries</span><h2>How we serve</h2><hr class="divider"></div>
+    <div class="grid-3" style="margin-top:28px">
+      {% for m in ministries %}
+      <div class="card ministry c-{{ m.color }}">
+        <h3>{{ m.name }}</h3>
+        <div class="who">{{ m.leader_display }}</div>
+        {% if m.description %}<p class="muted small" style="margin:.6em 0 0">{{ m.description }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if elders %}
+<section class="section">
+  <div class="wrap">
+    <span class="eyebrow">Leadership</span>
+    <h2>Eldership board</h2>
+    <hr class="divider">
+    <div class="leaders">
+      {% for e in elders %}
+      <div class="leader"><div class="avatar">{{ e.first_name|first }}</div><div><b>{% if e.role == 'admin' %}Pastor {% endif %}{{ e.get_full_name|default:e.username }}</b><span>{{ e.title|default:e.get_role_display }}</span></div></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

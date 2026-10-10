@@ -1,0 +1,51 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">{% now "l, F j" %}</span><h1>Selam, {{ user.first_name|default:user.username }}</h1></div>
+  {% if my_ministries %}<div class="actions">{% for m in my_ministries %}<a class="btn btn-primary btn-sm" href="{% url 'ministries:activity_new' m.slug %}">+ Log {{ m.name }} activity</a>{% endfor %}</div>{% endif %}
+</div>
+
+{% if campaign and user.can_view_fund_totals %}
+<div class="kpis">
+  <div class="kpi accent"><span>Building fund raised</span><b>{{ campaign.raised|usd }}</b><div class="mini-bar"><i style="width:{{ campaign.percent }}%"></i></div></div>
+  <div class="kpi"><span>Goal</span><b>{{ campaign.goal_amount|usd }}</b><div class="small muted">{{ campaign.percent }}% reached</div></div>
+  <div class="kpi"><span>Still needed</span><b>{{ campaign.remaining|usd }}</b></div>
+  <div class="kpi"><span>Ministry activities (30 days)</span><b>{{ month_activities }}</b></div>
+</div>
+{% elif campaign %}
+<div class="panel"><div class="panel-body" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
+  <div><span class="eyebrow" style="margin-bottom:.4rem">{{ campaign.name }}</span><b style="font:700 1.6rem var(--serif);color:var(--maroon)">{{ campaign.raised|usd }}</b> <span class="muted">of {{ campaign.goal_amount|usd }} ({{ campaign.percent }}%)</span>
+  <div class="bar" style="max-width:420px"><i style="width:{{ campaign.percent }}%"></i></div></div>
+  <a class="btn btn-primary" href="{{ campaign.get_absolute_url }}">Give or pledge</a>
+</div></div>
+{% endif %}
+
+{% if my_gifts_total %}<p>Thank you — you've given <b>{{ my_gifts_total|usd:True }}</b>. See the details on <a href="{% url 'accounts:profile' %}">your profile</a>.</p>{% endif %}
+
+{% if ministries %}
+<div class="cols">
+  <div class="panel">
+    <div class="panel-head"><h3>{% if user.can_see_all_ministries %}All ministries{% else %}Your ministries{% endif %}</h3><span class="small muted">last 30 days</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Ministry</th><th>Leader</th><th class="num">Activities</th><th class="num">Attendance</th><th class="num">People</th></tr></thead>
+      <tbody>{% for m in ministries %}
+        <tr class="c-{{ m.color }}"><td><span class="dot"></span><a href="{{ m.get_absolute_url }}">{{ m.name }}</a></td><td class="muted">{{ m.leader_display }}</td>
+        <td class="num">{% if m.recent_count %}{{ m.recent_count }}{% else %}<span class="badge pending">none</span>{% endif %}</td><td class="num">{{ m.recent_attendance|default:"—" }}</td><td class="num">{{ m.people }}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Latest activity</h3></div>
+    <ul class="feed">{% for a in feed %}
+      <li class="c-{{ a.ministry.color }}"><time>{{ a.date|date:"M j" }}</time><div><span class="dot"></span><b>{{ a.title }}</b><div class="small muted">{{ a.ministry.name }} · {{ a.get_kind_display }}{% if a.attendance %} · {{ a.attendance }} present{% endif %}</div></div></li>
+    {% empty %}<li class="empty">Nothing recorded yet.</li>{% endfor %}</ul>
+  </div>
+</div>
+{% elif not user.can_view_fund_totals %}
+<div class="panel"><div class="panel-body">
+  <h3>Welcome to the Bethel portal</h3>
+  <p class="muted">Your account is a member account. If you lead a ministry, ask Pastor Abraham to give your login access to it. Then you'll be able to record activities and keep your team's roster here.</p>
+</div></div>
+{% endif %}
+{% endblock %}

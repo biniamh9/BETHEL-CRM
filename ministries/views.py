@@ -1,0 +1,117 @@
+import csv
+from datetime import date, timedelta
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.db.models import Count, Sum
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+
+from .forms import ActivityForm, ParticipantForm
+from .models import Activity, Ministry, Participant
+
+
+def _get_ministry(request, slug, edit=False):
+    ministry = get_object_or_404(Ministry, slug=slug)
+    allowed = request.user.can_edit_ministry(ministry) if edit else request.user.can_view_ministry(ministry)
+    if not allowed:
+        raise PermissionDenied
+    return ministry
+
+
+@login_required
+def ministry_list(request):
+    ministries = request.user.visible_ministries().annotate(
+        n_activities=Count("activities", distinct=True),
+        n_participants=Count("participants", distinct=True),
+    ).prefetch_related("leaders")
+    return render(request, "ministries/list.html", {"ministries": ministries})
+
+
+@login_required
+def ministry_detail(request, slug):
+    ministry = _get_ministry(request, slug)
+    activities = ministry.activities.all()
+    kind = request.GET.get("kind")
+    if kind:
+        activities = activities.filter(kind=kind)
+    since = date.today() - timedelta(days=90)
+    recent = ministry.activities.filter(date__gte=since)
+    stats = recent.aggregate(total_attendance=Sum("attendance"), hours=Sum("volunteer_hours"))
+    stats["count"] = recent.count()
+    return render(request, "ministries/detail.html", {
+        "ministry": ministry,
+        "activities": activities.prefetch_related("attendees")[:50],
+        "participants": ministry.participants.filter(is_active=True),
+        "inactive_count": ministry.participants.filter(is_active=False).count(),
+        "stats": stats,
+        "kinds": Activity.Kind.choices,
+        "current_kind": kind,
+        "can_edit": request.user.can_edit_ministry(ministry),
+    })
+
+
+@login_required
+def activity_edit(request, slug, pk=None):
+    ministry = _get_ministry(request, slug, edit=True)
+    activity = get_object_or_404(Activity, pk=pk, ministry=ministry) if pk else None
+    initial = {} if activity else {"date": date.today()}
+    form = ActivityForm(request.POST or None, instance=activity, ministry=ministry, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.ministry = ministry
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj.save()
+        form.save_m2m()
+        if obj.attendees.exists() and obj.attendance < obj.attendees.count():
+            obj.attendance = obj.attendees.count()
+            obj.save(update_fields=["attendance"])
+        messages.success(request, "Activity saved.")
+        return redirect(ministry)
+    return render(request, "ministries/form.html", {
+        "form": form, "ministry": ministry,
+        "title": "Edit activity" if activity else "Record an activity",
+        "delete_url": "ministries:activity_delete" if activity else None, "obj": activity,
+    })
+
+
+@login_required
+def activity_delete(request, slug, pk):
+    ministry = _get_ministry(request, slug, edit=True)
+    activity = get_object_or_404(Activity, pk=pk, ministry=ministry)
+    if request.method == "POST":
+        activity.delete()
+        messages.success(request, "Activity deleted.")
+    return redirect(ministry)
+
+
+@login_required
+def participant_edit(request, slug, pk=None):
+    ministry = _get_ministry(request, slug, edit=True)
+    person = get_object_or_404(Participant, pk=pk, ministry=ministry) if pk else None
+    form = ParticipantForm(request.POST or None, instance=person)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.ministry = ministry
+        obj.save()
+        messages.success(request, f"Saved {obj}.")
+        return redirect(f"{ministry.get_absolute_url()}#people")
+    return render(request, "ministries/form.html", {
+        "form": form, "ministry": ministry,
+        "title": f"Edit {person}" if person else "Add a person",
+    })
+
+
+@login_required
+def activity_export(request, slug):
+    ministry = _get_ministry(request, slug)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{ministry.slug}-activities.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Date", "Title", "Type", "Location", "Attendance", "Volunteer hours", "Summary", "Follow-up", "Recorded by"])
+    for a in ministry.activities.select_related("created_by"):
+        writer.writerow([a.date, a.title, a.get_kind_display(), a.location, a.attendance,
+                         a.volunteer_hours, a.summary, a.follow_up, a.created_by or ""])
+    return response

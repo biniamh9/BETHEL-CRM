@@ -1,0 +1,52 @@
+{% extends "base.html" %}{% load static %}
+{% block title %}{% block page_title %}Portal{% endblock %} · Bethel CRM{% endblock %}
+{% block body %}
+{% with path=request.path %}
+<div class="portal">
+  <aside class="side" id="side">
+    <a class="brand" href="{% url 'core:portal' %}">
+      <img src="{% static 'img/logo-mark.png' %}" alt="">
+      <div><b>Bethel CRM</b><span>Church portal</span></div>
+    </a>
+    <a href="{% url 'core:portal' %}" class="{% if path == '/portal/' %}on{% endif %}">Dashboard</a>
+
+    {% if user.can_view_fund_totals %}
+      <h4>Building fund</h4>
+      <a href="{% url 'fundraising:dashboard' %}" class="{% if path == '/portal/fund/' %}on{% endif %}">Overview</a>
+      {% if user.can_manage_finance %}
+        <a href="{% url 'fundraising:donations' %}" class="{% if '/fund/donations' in path %}on{% endif %}">Donations</a>
+        <a href="{% url 'fundraising:donors' %}" class="{% if '/fund/donors' in path %}on{% endif %}">Donors</a>
+        <a href="{% url 'fundraising:pledges' %}" class="{% if '/fund/pledges' in path %}on{% endif %}">Pledges</a>
+      {% endif %}
+    {% endif %}
+
+    {% with ms=user.visible_ministries %}{% if ms %}
+      <h4>Ministries</h4>
+      {% for m in ms %}
+        <a href="{{ m.get_absolute_url }}" class="c-{{ m.color }}{% if m.get_absolute_url in path %} on{% endif %}"><span class="dot"></span>{{ m.name }}</a>
+      {% endfor %}
+    {% endif %}{% endwith %}
+
+    {% if user.can_manage_users %}
+      <h4>Administration</h4>
+      <a href="{% url 'accounts:team' %}" class="{% if '/accounts/team' in path %}on{% endif %}">Team &amp; logins</a>
+      <a href="{% url 'admin:index' %}">Database admin</a>
+    {% endif %}
+
+    <h4>You</h4>
+    <a href="{% url 'accounts:profile' %}" class="{% if '/accounts/profile' in path %}on{% endif %}">My profile</a>
+    <a href="{% url 'core:home' %}">Public website</a>
+    <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+      <button class="btn btn-ghost btn-sm" style="margin:10px;color:#dfe3ee;border-color:rgba(255,255,255,.2)">Log out</button>
+    </form>
+    <div class="side-user"><b>{{ user.get_full_name|default:user.username }}</b>{{ user.title|default:user.get_role_display }}</div>
+  </aside>
+  <div class="main">
+    <button class="btn btn-ghost btn-sm menu-btn" onclick="document.getElementById('side').classList.toggle('open')">☰ Menu</button>
+    {% include "partials/messages.html" %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% endwith %}
+<script>document.addEventListener('click',e=>{const s=document.getElementById('side');if(s.classList.contains('open')&&!s.contains(e.target)&&!e.target.closest('.menu-btn'))s.classList.remove('open')});</script>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base_public.html" %}{% load church %}
+{% block title %}{{ title }} · {{ church.short_name }}{% endblock %}
+{% block content %}
+<div class="wrap"><div class="card auth-card">
+  <h2>{{ title }}</h2>
+  {% if validlink is False %}<p>This reset link has expired or was already used. <a href="{% url 'accounts:password_reset' %}">Request a new one.</a></p>{% else %}
+  <form method="post">{% csrf_token %}{% form_fields form %}<button class="btn btn-primary btn-block">Continue</button></form>{% endif %}
+</div></div>
+{% endblock %}

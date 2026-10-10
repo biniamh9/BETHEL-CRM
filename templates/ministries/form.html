@@ -1,0 +1,15 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-head c-{{ ministry.color }}"><div><span class="eyebrow" style="color:var(--c)">{{ ministry.name }}</span><h1>{{ title }}</h1></div></div>
+<form method="post" class="form-panel">{% csrf_token %}
+  <div class="panel"><div class="panel-body">{% form_fields form %}</div></div>
+  <div class="form-actions">
+    <button class="btn btn-primary">Save</button>
+    <a class="btn btn-ghost" href="{{ ministry.get_absolute_url }}">Cancel</a>
+  </div>
+</form>
+{% if obj and delete_url %}
+<form method="post" action="{% url delete_url ministry.slug obj.pk %}" onsubmit="return confirm('Delete this activity?')" style="margin-top:16px">{% csrf_token %}<button class="btn btn-danger btn-sm">Delete activity</button></form>
+{% endif %}
+{% endblock %}

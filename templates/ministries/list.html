@@ -1,0 +1,13 @@
+{% extends "base_portal.html" %}
+{% block page_title %}Ministries{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Ministries</h1></div>
+<div class="grid-3">
+  {% for m in ministries %}
+  <a class="card card-link ministry c-{{ m.color }}" href="{{ m.get_absolute_url }}">
+    <h3>{{ m.name }}</h3><div class="who">{{ m.leader_display }}</div>
+    <p class="small muted" style="margin:.6em 0 0">{{ m.n_activities }} activities recorded · {{ m.n_participants }} people</p>
+  </a>
+  {% empty %}<div class="panel"><div class="empty">You don't have access to any ministry yet.</div></div>{% endfor %}
+</div>
+{% endblock %}

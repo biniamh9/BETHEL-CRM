@@ -1,0 +1,4 @@
+{% extends "base_public.html" %}
+{% block content %}
+<div class="wrap"><div class="card auth-card"><h2>{{ title }}</h2><p>{{ body }}</p><a href="{% url 'accounts:login' %}">Back to log in</a></div></div>
+{% endblock %}

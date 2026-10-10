@@ -1,0 +1,14 @@
+{% extends "base_public.html" %}{% load church %}
+{% block title %}Create an account · {{ church.short_name }}{% endblock %}
+{% block content %}
+<div class="wrap"><div class="card auth-card" style="max-width:520px">
+  <h2>Create a member account</h2>
+  <p class="muted small">Members can see their own giving history. Ministry leaders get portal access from Pastor Abraham after signing up.</p>
+  <form method="post">{% csrf_token %}
+    <div class="form-row">{% form_fields form "first_name,last_name" %}</div>
+    {% form_fields form "username,email,phone,password1,password2" %}
+    <button class="btn btn-primary btn-block">Create account</button>
+  </form>
+  <p class="small" style="margin-top:16px">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
+</div></div>
+{% endblock %}

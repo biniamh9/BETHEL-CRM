@@ -1,0 +1,22 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}{% if donation %}Edit gift{% else %}Record a gift{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Building fund</span><h1>{% if donation %}Edit gift {{ donation.receipt_number }}{% else %}Record a gift{% endif %}</h1></div></div>
+<form method="post" class="form-panel">{% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="panel"><div class="panel-head"><h3>Who gave</h3></div><div class="panel-body">
+    {% form_fields form "donor" %}
+    <p class="small muted" style="margin:-4px 0 10px">Not in the list? Add them here instead:</p>
+    <div class="form-row">{% form_fields form "new_donor_first,new_donor_last,new_donor_email,new_donor_phone" %}</div>
+  </div></div>
+  <div class="panel"><div class="panel-head"><h3>The gift</h3></div><div class="panel-body">
+    <div class="form-row">{% form_fields form "amount,received_on,method,status" %}</div>
+    {% form_fields form "campaign,pledge,reference,show_on_wall,notes" %}
+  </div></div>
+  <div class="form-actions">
+    <button class="btn btn-primary">Save gift</button>
+    <a class="btn btn-ghost" href="{% url 'fundraising:donations' %}">Cancel</a>
+    {% if donation and donation.status == 'succeeded' %}<a class="btn btn-ghost" href="{% url 'fundraising:receipt' donation.pk %}">View receipt</a>{% endif %}
+  </div>
+</form>
+{% endblock %}

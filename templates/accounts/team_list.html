@@ -1,0 +1,26 @@
+{% extends "base_portal.html" %}
+{% block page_title %}Team & logins{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Administration</span><h1>Team &amp; logins</h1><p class="muted small" style="margin:.4em 0 0">Create a login for each ministry leader and tick the ministries they can manage.</p></div>
+  <div class="actions"><a class="btn btn-primary btn-sm" href="{% url 'accounts:team_new' %}">+ New login</a></div>
+</div>
+<div class="panel"><div class="table-wrap"><table>
+  <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Ministries</th><th>Last login</th><th></th></tr></thead>
+  <tbody>{% for u in users %}
+    <tr><td><b>{{ u }}</b>{% if u.title %}<div class="small muted">{{ u.title }}</div>{% endif %}</td><td>{{ u.username }}{% if not u.has_usable_password %} <span class="badge pending">no password</span>{% endif %}{% if not u.is_active %} <span class="badge cancelled">disabled</span>{% endif %}</td>
+    <td>{{ u.get_role_display }}</td><td class="small">{{ u.led_ministries.all|join:", "|default:"—" }}</td><td class="small muted">{{ u.last_login|date:"M j, Y"|default:"never" }}</td>
+    <td class="num"><a href="{% url 'accounts:team_edit' u.pk %}">Edit</a></td></tr>
+  {% endfor %}</tbody>
+</table></div></div>
+<div class="panel"><div class="panel-body small">
+  <b>What each role can do</b>
+  <ul style="margin:.5em 0 0;padding-left:1.2em">
+    <li><b>Pastor / Administrator</b> — everything, including creating logins.</li>
+    <li><b>Finance</b> — records gifts and pledges, sees donor names and amounts, prints receipts.</li>
+    <li><b>Elder</b> — sees every ministry portal and the building fund totals (not individual donors).</li>
+    <li><b>Ministry Leader</b> — records activities and keeps the roster for the ministries ticked on their login.</li>
+    <li><b>Member</b> — sees their own profile and giving history.</li>
+  </ul>
+</div></div>
+{% endblock %}

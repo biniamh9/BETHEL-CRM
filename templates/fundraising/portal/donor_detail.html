@@ -1,0 +1,28 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}{{ donor }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Donor</span><h1>{{ donor }}</h1><div class="muted small">{{ donor.email }}{% if donor.phone %} · {{ donor.phone }}{% endif %}{% if donor.user %} · linked to login <b>{{ donor.user.username }}</b>{% endif %}</div></div>
+  <div class="actions">
+    <a class="btn btn-primary btn-sm" href="{% url 'fundraising:donation_new' %}?donor={{ donor.pk }}">+ Record a gift</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'fundraising:pledge_new' %}?donor={{ donor.pk }}">+ Pledge</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'fundraising:donor_edit' donor.pk %}">Edit</a>
+  </div>
+</div>
+<div class="kpis">
+  <div class="kpi accent"><span>Lifetime giving</span><b>{{ donor.lifetime_total|usd:True }}</b></div>
+  <div class="kpi"><span>Year-end statements</span><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">{% for y in years %}<a class="btn btn-ghost btn-sm" href="{% url 'fundraising:statement' donor.pk y %}">{{ y }}</a>{% empty %}<span class="muted small">none yet</span>{% endfor %}</div></div>
+</div>
+{% if pledges %}
+<div class="panel"><div class="panel-head"><h3>Pledges</h3></div><div class="table-wrap"><table>
+  <thead><tr><th>Campaign</th><th>Frequency</th><th>Progress</th><th>Status</th><th class="num">Given / pledged</th><th></th></tr></thead>
+  <tbody>{% for p in pledges %}<tr><td>{{ p.campaign }}</td><td>{{ p.get_frequency_display }}</td><td><div class="mini-bar"><i style="width:{{ p.percent }}%"></i></div></td><td><span class="badge {{ p.status }}">{{ p.get_status_display }}</span></td><td class="num">{{ p.fulfilled|usd }} / {{ p.total_amount|usd }}</td><td class="num"><a href="{% url 'fundraising:donation_new' %}?pledge={{ p.pk }}">Record payment</a> · <a href="{% url 'fundraising:pledge_edit' p.pk %}">Edit</a></td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endif %}
+<div class="panel"><div class="panel-head"><h3>Gifts</h3></div><div class="table-wrap"><table>
+  <thead><tr><th>Date</th><th>Campaign</th><th>Method</th><th>Status</th><th class="num">Amount</th><th></th></tr></thead>
+  <tbody>{% for d in donations %}<tr><td>{{ d.received_on|date:"M j, Y" }}</td><td>{{ d.campaign }}</td><td>{{ d.get_method_display }}</td><td><span class="badge {{ d.status }}">{{ d.get_status_display }}</span></td><td class="num">{{ d.amount|usd:True }}</td><td class="num"><a href="{% url 'fundraising:donation_edit' d.pk %}">Edit</a>{% if d.status == 'succeeded' %} · <a href="{% url 'fundraising:receipt' d.pk %}">Receipt</a>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="6" class="empty">No gifts yet.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% if donor.notes %}<div class="panel"><div class="panel-head"><h3>Notes</h3></div><div class="panel-body">{{ donor.notes|linebreaks }}</div></div>{% endif %}
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}Donors{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Building fund</span><h1>Donors</h1></div>
+  <div class="actions"><a class="btn btn-primary btn-sm" href="{% url 'fundraising:donor_new' %}">+ Add donor</a></div>
+</div>
+<div class="panel">
+  <form class="filters" method="get">
+    <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search name, email, phone">
+    <select name="sort"><option value="">Sort by name</option><option value="total" {% if request.GET.sort == 'total' %}selected{% endif %}>Sort by total given</option></select>
+    <button class="btn btn-navy btn-sm">Go</button>
+  </form>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th class="num">Gifts</th><th class="num">Total given</th></tr></thead>
+    <tbody>{% for d in donors %}
+      <tr><td><a href="{{ d.get_absolute_url }}">{{ d }}</a></td><td>{{ d.email }}</td><td>{{ d.phone }}</td><td class="num">{{ d.gifts }}</td><td class="num">{{ d.total|default:0|usd:True }}</td></tr>
+    {% empty %}<tr><td colspan="5" class="empty">No donors yet.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}
