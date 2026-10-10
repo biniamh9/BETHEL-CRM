@@ -7,4 +7,3 @@ gunicorn>=22.0
 python-dotenv>=1.0
 django-storages[s3]>=1.14
 boto3>=1.34
-pip install "psycopg[binary]" dj-database-url

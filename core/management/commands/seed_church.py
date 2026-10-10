@@ -6,6 +6,7 @@
 
 Safe to run more than once: existing records are left as they are.
 """
+import os
 import random
 from datetime import date, timedelta
 from decimal import Decimal
@@ -83,6 +84,16 @@ class Command(BaseCommand):
                     user.is_staff = user.is_superuser = True
                 user.save()
             users[username] = user
+
+        # First Pastor password from the INITIAL_ADMIN_PASSWORD environment variable (e.g. set in Vercel).
+        # Only applied while the account has no usable password, so it never overwrites a password
+        # the Pastor has chosen. Remove the variable after the first login.
+        initial = os.environ.get("INITIAL_ADMIN_PASSWORD", "").strip()
+        pastor = users["abraham"]
+        if initial and not pastor.has_usable_password():
+            pastor.set_password(initial)
+            pastor.save(update_fields=["password"])
+            self.stdout.write(self.style.SUCCESS("Set Pastor Abraham's first password from INITIAL_ADMIN_PASSWORD."))
 
         for i, (name, color, shown, logins, desc) in enumerate(MINISTRIES):
             m, _ = Ministry.objects.get_or_create(

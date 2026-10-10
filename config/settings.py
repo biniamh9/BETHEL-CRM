@@ -19,10 +19,32 @@ def env_bool(name, default=False):
     return os.environ.get(name, str(default)).lower() in ("1", "true", "yes", "on")
 
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-insecure-key-change-me")
-DEBUG = env_bool("DEBUG", True)
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
+# Vercel sets VERCEL=1 (and VERCEL_ENV, VERCEL_URL, ...) both while building and at runtime.
+ON_VERCEL = bool(os.environ.get("VERCEL"))
+
+DEBUG = env_bool("DEBUG", not ON_VERCEL)  # never debug on Vercel unless DEBUG=True is set on purpose
+SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-only-insecure-key-change-me"
+if ON_VERCEL and os.environ.get("VERCEL_ENV") == "production" and not os.environ.get("SECRET_KEY"):
+    import warnings
+
+    warnings.warn("SECRET_KEY is not set in Vercel. Add it under Project Settings -> Environment Variables.")
+
+
+def env_list(name, default=""):
+    return [v.strip() for v in os.environ.get(name, default).split(",") if v.strip()]
+
+
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+if ON_VERCEL:
+    # every *.vercel.app address (production, previews) plus any custom domain from VERCEL_* vars
+    ALLOWED_HOSTS += [".vercel.app"]
+    CSRF_TRUSTED_ORIGINS += ["https://*.vercel.app"]
+    for var in ("VERCEL_URL", "VERCEL_BRANCH_URL", "VERCEL_PROJECT_PRODUCTION_URL"):
+        host = os.environ.get(var)
+        if host:
+            ALLOWED_HOSTS.append(host)
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -42,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.middleware.DatabaseConfigCheck",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -60,6 +83,14 @@ try:  # serve static files in production without a separate server
     }
 except ImportError:
     pass
+
+import sys  # noqa: E402
+
+if "test" in sys.argv[1:2]:  # tests don't run collectstatic, so skip the hashed-filename manifest
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
 
 ROOT_URLCONF = "config.urls"
 
@@ -83,11 +114,20 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database: SQLite locally; set DATABASE_URL (e.g. your Supabase Postgres
 # connection string) in production.
-DATABASE_URL = os.environ.get("DATABASE_URL")
+# On Vercel use Supabase's *Transaction pooler* URL (port 6543): serverless functions open
+# many short-lived connections, and Supabase's direct connection is IPv6-only.
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
 if DATABASE_URL:
     import dj_database_url
 
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=not DEBUG)}
+    DATABASES = {"default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=0 if ON_VERCEL else 600,  # don't hold connections open between serverless requests
+        conn_health_checks=True,
+        ssl_require="localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL,
+    )}
+    # Transaction-mode poolers (pgbouncer / Supavisor) can't keep server-side cursors.
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 else:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 
@@ -113,10 +153,13 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Uploaded resource files. They're never served publicly: downloads go through a
-# permission-checked view. Locally they live in ./media. In production, hosts like
-# Render wipe the disk on each deploy, so set the SUPABASE_S3_* variables to store
-# files in a private Supabase Storage bucket instead (needs `pip install django-storages boto3`).
+# permission-checked view. Locally they live in ./media. Vercel's disk is read-only,
+# so set the SUPABASE_S3_* variables to store files in a private Supabase Storage
+# bucket. Until then, uploads are switched off on Vercel and people add links instead.
 MEDIA_ROOT = BASE_DIR / "media"
+UPLOADS_ENABLED = bool(os.environ.get("SUPABASE_S3_BUCKET")) or not ON_VERCEL
+# Vercel Functions accept request bodies up to 4.5 MB, so keep uploads under that there.
+MAX_UPLOAD_MB = 4 if ON_VERCEL else 25
 MEDIA_URL = "/media/"
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 30 * 1024 * 1024
@@ -158,13 +201,13 @@ CHURCH = {
     "name": os.environ.get("CHURCH_NAME", "Bethel Eritrean Alliance Church Atlanta"),
     "short_name": "Bethel Eritrean Church",
     "tigrinya_name": "ቤትኤል ቤተክርስትያን ኤርትራውያን ኣትላንታ",
-    "address": os.environ.get("CHURCH_ADDRESS", "Metro Atlanta, Georgia"),
-    "email": os.environ.get("CHURCH_EMAIL", ""),
-    "phone": os.environ.get("CHURCH_PHONE", ""),
-    "ein": os.environ.get("CHURCH_EIN", ""),
-    "zelle": os.environ.get("CHURCH_ZELLE", ""),
+    "address": os.environ.get("CHURCH_ADDRESS", "5915 Lawrenceville Hwy, Tucker, GA 30084"),
+    "email": os.environ.get("CHURCH_EMAIL", "bethelatlanta26@gmail.com"),
+    "phone": os.environ.get("CHURCH_PHONE", "404-723-4407"),
+    "ein": os.environ.get("CHURCH_EIN", "20-0604532"),
+    "zelle": os.environ.get("CHURCH_ZELLE", "678-974-6608"),
     "check_payable_to": os.environ.get("CHURCH_CHECK_PAYABLE", "Bethel Eritrean Alliance Church"),
-    "mailing_address": os.environ.get("CHURCH_MAILING_ADDRESS", ""),
+    "mailing_address": os.environ.get("CHURCH_MAILING_ADDRESS", "5915 Lawrenceville Hwy, Tucker, GA 30084"),
     "founded": 2011,
 }
 
@@ -175,3 +218,12 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", True)
     SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Send errors to the console so they appear in Vercel's Runtime Logs.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {"django": {"handlers": ["console"], "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"), "propagate": False}},
+}

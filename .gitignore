@@ -6,3 +6,6 @@ staticfiles/
 .venv/
 venv/
 .DS_Store
+media/
+.env.local
+.vercel/

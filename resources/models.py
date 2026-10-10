@@ -6,7 +6,6 @@ from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models import Q
 
-MAX_UPLOAD_MB = 25
 ALLOWED_EXTENSIONS = [
     "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv", "rtf", "odt",
     "jpg", "jpeg", "png", "gif", "webp", "heic", "mp3", "m4a", "wav", "mp4", "mov", "zip",
@@ -14,8 +13,9 @@ ALLOWED_EXTENSIONS = [
 
 
 def validate_size(f):
-    if f.size > MAX_UPLOAD_MB * 1024 * 1024:
-        raise ValidationError(f"Files must be {MAX_UPLOAD_MB} MB or smaller. For larger videos, upload to YouTube or Google Drive and add the link instead.")
+    limit = getattr(settings, "MAX_UPLOAD_MB", 25)
+    if f.size > limit * 1024 * 1024:
+        raise ValidationError(f"Files must be {limit} MB or smaller. For larger files, upload to Google Drive or YouTube and add the link instead.")
 
 
 class Resource(models.Model):

@@ -57,20 +57,39 @@ Run the tests with `python manage.py test`.
 
 ## Go live
 
-### 1. Database: Supabase (you already have it)
-Supabase → Project Settings → Database → **Connection string → Session pooler (URI)**. Use it as `DATABASE_URL`. Django creates its own tables; Supabase Auth isn't used (Django handles logins).
+### 1. Hosting on Vercel
 
-### 2. Hosting: Render (recommended over Vercel for Django)
-1. Push this folder to a GitHub repository.
-2. In Render: **New → Blueprint**, pick the repo. `render.yaml` sets everything up.
-3. In the service's **Environment** tab paste `DATABASE_URL`, and set `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` to your real domain.
-4. After the first deploy, open **Shell** and give the Pastor a password:
-   ```bash
-   python manage.py changepassword abraham
-   ```
-   Then log in as Pastor Abraham and set everyone else's temporary password on **Team & logins**.
+Vercel detects this as a Django app automatically (it finds `manage.py` and `config/wsgi.py`). On every **production** deploy, `vercel_build.py` creates or updates the database tables and loads the ministries; Vercel then collects the static files and serves them from its CDN. Preview deployments never touch the database.
 
-Railway or Fly.io work the same way (`gunicorn config.wsgi:application`).
+**One-time setup in Vercel → your project → Settings:**
+
+1. **Build and Deployment → Framework Preset:** *Django* (if it still says Next.js from an earlier project, change it).
+2. **Environment Variables** (Production):
+
+   | Name | Value |
+   |---|---|
+   | `DATABASE_URL` | Supabase **Transaction pooler** URI (see below) |
+   | `SECRET_KEY` | A long random string, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(50))"` |
+   | `INITIAL_ADMIN_PASSWORD` | Pastor Abraham's first password. Delete this variable after he logs in and changes it |
+   | `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` | Only if you add a custom domain, e.g. `bethelatlanta.org` and `https://bethelatlanta.org` (`*.vercel.app` already works) |
+   | `STRIPE_*`, `EMAIL_*`, `SUPABASE_S3_*` | When you're ready for online giving, email and file uploads |
+
+3. **Deployments → latest → Redeploy** so the build runs with the new variables.
+4. Open the site, go to `/accounts/login/`, log in as `abraham`, change the password (My profile → Change password), then create everyone else's logins on **Team & logins**.
+
+If the database isn't connected yet, the site shows a page with these steps instead of an error. Errors show up under **Logs** in Vercel.
+
+### 2. Database: Supabase
+
+In Supabase, open your project → **Connect** → **Transaction pooler** and copy the URI. It looks like
+`postgresql://postgres.<project-ref>:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:6543/postgres`.
+Replace `[YOUR-PASSWORD]` with your database password and save it as `DATABASE_URL` in Vercel.
+
+Use the pooler, not the "Direct connection": Vercel runs many short-lived functions, and Supabase's direct connection only works over IPv6. Django creates its own tables; Supabase Auth isn't used (Django handles logins).
+
+To run commands against the live database from VS Code (e.g. `python manage.py changepassword abraham`), put the same `DATABASE_URL` in your local `.env`. Remove it again afterwards so local testing doesn't change live data.
+
+**Render** also still works (`render.yaml` and `build.sh` are included) if you ever want a host with a normal server instead of serverless functions.
 
 ### 3. Online giving: Stripe
 1. Create a Stripe account for the church (use the church's EIN and bank account). Stripe offers discounted nonprofit pricing — email them with your 501(c)(3) letter.
@@ -83,10 +102,10 @@ Railway or Fly.io work the same way (`gunicorn config.wsgi:application`).
 Until Stripe keys are set, the giving page shows Zelle / check / cash instructions and the pledge form.
 
 ### 4. File storage for Resources
-Locally, uploads go to the `media/` folder. Render's disk is wiped on every deploy, so in production store files in a **private** Supabase Storage bucket: Supabase → Storage → New bucket `resources` (private) → Storage settings → S3 access keys. Then set the `SUPABASE_S3_*` variables from `.env.example`. Until then, add Google Drive or YouTube links as resources instead of uploading files.
+Locally, uploads go to the `media/` folder. Vercel can't save files to its own disk, so on Vercel the Resources page accepts **links only** (Google Drive, YouTube, etc.) until you connect a **private** Supabase Storage bucket: Supabase → Storage → New bucket `resources` (private) → Storage settings → S3 access keys. Then set the `SUPABASE_S3_*` variables from `.env.example` in Vercel and redeploy. Vercel limits each upload to about 4 MB, so larger files should still go in as links.
 
 ### 5. Church details and email
-Set `CHURCH_EIN`, `CHURCH_ZELLE`, `CHURCH_MAILING_ADDRESS`, etc. (see `.env.example`). Configure SMTP so online donors get emailed receipts and leaders can reset passwords.
+The church's address, phone, email, EIN and Zelle number are built into `config/settings.py` as defaults, so they appear without any setup. To change one, set the matching `CHURCH_*` variable in Vercel (it overrides the default). Configure SMTP (`EMAIL_*`) so online donors get emailed receipts and leaders can reset passwords.
 
 ### 6. The building fund goal
 The goal is seeded at **$1,500,000** as a placeholder with the **$200,000** members have already saved counted as the opening balance. Change both on **Building fund → Edit campaign** once you know the purchase price.
