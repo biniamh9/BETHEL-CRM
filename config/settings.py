@@ -24,10 +24,6 @@ ON_VERCEL = bool(os.environ.get("VERCEL"))
 
 DEBUG = env_bool("DEBUG", not ON_VERCEL)  # never debug on Vercel unless DEBUG=True is set on purpose
 SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-only-insecure-key-change-me"
-if ON_VERCEL and os.environ.get("VERCEL_ENV") == "production" and not os.environ.get("SECRET_KEY"):
-    import warnings
-
-    warnings.warn("SECRET_KEY is not set in Vercel. Add it under Project Settings -> Environment Variables.")
 
 
 def env_list(name, default=""):
@@ -112,31 +108,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# Database: SQLite locally; set DATABASE_URL (e.g. your Supabase Postgres
-# connection string) in production.
-# On Vercel use Supabase's *Transaction pooler* URL (port 6543): serverless functions open
-# many short-lived connections, and Supabase's direct connection is IPv6-only.
-DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
-if DATABASE_URL and not DATABASE_URL.startswith(("postgres://", "postgresql://")):
-    from django.core.exceptions import ImproperlyConfigured
+# Database: SQLite on your computer; your Supabase Postgres database on Vercel.
+# See config/database.py for which environment variables are read.
+from config.database import database_settings, find_database_url  # noqa: E402
 
-    raise ImproperlyConfigured(
-        f"DATABASE_URL must be a Postgres connection string starting with postgresql://, "
-        f"but it starts with {DATABASE_URL.split('//')[0]}//. "
-        "In Supabase click Connect -> Transaction pooler and copy that URI "
-        "(not the https://...supabase.co Project URL)."
-    )
+DATABASE_URL_VARIABLE, DATABASE_URL = find_database_url()
 if DATABASE_URL:
-    import dj_database_url
-
-    DATABASES = {"default": dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=0 if ON_VERCEL else 600,  # don't hold connections open between serverless requests
-        conn_health_checks=True,
-        ssl_require="localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL,
-    )}
-    # Transaction-mode poolers (pgbouncer / Supavisor) can't keep server-side cursors.
-    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+    DATABASES = {"default": database_settings(DATABASE_URL, serverless=ON_VERCEL)}
 else:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 

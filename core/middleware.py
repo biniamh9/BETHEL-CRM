@@ -14,6 +14,7 @@ MESSAGE = """<!doctype html><meta charset="utf-8"><meta name="viewport" content=
 <code>INITIAL_ADMIN_PASSWORD</code> (Pastor Abraham's first password).</li>
 <li>Go to <b>Deployments</b>, open the latest one and click <b>Redeploy</b>. The database tables are created during the build.</li>
 </ol>
+<p>The full step-by-step guide is in <code>DEPLOY.md</code> in the project.</p>
 <p>Then log in at <code>/accounts/login/</code> as <b>abraham</b>.</p>
 </body>"""
 

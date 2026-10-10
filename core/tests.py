@@ -48,3 +48,42 @@ class DeploymentTest(TestCase):
             self.assertRedirects(r, reverse("resources:list"))
         with override_settings(UPLOADS_ENABLED=True):
             self.assertContains(self.client.get(reverse("resources:new")), 'type="file"')
+
+
+class SupabaseConnectionStringTest(TestCase):
+    POOLER = "postgresql://postgres.abcd:secret123@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+
+    def find(self, **env):
+        from config.database import find_database_url
+
+        with mock.patch.dict(os.environ, env, clear=True):
+            return find_database_url()
+
+    def test_pasted_transaction_pooler_uri(self):
+        from config.database import database_settings
+
+        self.assertEqual(self.find(DATABASE_URL=self.POOLER), ("DATABASE_URL", self.POOLER))
+        db = database_settings(self.POOLER, serverless=True)
+        self.assertEqual((db["HOST"], db["PORT"], db["USER"]), ("aws-0-us-east-1.pooler.supabase.com", 6543, "postgres.abcd"))
+        self.assertEqual(db["OPTIONS"], {"sslmode": "require"})
+        self.assertEqual(db["CONN_MAX_AGE"], 0)
+
+    def test_vercel_integration_url_drops_supa_option(self):
+        from config.database import database_settings
+
+        name, url = self.find(POSTGRES_URL=self.POOLER + "?sslmode=require&supa=base-pooler.x")
+        self.assertEqual(name, "POSTGRES_URL")
+        self.assertEqual(database_settings(url, serverless=True)["OPTIONS"], {"sslmode": "require"})
+
+    def test_plain_explanations_for_common_mistakes(self):
+        from django.core.exceptions import ImproperlyConfigured
+
+        from config.database import database_settings
+
+        with self.assertRaisesMessage(ImproperlyConfigured, "Project URL"):
+            self.find(DATABASE_URL="https://abcd.supabase.co")
+        with self.assertRaisesMessage(ImproperlyConfigured, "[YOUR-PASSWORD]"):
+            database_settings(self.POOLER.replace("secret123", "[YOUR-PASSWORD]"), serverless=True)
+        with self.assertRaisesMessage(ImproperlyConfigured, "letters and numbers"):
+            database_settings(self.POOLER.replace("secret123", "ab#c"), serverless=True)
+        self.assertEqual(self.find(), (None, None))
