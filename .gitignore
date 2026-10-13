@@ -10,3 +10,6 @@ media/
 .env.local
 .vercel/
 *.patch
+BETHEL-CRM/
+images/*.ARW
+images/*.arw
