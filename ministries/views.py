@@ -1,6 +1,8 @@
 import csv
 from datetime import date, timedelta
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -10,6 +12,20 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ActivityForm, ParticipantForm
 from .models import Activity, Ministry, Participant
+
+ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
+
+
+def _activity_image_paths():
+    """Return web-compatible, optimized photographs from the repository."""
+    root = Path(settings.BASE_DIR) / "images"
+    if not root.is_dir():
+        return []
+    return [
+        f"activity-images/{path.name}"
+        for path in sorted(root.iterdir(), key=lambda item: item.name.lower())
+        if path.is_file() and path.suffix.lower() in ACTIVITY_IMAGE_EXTENSIONS
+    ]
 
 
 def _get_ministry(request, slug, edit=False):
@@ -50,10 +66,16 @@ def all_activities(request):
     totals = qs.aggregate(attendance=Sum("attendance"), hours=Sum("volunteer_hours"))
     if request.GET.get("export") == "csv":
         return _activities_csv(qs, "all-activities")
+    activities = list(qs[:200])
+    images = _activity_image_paths()
+    if images:
+        for activity in activities:
+            activity.image_static_path = images[activity.pk % len(images)]
     return render(request, "ministries/activities.html", {
-        "activities": qs[:200], "count": qs.count(), "totals": totals,
+        "activities": activities, "count": qs.count(), "totals": totals,
         "ministries": visible, "editable": request.user.editable_ministries(),
         "kinds": Activity.Kind.choices, "period": period,
+        "has_activity_images": bool(images),
     })
 
 

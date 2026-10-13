@@ -21,7 +21,7 @@
   <div class="kpi"><span>Volunteer hours</span><b>{{ totals.hours|default:0 }}</b></div>
 </div>
 
-<div class="panel">
+<div class="panel activity-panel">
   <form class="filters" method="get">
     <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search title, notes, follow-ups">
     <select name="ministry"><option value="">All ministries</option>{% for m in ministries %}<option value="{{ m.slug }}" {% if request.GET.ministry == m.slug %}selected{% endif %}>{{ m.name }}</option>{% endfor %}</select>
@@ -35,18 +35,36 @@
     <label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" name="followups" value="1" {% if request.GET.followups %}checked{% endif %}> Needs follow-up</label>
     <button class="btn btn-navy btn-sm">Filter</button>
   </form>
-  <div class="table-wrap"><table>
-    <thead><tr><th>Date</th><th>Ministry</th><th>Activity</th><th class="num">Present</th><th>Recorded by</th></tr></thead>
-    <tbody>{% for a in activities %}
-      <tr class="c-{{ a.ministry.color }}">
-        <td>{{ a.date|date:"M j, Y" }}</td>
-        <td><span class="dot"></span><a href="{{ a.ministry.get_absolute_url }}">{{ a.ministry.name }}</a></td>
-        <td><b>{{ a.title }}</b> <span class="badge">{{ a.get_kind_display }}</span>{% if a.summary %}<div class="small" style="margin-top:3px">{{ a.summary|truncatewords:24 }}</div>{% endif %}{% if a.follow_up %}<div class="small" style="color:var(--warn)">Follow-up: {{ a.follow_up|truncatewords:18 }}</div>{% endif %}</td>
-        <td class="num">{{ a.attendance }}</td>
-        <td class="small muted">{{ a.created_by|default:"—" }}</td>
-      </tr>
-    {% empty %}<tr><td colspan="5" class="empty">No activities match these filters.</td></tr>{% endfor %}</tbody>
-  </table></div>
+  {% load static %}
+  <div class="activity-grid">
+    {% for a in activities %}
+      <article class="activity-card c-{{ a.ministry.color }}">
+        {% if a.image_static_path %}
+          <img class="activity-photo" src="{% static a.image_static_path %}" alt="Church activity: {{ a.title }}" loading="lazy">
+        {% else %}
+          <div class="activity-photo activity-fallback"><span>{{ a.title|first|upper }}</span></div>
+        {% endif %}
+        <div class="activity-card-body">
+          <div class="activity-meta">
+            <time datetime="{{ a.date|date:'Y-m-d' }}">{{ a.date|date:"M j, Y" }}</time>
+            <span class="badge">{{ a.get_kind_display }}</span>
+          </div>
+          <h2>{{ a.title }}</h2>
+          <a class="activity-ministry" href="{{ a.ministry.get_absolute_url }}"><span class="dot"></span>{{ a.ministry.name }}</a>
+          {% if a.summary %}<p>{{ a.summary|truncatewords:34 }}</p>{% endif %}
+          <div class="activity-facts">
+            <span><b>{{ a.attendance }}</b> attended</span>
+            {% if a.volunteer_hours %}<span><b>{{ a.volunteer_hours }}</b> volunteer hours</span>{% endif %}
+            {% if a.location %}<span>{{ a.location }}</span>{% endif %}
+          </div>
+          {% if a.follow_up %}<div class="activity-follow-up"><b>Follow-up</b>{{ a.follow_up|truncatewords:20 }}</div>{% endif %}
+          {% if a.created_by %}<div class="activity-byline">Recorded by {{ a.created_by }}</div>{% endif %}
+        </div>
+      </article>
+    {% empty %}
+      <div class="empty activity-empty">No activities match these filters.</div>
+    {% endfor %}
+  </div>
   {% if count > 200 %}<div class="panel-body small muted">Showing the latest 200. Narrow the filters or export to CSV to see everything.</div>{% endif %}
 </div>
 {% endblock %}

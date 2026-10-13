@@ -137,6 +137,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# Optimized photographs committed to images/ are published for the activity gallery.
+if (BASE_DIR / "images").is_dir():
+    STATICFILES_DIRS.append(("activity-images", BASE_DIR / "images"))
 # If the collected files/manifest aren't bundled into the Vercel function, fall back to
 # serving straight from ./static with plain names instead of failing every page with a 500.
 WHITENOISE_USE_FINDERS = ON_VERCEL

@@ -20,6 +20,9 @@ def validate_size(f):
 
 class Resource(models.Model):
     class Category(models.TextChoices):
+        TEACHING = "teaching", "Teaching"
+        FAITH = "faith", "Our faith"
+        ARCHIVE = "archive", "Archive"
         DOCUMENT = "document", "Document"
         FORM = "form", "Form / template"
         CURRICULUM = "curriculum", "Lesson / curriculum"
