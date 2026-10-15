@@ -75,22 +75,18 @@
     </details>
   </div>
 </header>
-<main>
+<main class="public-main">
   {% if messages %}<div class="wrap">{% include "partials/messages.html" %}</div>{% endif %}
   {% block content %}{% endblock %}
 </main>
-<footer class="site-foot">
-  <div class="wrap">
-    <div>
-      <strong style="color:#fff">{{ church.name }}</strong><br>
-      <span class="ethiopic">{{ church.tigrinya_name }}</span><br>
-      {{ church.address }}{% if church.phone %} · {{ church.phone }}{% endif %}{% if church.email %} · <a href="mailto:{{ church.email }}">{{ church.email }}</a>{% endif %}
-    </div>
-    <div>
-      A registered 501(c)(3) nonprofit{% if church.ein %} · EIN {{ church.ein }}{% endif %}.<br>
-      Gifts are tax-deductible to the extent allowed by law.
-    </div>
+<footer class="site-foot editorial-foot">
+  <div class="wrap footer-grid">
+    <div class="footer-brand"><img src="{% static 'img/logo-mark.png' %}" alt=""><div><strong>{{ church.short_name }}</strong><span class="ethiopic">{{ church.tigrinya_name }}</span></div></div>
+    <div><span class="footer-label">Visit</span><p>{{ church.address }}<br>Metro Atlanta, Georgia</p></div>
+    <div><span class="footer-label">Explore</span><a href="{% url 'core:home' %}#ministries">Ministries</a><a href="{% url 'activities' %}">Activities</a><a href="{% url 'resources:list' %}">Resources</a></div>
+    <div><span class="footer-label">Connect</span><a href="{% url 'events:public' %}">Upcoming events</a><a href="{% url 'accounts:login' %}">Member login</a><a href="{% url 'fundraising:give' %}">Give</a></div>
   </div>
+  <div class="wrap footer-bottom"><span>© {% now "Y" %} {{ church.short_name }}</span><span>Faith · Family · Future</span><span>501(c)(3){% if church.ein %} · EIN {{ church.ein }}{% endif %}</span></div>
 </footer>
 <script>
 document.querySelectorAll('.nav-desktop .nav-dropdown').forEach(menu => {

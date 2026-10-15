@@ -1,92 +1,131 @@
 {% extends "base_public.html" %}{% load static church %}
 {% block content %}
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <span class="eyebrow">Serving Metro Atlanta since {{ church.founded }}</span>
-      <div class="ethiopic">{{ church.tigrinya_name }}</div>
-      <h1>A home for our families, and for the next generation.</h1>
-      <p class="lead">Bethel Eritrean Alliance Church strengthens immigrant families, raises young leaders and preserves our culture and faith. We are now raising funds to buy a permanent church building.</p>
+<section class="editorial-hero">
+  <div class="hero-photo" style="background-image:url('{% static 'activity-images/20260621_113635.jpg' %}')"></div>
+  <div class="hero-shade"></div>
+  <div class="wrap editorial-hero-inner">
+    <div class="hero-copy">
+      <span class="hero-kicker"><i></i> Eritrean faith · Atlanta home</span>
+      <div class="hero-tigrinya ethiopic">{{ church.tigrinya_name }}</div>
+      <h1>Rooted in faith.<br><em>Rising together.</em></h1>
+      <p>We are a Christ-centered Eritrean family where generations worship, belong, and grow—together in the heart of Metro Atlanta.</p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="{% url 'fundraising:give' %}">Give to the building fund</a>
-        <a class="btn btn-ghost" href="#about">Who we are</a>
+        <a class="btn btn-light" href="{% url 'events:public' %}">Plan your visit <span>→</span></a>
+        <a class="text-link light" href="#story">Discover our story <span>↘</span></a>
       </div>
     </div>
-    <img class="hero-logo" src="{% static 'img/logo-full.png' %}" alt="Bethel Eritrean Church of Atlanta logo">
+    <aside class="service-note">
+      <span class="service-label">Join us Sunday</span>
+      <strong>Worship &amp; fellowship</strong>
+      <span>Metro Atlanta, Georgia</span>
+      <a href="{% url 'events:public' %}">View upcoming gatherings →</a>
+    </aside>
   </div>
+  <a class="hero-scroll" href="#story" aria-label="Scroll to our story"><span></span> Our story</a>
 </section>
 
-{% if campaign %}
-<section class="wrap" style="margin-top:-12px">
-  {% include "partials/fund_card.html" with show_buttons=True %}
-</section>
-{% endif %}
-
-<section class="section" id="about">
-  <div class="wrap grid-2">
+<section class="welcome-band" id="story">
+  <div class="wrap welcome-grid">
+    <div class="welcome-mark">ቤ</div>
     <div>
-      <span class="eyebrow">About us</span>
-      <h2>An anchor for Eritrean and East African families</h2>
-      <hr class="divider">
-      <p>For more than a decade we have been a place where families grow spiritually, children receive steady formation, young people find mentors, and newcomers find their first trusted community in a new country.</p>
-      <p>We serve families across Atlanta, Tucker, Stone Mountain, Clarkston, Lilburn and Decatur, offering family and marriage counseling, crisis support, new immigrant support, and weekly programs for children and youth.</p>
+      <span class="eyebrow">A church that feels like home</span>
+      <h2>Faith carried forward.<br>Community built to last.</h2>
     </div>
-    <div class="grid-2" style="gap:20px;align-content:center">
-      <div class="card stat-big"><b>100+</b><span>active members</span></div>
-      <div class="card stat-big"><b>74</b><span>children, youth and young adults each week</span></div>
-      <div class="card stat-big"><b>{{ ministries|length }}</b><span>ministries led by volunteers</span></div>
-      <div class="card stat-big"><b>2011</b><span>serving Atlanta since</span></div>
+    <div class="welcome-copy">
+      <p>Since {{ church.founded }}, Bethel has been an anchor for Eritrean and East African families—a place where children know their heritage, young people find their calling, and newcomers find family.</p>
+      <a class="text-link" href="#ministries">See how we serve <span>→</span></a>
     </div>
   </div>
 </section>
 
-<section class="section alt" id="ministries">
+<section class="community-collage">
+  <div class="wrap collage-grid">
+    <figure class="collage-wide">
+      <img src="{% static 'activity-images/20260621_111520.jpg' %}" alt="Children and young adults worshipping together at Bethel" loading="lazy">
+      <figcaption><span>One faith</span><b>Every generation has a place here.</b></figcaption>
+    </figure>
+    <figure class="collage-tall">
+      <img src="{% static 'activity-images/DSC04488.JPG' %}" alt="Bethel choir members together" loading="lazy">
+      <figcaption><span>One family</span><b>Known, loved, and growing together.</b></figcaption>
+    </figure>
+    <div class="collage-stat">
+      <b>14+</b><span>years serving<br>Metro Atlanta</span>
+    </div>
+  </div>
+</section>
+
+<section class="section ministry-showcase" id="ministries">
   <div class="wrap">
-    <div class="center"><span class="eyebrow">Ministries</span><h2>How we serve</h2><hr class="divider"></div>
-    <div class="grid-3" style="margin-top:28px">
+    <header class="section-heading split-heading">
+      <div><span class="eyebrow">Find your place</span><h2>There is room for<br><em>your story here.</em></h2></div>
+      <div><p>Every ministry is a doorway into deeper faith, meaningful friendships, and a life of service.</p><a class="text-link" href="{% url 'ministries:list' %}">Explore every ministry <span>→</span></a></div>
+    </header>
+    <div class="ministry-editorial-grid">
       {% for m in ministries %}
-      <div class="card ministry c-{{ m.color }}">
-        <h3>{{ m.name }}</h3>
-        <div class="who">{{ m.leader_display }}</div>
-        {% if m.description %}<p class="muted small" style="margin:.6em 0 0">{{ m.description }}</p>{% endif %}
-      </div>
+      <a class="ministry-editorial c-{{ m.color }}" href="{{ m.get_absolute_url }}">
+        <span class="ministry-number">{{ forloop.counter|stringformat:"02d" }}</span>
+        <div><h3>{{ m.name }}</h3>{% if m.description %}<p>{{ m.description|truncatewords:20 }}</p>{% endif %}</div>
+        <span class="circle-arrow">↗</span>
+      </a>
+      {% empty %}
+      <a class="ministry-editorial" href="#"><span class="ministry-number">01</span><div><h3>Worship &amp; community</h3><p>Gather, grow and serve with our church family.</p></div><span class="circle-arrow">↗</span></a>
       {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="resource-feature">
+  <div class="wrap resource-feature-grid">
+    <div class="resource-art"><span class="resource-cross">✦</span><span class="resource-word">ቃል</span><small>The Word</small></div>
+    <div>
+      <span class="eyebrow gold">Grow deeper</span>
+      <h2>Faith for Monday,<br>not only Sunday.</h2>
+      <p>Return to teachings, explore what we believe, and carry trusted resources with you throughout the week.</p>
+      <div class="resource-links">
+        <a href="{% url 'resources:list' %}?category=teaching">Teachings <span>→</span></a>
+        <a href="{% url 'resources:list' %}?category=faith">Our faith <span>→</span></a>
+        <a href="{% url 'resources:list' %}?category=archive">Archive <span>→</span></a>
+      </div>
     </div>
   </div>
 </section>
 
 {% if events %}
-<section class="section" id="events">
+<section class="section events-editorial" id="events">
   <div class="wrap">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
-      <div><span class="eyebrow">Join us</span><h2>Upcoming events</h2><hr class="divider"></div>
-      <a class="btn btn-ghost btn-sm" href="{% url 'events:public' %}">See all events</a>
-    </div>
-    <div class="grid-3" style="margin-top:12px">
+    <header class="section-heading split-heading compact">
+      <div><span class="eyebrow">Come as you are</span><h2>Life together.</h2></div>
+      <a class="text-link" href="{% url 'events:public' %}">All events <span>→</span></a>
+    </header>
+    <div class="event-editorial-list">
       {% for o in events %}
-      <div class="card next-card c-{{ o.event.color }}" style="align-items:flex-start">
-        <div class="next-date"><b>{{ o.start|date:"j" }}</b><span>{{ o.start|date:"M" }}</span><span>{{ o.start|date:"D" }}</span></div>
-        <div><b>{{ o.event.title }}</b><div class="small muted">{% if o.event.all_day %}All day{% else %}{{ o.start|time:"g:i A" }}{% endif %}{% if o.event.location %} · {{ o.event.location }}{% endif %}</div>
-        <a class="small" href="{{ o.google_url }}" target="_blank" rel="noopener">Add to calendar</a></div>
-      </div>
+      <article class="event-editorial-row">
+        <time datetime="{{ o.start|date:'c' }}"><b>{{ o.start|date:"d" }}</b><span>{{ o.start|date:"M" }}</span></time>
+        <div><span class="event-kind">Gathering</span><h3>{{ o.event.title }}</h3></div>
+        <p>{% if o.event.all_day %}All day{% else %}{{ o.start|time:"g:i A" }}{% endif %}{% if o.event.location %}<br>{{ o.event.location }}{% endif %}</p>
+        <a class="circle-arrow" href="{{ o.google_url }}" target="_blank" rel="noopener" aria-label="Add {{ o.event.title }} to calendar">↗</a>
+      </article>
       {% endfor %}
     </div>
   </div>
 </section>
 {% endif %}
 
-{% if elders %}
-<section class="section">
-  <div class="wrap">
-    <span class="eyebrow">Leadership</span>
-    <h2>Eldership board</h2>
-    <hr class="divider">
-    <div class="leaders">
-      {% for e in elders %}
-      <div class="leader"><div class="avatar">{{ e.first_name|first }}</div><div><b>{% if e.role == 'admin' %}Pastor {% endif %}{{ e.get_full_name|default:e.username }}</b><span>{{ e.title|default:e.get_role_display }}</span></div></div>
-      {% endfor %}
-    </div>
+{% if campaign %}
+<section class="building-callout">
+  <div class="wrap building-callout-inner">
+    <div><span class="eyebrow gold">{{ campaign.name }}</span><h2>Help us build what<br>the next generation needs.</h2></div>
+    <div><p>Our vision is bigger than a building. It is a lasting spiritual home for families, children, and generations still to come.</p><a class="btn btn-gold" href="{% url 'fundraising:give' %}">Give to the vision <span>→</span></a></div>
   </div>
 </section>
 {% endif %}
+
+<section class="final-invitation">
+  <div class="wrap">
+    <span class="ethiopic">ንዑ እሞ ርኣዩ</span>
+    <h2>Come and see.</h2>
+    <p>You do not have to have everything figured out. There is a seat, a family, and a next step waiting for you.</p>
+    <a class="btn btn-primary" href="{% url 'events:public' %}">Join us this Sunday</a>
+  </div>
+</section>
 {% endblock %}
