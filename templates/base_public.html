@@ -11,24 +11,24 @@
       <details class="nav-dropdown">
         <summary>Ministries <span class="nav-caret" aria-hidden="true"></span></summary>
         <div class="nav-dropdown-menu">
-          <a href="{% url 'ministries:list' %}"><strong>All ministries</strong></a>
+          <a href="{% url 'public_ministries:list' %}"><strong>All ministries</strong></a>
           {% for ministry in navigation_ministries %}
-            <a class="c-{{ ministry.color }}" href="{{ ministry.get_absolute_url }}"><span class="dot"></span>{{ ministry.name }}</a>
+            <a class="c-{{ ministry.color }}" href="{{ ministry.get_public_url }}"><span class="dot"></span>{{ ministry.name }}</a>
           {% empty %}
             <a href="{% url 'core:home' %}#ministries">Explore our ministries</a>
           {% endfor %}
         </div>
       </details>
-      <a href="{% url 'activities' %}">Activities</a>
+      <a href="{% url 'core:public_activities' %}">Activities</a>
       <a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch</a>
       <details class="nav-dropdown">
         <summary>Resources <span class="nav-caret" aria-hidden="true"></span></summary>
         <div class="nav-dropdown-menu">
-          <a href="{% url 'resources:list' %}"><strong>All resources</strong></a>
-          <a href="{% url 'resources:list' %}?category=teaching">Teachings</a>
-          <a href="{% url 'resources:list' %}?category=faith">Our faith</a>
-          <a href="{% url 'resources:list' %}?category=archive">Archives</a>
-          <a href="{% url 'resources:list' %}?category=other">Other resources</a>
+          <a href="{% url 'public_resources:list' %}"><strong>All resources</strong></a>
+          <a href="{% url 'public_resources:list' %}?category=teaching">Teachings</a>
+          <a href="{% url 'public_resources:list' %}?category=faith">Our faith</a>
+          <a href="{% url 'public_resources:list' %}?category=archive">Archives</a>
+          <a href="{% url 'public_resources:list' %}?category=other">Other resources</a>
         </div>
       </details>
       <a class="hide-md" href="{% url 'events:public' %}">Events</a>
@@ -46,24 +46,24 @@
         <details class="nav-mobile-group">
           <summary>Ministries <span class="nav-caret" aria-hidden="true"></span></summary>
           <div>
-            <a href="{% url 'ministries:list' %}"><strong>All ministries</strong></a>
+            <a href="{% url 'public_ministries:list' %}"><strong>All ministries</strong></a>
             {% for ministry in navigation_ministries %}
-              <a class="c-{{ ministry.color }}" href="{{ ministry.get_absolute_url }}"><span class="dot"></span>{{ ministry.name }}</a>
+              <a class="c-{{ ministry.color }}" href="{{ ministry.get_public_url }}"><span class="dot"></span>{{ ministry.name }}</a>
             {% empty %}
               <a href="{% url 'core:home' %}#ministries">Explore our ministries</a>
             {% endfor %}
           </div>
         </details>
-        <a href="{% url 'activities' %}">Activities</a>
+        <a href="{% url 'core:public_activities' %}">Activities</a>
         <a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch on YouTube</a>
         <details class="nav-mobile-group">
           <summary>Resources <span class="nav-caret" aria-hidden="true"></span></summary>
           <div>
-            <a href="{% url 'resources:list' %}"><strong>All resources</strong></a>
-            <a href="{% url 'resources:list' %}?category=teaching">Teachings</a>
-            <a href="{% url 'resources:list' %}?category=faith">Our faith</a>
-            <a href="{% url 'resources:list' %}?category=archive">Archives</a>
-            <a href="{% url 'resources:list' %}?category=other">Other resources</a>
+            <a href="{% url 'public_resources:list' %}"><strong>All resources</strong></a>
+            <a href="{% url 'public_resources:list' %}?category=teaching">Teachings</a>
+            <a href="{% url 'public_resources:list' %}?category=faith">Our faith</a>
+            <a href="{% url 'public_resources:list' %}?category=archive">Archives</a>
+            <a href="{% url 'public_resources:list' %}?category=other">Other resources</a>
           </div>
         </details>
         <a href="{% url 'events:public' %}">Events</a>
@@ -85,7 +85,7 @@
   <div class="wrap footer-grid">
     <div class="footer-brand"><img src="{% static 'img/logo-mark.png' %}" alt=""><div><strong>{{ church.short_name }}</strong><span class="ethiopic">{{ church.tigrinya_name }}</span></div></div>
     <div><span class="footer-label">Visit</span><p>{{ church.address }}<br>Metro Atlanta, Georgia</p></div>
-    <div><span class="footer-label">Explore</span><a href="{% url 'core:home' %}#ministries">Ministries</a><a href="{% url 'activities' %}">Activities</a><a href="{% url 'resources:list' %}">Resources</a></div>
+    <div><span class="footer-label">Explore</span><a href="{% url 'public_ministries:list' %}">Ministries</a><a href="{% url 'core:public_activities' %}">Activities</a><a href="{% url 'public_resources:list' %}">Resources</a></div>
     <div><span class="footer-label">Connect</span><a href="{% url 'events:public' %}">Upcoming events</a><a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch on YouTube</a><a href="{% url 'accounts:login' %}">Member login</a><a href="{% url 'fundraising:give' %}">Give</a></div>
   </div>
   <div class="wrap footer-bottom"><span>© {% now "Y" %} {{ church.short_name }}</span><span>Faith · Family · Future</span><span>501(c)(3){% if church.ein %} · EIN {{ church.ein }}{% endif %}</span></div>

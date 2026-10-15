@@ -5,15 +5,58 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ActivityForm, ParticipantForm
-from .models import Activity, Ministry, Participant
+from .forms import ActivityForm, MinistryInquiryForm, ParticipantForm
+from .models import Activity, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
+
+
+def public_ministry_list(request):
+    ministries = Ministry.objects.filter(is_public=True).prefetch_related("leaders")
+    return render(request, "ministries/public_list.html", {"ministries": ministries})
+
+
+def public_ministry_detail(request, slug):
+    ministry = get_object_or_404(Ministry.objects.filter(is_public=True), slug=slug)
+    from events.models import Event
+    return render(request, "ministries/public_detail.html", {
+        "ministry": ministry,
+        "upcoming": Event.occurrences_between(
+            date.today(), date.today() + timedelta(days=90), ministry.events.filter(is_public=True)
+        )[:6],
+        "announcements": ministry.announcements.filter(status=MinistryAnnouncement.Status.PUBLISHED)[:6],
+    })
+
+
+def public_ministry_inquiry(request, slug, kind):
+    ministry = get_object_or_404(Ministry.objects.filter(is_public=True), slug=slug)
+    if kind not in {MinistryInquiry.Kind.CONTACT, MinistryInquiry.Kind.JOIN}:
+        raise PermissionDenied
+    form = MinistryInquiryForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+        client = forwarded or request.META.get("REMOTE_ADDR", "unknown")
+        throttle_key = f"ministry-inquiry:{client}:{ministry.pk}"
+        attempts = cache.get(throttle_key, 0)
+        if attempts >= 5:
+            form.add_error(None, "Too many submissions. Please wait a few minutes and try again.")
+        else:
+            cache.set(throttle_key, attempts + 1, 600)
+            inquiry = form.save(commit=False)
+            inquiry.ministry = ministry
+            inquiry.kind = kind
+            inquiry.save()
+            messages.success(request, "Thank you. Your message was sent securely to the ministry team.")
+            return redirect(ministry.get_public_url())
+    return render(request, "ministries/public_inquiry.html", {
+        "form": form, "ministry": ministry, "kind": kind,
+    })
 
 
 def _activity_image_paths():
@@ -115,6 +158,7 @@ def ministry_detail(request, slug):
         "kinds": Activity.Kind.choices,
         "current_kind": kind,
         "can_edit": request.user.can_edit_ministry(ministry),
+        "pending_inquiries": ministry.inquiries.filter(status=MinistryInquiry.Status.PENDING)[:8],
     })
 
 

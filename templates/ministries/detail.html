@@ -13,6 +13,15 @@
   </div>
 </div>
 
+{% if pending_inquiries %}
+<section class="panel" style="margin-bottom:24px">
+  <div class="panel-head"><div><span class="eyebrow">Needs follow-up</span><h2>New ministry inquiries</h2></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Received</th><th>Type</th><th>Name</th><th>Contact</th><th>Message</th></tr></thead><tbody>
+    {% for inquiry in pending_inquiries %}<tr><td>{{ inquiry.created_at|date:"M j, Y" }}</td><td>{{ inquiry.get_kind_display }}</td><td>{{ inquiry.name }}</td><td><a href="mailto:{{ inquiry.email }}">{{ inquiry.email }}</a>{% if inquiry.phone %}<br>{{ inquiry.phone }}{% endif %}</td><td>{{ inquiry.message|truncatewords:24 }}</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endif %}
+
 <div class="kpis">
   <div class="kpi"><span>Activities · 90 days</span><b>{{ stats.count }}</b></div>
   <div class="kpi"><span>Attendance · 90 days</span><b>{{ stats.total_attendance|default:0 }}</b></div>

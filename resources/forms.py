@@ -7,7 +7,7 @@ from .models import Resource
 class ResourceForm(forms.ModelForm):
     class Meta:
         model = Resource
-        fields = ("title", "category", "ministry", "audience", "file", "url", "description", "pinned")
+        fields = ("title", "category", "ministry", "audience", "file", "url", "description", "pinned", "is_public")
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
 
     def __init__(self, *args, user=None, **kwargs):
@@ -15,6 +15,7 @@ class ResourceForm(forms.ModelForm):
         self.fields["ministry"].queryset = user.editable_ministries()
         if not user.is_church_admin:
             self.fields.pop("pinned")
+            self.fields.pop("is_public")
         if not settings.UPLOADS_ENABLED:
             # e.g. on Vercel before Supabase Storage is configured: links only
             self.fields.pop("file")

@@ -17,6 +17,7 @@ class User(AbstractUser):
         FINANCE = "finance", "Finance (CFO / Treasurer)"
         ELDER = "elder", "Elder"
         LEADER = "leader", "Ministry Leader"
+        TEAM = "team", "Ministry Team Member"
         MEMBER = "member", "Member"
 
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
@@ -91,3 +92,26 @@ class User(AbstractUser):
         if event.ministry_id is None:
             return self.role == self.Role.ELDER
         return self.can_edit_ministry(event.ministry)
+
+
+class MinistryAccessRequest(models.Model):
+    """A member's request for portal access; never grants permissions by itself."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending approval"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ministry_access_requests")
+    ministries = models.ManyToManyField("ministries.Ministry", related_name="access_requests")
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
+    reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="reviewed_access_requests")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user} — {self.get_status_display()}"

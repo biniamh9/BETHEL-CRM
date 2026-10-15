@@ -13,6 +13,11 @@ class Ministry(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=110, unique=True, blank=True)
     description = models.TextField(blank=True)
+    mission = models.TextField(blank=True)
+    serves = models.TextField(blank=True, help_text="Who this ministry serves.")
+    regular_activities = models.TextField(blank=True)
+    participation = models.TextField(blank=True, help_text="How visitors can participate.")
+    is_public = models.BooleanField(default=True, db_index=True)
     color = models.CharField(max_length=10, choices=COLORS, default="navy")
     leader_display = models.CharField(
         max_length=100, blank=True, help_text="Leader name as shown publicly (e.g. 'Leader TBD')."
@@ -38,6 +43,57 @@ class Ministry(models.Model):
 
     def get_absolute_url(self):
         return reverse("ministries:detail", args=[self.slug])
+
+    def get_public_url(self):
+        return reverse("public_ministries:detail", args=[self.slug])
+
+
+class MinistryAnnouncement(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        REVIEW = "review", "Pending review"
+        PUBLISHED = "published", "Published"
+        ARCHIVED = "archived", "Archived"
+
+    ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="announcements")
+    title = models.CharField(max_length=160)
+    body = models.TextField()
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT, db_index=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class MinistryInquiry(models.Model):
+    class Kind(models.TextChoices):
+        CONTACT = "contact", "Contact ministry"
+        JOIN = "join", "Join ministry"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        CONTACTED = "contacted", "Contacted"
+        APPROVED = "approved", "Approved"
+        DECLINED = "declined", "Declined"
+
+    ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="inquiries")
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    name = models.CharField(max_length=160)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30, blank=True)
+    message = models.TextField()
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["ministry", "kind", "status"])]
+
+    def __str__(self):
+        return f"{self.get_kind_display()}: {self.name} — {self.ministry}"
 
 
 class Participant(models.Model):

@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Activity, Participant
+from .models import Activity, MinistryInquiry, Participant
 
 
 class DateInput(forms.DateInput):
@@ -43,3 +43,18 @@ class ParticipantForm(forms.ModelForm):
             "guardian_phone", "birth_year", "joined_on", "is_active", "notes",
         )
         widgets = {"joined_on": DateInput(), "notes": forms.Textarea(attrs={"rows": 3})}
+
+
+class MinistryInquiryForm(forms.ModelForm):
+    website = forms.CharField(required=False, widget=forms.HiddenInput, label="Leave blank")
+
+    class Meta:
+        model = MinistryInquiry
+        fields = ("name", "email", "phone", "message")
+        widgets = {"message": forms.Textarea(attrs={"rows": 5})}
+
+    def clean_website(self):
+        value = self.cleaned_data.get("website")
+        if value:
+            raise forms.ValidationError("Unable to submit this form.")
+        return value

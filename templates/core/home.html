@@ -53,11 +53,11 @@
   <div class="wrap">
     <header class="section-heading split-heading">
       <div><span class="eyebrow">Find your place</span><h2>There is room for<br><em>your story here.</em></h2></div>
-      <div><p>Every ministry is a doorway into deeper faith, meaningful friendships, and a life of service.</p><a class="text-link" href="{% url 'ministries:list' %}">Explore every ministry <span>→</span></a></div>
+      <div><p>Every ministry is a doorway into deeper faith, meaningful friendships, and a life of service.</p><a class="text-link" href="{% url 'public_ministries:list' %}">Explore every ministry <span>→</span></a></div>
     </header>
     <div class="ministry-editorial-grid">
       {% for m in ministries %}
-      <a class="ministry-editorial c-{{ m.color }}" href="{{ m.get_absolute_url }}">
+      <a class="ministry-editorial c-{{ m.color }}" href="{{ m.get_public_url }}">
         <span class="ministry-number">{{ forloop.counter|stringformat:"02d" }}</span>
         <div><h3>{{ m.name }}</h3>{% if m.description %}<p>{{ m.description|truncatewords:20 }}</p>{% endif %}</div>
         <span class="circle-arrow">↗</span>
@@ -77,9 +77,9 @@
       <h2>Faith for Monday,<br>not only Sunday.</h2>
       <p>Return to teachings, explore what we believe, and carry trusted resources with you throughout the week.</p>
       <div class="resource-links">
-        <a href="{% url 'resources:list' %}?category=teaching">Teachings <span>→</span></a>
-        <a href="{% url 'resources:list' %}?category=faith">Our faith <span>→</span></a>
-        <a href="{% url 'resources:list' %}?category=archive">Archive <span>→</span></a>
+        <a href="{% url 'public_resources:list' %}?category=teaching">Teachings <span>→</span></a>
+        <a href="{% url 'public_resources:list' %}?category=faith">Our faith <span>→</span></a>
+        <a href="{% url 'public_resources:list' %}?category=archive">Archive <span>→</span></a>
       </div>
     </div>
   </div>

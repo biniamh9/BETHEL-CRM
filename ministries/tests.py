@@ -1,0 +1,76 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase
+from django.urls import reverse
+
+from accounts.models import MinistryAccessRequest, User
+from resources.models import Resource
+
+from .models import Ministry, MinistryAnnouncement, MinistryInquiry
+
+
+class PublicMinistryTests(TestCase):
+    def setUp(self):
+        self.ministry = Ministry.objects.create(
+            name="Youth & Kids Ministry", slug="youth-kids-ministry", description="Faith and discipleship."
+        )
+
+    def test_public_pages_do_not_require_login(self):
+        for url in (
+            reverse("public_ministries:list"),
+            reverse("public_ministries:detail", args=[self.ministry.slug]),
+            reverse("public_ministries:contact", args=[self.ministry.slug]),
+            reverse("public_ministries:join", args=[self.ministry.slug]),
+            reverse("core:public_activities"),
+            reverse("public_resources:list"),
+        ):
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+
+    def test_contact_and_join_requests_are_saved_without_privileges(self):
+        for kind in ("contact", "join"):
+            response = self.client.post(
+                reverse(f"public_ministries:{kind}", args=[self.ministry.slug]),
+                {"name": "Visitor", "email": "visitor@example.com", "message": "Please contact me."},
+            )
+            self.assertRedirects(response, self.ministry.get_public_url())
+        self.assertEqual(MinistryInquiry.objects.filter(ministry=self.ministry).count(), 2)
+        self.assertEqual(set(MinistryInquiry.objects.values_list("status", flat=True)), {"pending"})
+
+    def test_only_published_announcements_are_public(self):
+        MinistryAnnouncement.objects.create(
+            ministry=self.ministry, title="Draft private", body="Not ready", status="draft"
+        )
+        MinistryAnnouncement.objects.create(
+            ministry=self.ministry, title="Published notice", body="Ready", status="published"
+        )
+        response = self.client.get(self.ministry.get_public_url())
+        self.assertContains(response, "Published notice")
+        self.assertNotContains(response, "Draft private")
+
+    def test_registration_access_request_never_elevates_user(self):
+        response = self.client.post(reverse("accounts:register"), {
+            "first_name": "New", "last_name": "Leader", "username": "newleader",
+            "email": "newleader@example.com", "purpose": "leader",
+            "requested_ministries": [self.ministry.pk], "access_reason": "I volunteer.",
+            "password1": "Long-Enough-Pass-42", "password2": "Long-Enough-Pass-42",
+        })
+        self.assertRedirects(response, reverse("core:portal"))
+        user = User.objects.get(username="newleader")
+        self.assertEqual(user.role, User.Role.MEMBER)
+        self.assertFalse(user.is_staff)
+        request = MinistryAccessRequest.objects.get(user=user)
+        self.assertEqual(request.status, MinistryAccessRequest.Status.PENDING)
+        self.assertEqual(list(request.ministries.all()), [self.ministry])
+        self.assertEqual(user.led_ministries.count(), 0)
+
+    def test_public_resource_is_explicit_opt_in(self):
+        private = Resource.objects.create(
+            title="Private", category="teaching", url="https://example.com/private", is_public=False
+        )
+        public = Resource.objects.create(
+            title="Public", category="teaching", url="https://example.com/public", is_public=True
+        )
+        response = self.client.get(reverse("public_resources:list"))
+        self.assertContains(response, public.title)
+        self.assertNotContains(response, private.title)
+        self.assertEqual(self.client.get(reverse("public_resources:open", args=[private.pk])).status_code, 404)
+

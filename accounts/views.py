@@ -18,8 +18,15 @@ def register(request):
         user = form.save(commit=False)
         user.phone = form.cleaned_data.get("phone", "")
         user.save()
+        access_request = form.save_access_request(user)
         login(request, user)
-        messages.success(request, "Welcome! Your account is ready. A church administrator can give you ministry access.")
+        if access_request:
+            messages.success(
+                request,
+                "Your account has been created. Ministry management access requires administrator approval.",
+            )
+        else:
+            messages.success(request, "Welcome! Your member account is ready.")
         return redirect("core:portal")
     return render(request, "accounts/register.html", {"form": form})
 

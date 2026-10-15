@@ -1,0 +1,17 @@
+{% extends "base_public.html" %}
+{% block title %}Ministries · {{ church.short_name }}{% endblock %}
+{% block content %}
+<section class="public-page-hero">
+  <div class="wrap"><span class="eyebrow">Belong · Grow · Serve</span><h1>There is a place for you here.</h1><p>Explore the ministries that nurture faith, strengthen families, and serve our community.</p></div>
+</section>
+<section class="wrap public-section">
+  <div class="public-card-grid">
+    {% for ministry in ministries %}
+      <a class="public-ministry-card c-{{ ministry.color }}" href="{{ ministry.get_public_url }}">
+        <span class="ministry-number">{{ forloop.counter|stringformat:"02d" }}</span>
+        <div><span class="eyebrow">Ministry</span><h2>{{ ministry.name }}</h2><p>{{ ministry.description|default:"Learn about this ministry, its purpose, and ways to participate." }}</p><span class="text-link">Explore ministry →</span></div>
+      </a>
+    {% empty %}<div class="public-empty"><h2>Ministry information is being prepared.</h2><p>Please check back soon.</p></div>{% endfor %}
+  </div>
+</section>
+{% endblock %}

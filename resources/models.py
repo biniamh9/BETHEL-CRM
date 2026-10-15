@@ -48,6 +48,11 @@ class Resource(models.Model):
                             validators=[FileExtensionValidator(ALLOWED_EXTENSIONS), validate_size])
     url = models.URLField(blank=True, verbose_name="Link", help_text="Google Drive, YouTube, website, etc.")
     pinned = models.BooleanField(default=False, help_text="Keep at the top of the list.")
+    is_public = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Publish this resource on the public website. Only use for material approved for everyone.",
+    )
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

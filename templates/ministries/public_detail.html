@@ -1,0 +1,17 @@
+{% extends "base_public.html" %}
+{% block title %}{{ ministry.name }} · {{ church.short_name }}{% endblock %}
+{% block content %}
+<section class="ministry-detail-hero c-{{ ministry.color }}">
+  <div class="wrap"><a class="back-link" href="{% url 'public_ministries:list' %}">← All ministries</a><span class="eyebrow">A ministry of Bethel</span><h1>{{ ministry.name }}</h1><p>{{ ministry.description|default:"This ministry serves our church family through faith, fellowship, and service." }}</p><div class="hero-actions"><a class="btn btn-primary" href="{% url 'public_ministries:join' ministry.slug %}">Join this ministry</a><a class="btn btn-light" href="{% url 'public_ministries:contact' ministry.slug %}">Contact ministry team</a></div></div>
+</section>
+<section class="wrap public-section ministry-story-grid">
+  <article><span class="eyebrow">Purpose</span><h2>Growing in faith, together.</h2><p>{{ ministry.mission|default:ministry.description|default:"Detailed mission information will be published after it is confirmed by the ministry team." }}</p></article>
+  <aside class="ministry-facts">
+    <div><strong>Who we serve</strong><p>{{ ministry.serves|default:"Members, families, and neighbors who want to grow and serve together." }}</p></div>
+    <div><strong>Regular activities</strong><p>{{ ministry.regular_activities|default:"The ministry team is preparing confirmed activity and schedule information." }}</p></div>
+    <div><strong>How to participate</strong><p>{{ ministry.participation|default:"Send a participation request and the ministry team will follow up with you." }}</p></div>
+  </aside>
+</section>
+{% if upcoming or announcements %}<section class="public-band"><div class="wrap public-section"><span class="eyebrow">What’s happening</span><h2>Upcoming and noteworthy</h2><div class="public-card-grid compact">{% for occurrence in upcoming %}<article class="info-card"><span>{{ occurrence.start|date:"M j" }}</span><h3>{{ occurrence.event.title }}</h3><p>{{ occurrence.event.description|truncatewords:24 }}</p></article>{% endfor %}{% for item in announcements %}<article class="info-card"><span>Announcement</span><h3>{{ item.title }}</h3><p>{{ item.body|truncatewords:28 }}</p></article>{% endfor %}</div></div></section>{% endif %}
+<section class="ministry-cta"><div class="wrap"><div><span class="eyebrow">Take your next step</span><h2>Connect with {{ ministry.name }}.</h2></div><div class="hero-actions"><a class="btn btn-primary" href="{% url 'public_ministries:join' ministry.slug %}">Join this ministry</a><a class="btn btn-ghost" href="{% url 'public_ministries:contact' ministry.slug %}">Ask a question</a></div></div></section>
+{% endblock %}

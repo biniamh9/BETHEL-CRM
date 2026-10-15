@@ -13,6 +13,8 @@ urlpatterns = [
     path("portal/activities/", all_activities, name="activities"),
     path("portal/ministries/", include("ministries.urls")),
     path("portal/resources/", include("resources.urls")),
+    path("ministries/", include("ministries.public_urls")),
+    path("resources/", include("resources.public_urls")),
     path("", include("events.urls")),
     path("", include("fundraising.urls")),
     path("", include("core.urls")),

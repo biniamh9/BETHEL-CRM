@@ -11,6 +11,29 @@ from .forms import ResourceForm
 from .models import Resource
 
 
+def public_resource_list(request):
+    qs = Resource.objects.filter(is_public=True).select_related("ministry")
+    category = request.GET.get("category", "")
+    if category:
+        qs = qs.filter(category=category)
+    return render(request, "resources/public_list.html", {
+        "resources": qs, "categories": Resource.Category.choices, "category": category,
+    })
+
+
+def public_resource_open(request, pk):
+    resource = get_object_or_404(Resource, pk=pk, is_public=True)
+    if resource.url:
+        return redirect(resource.url)
+    if not resource.file:
+        raise Http404
+    try:
+        return FileResponse(resource.file.open("rb"), as_attachment=request.GET.get("view") != "1",
+                            filename=resource.filename)
+    except NotImplementedError:
+        return redirect(resource.file.url)
+
+
 @login_required
 def resource_list(request):
     qs = Resource.visible_to(request.user)

@@ -1,8 +1,10 @@
 from datetime import date, timedelta
+from pathlib import Path
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
 from django.shortcuts import render
+from django.conf import settings
 
 from accounts.models import User
 from events.models import Event
@@ -18,6 +20,16 @@ def home(request):
         "ministries": Ministry.objects.all(),
         "elders": User.objects.filter(is_active=True, role__in=[User.Role.ADMIN, User.Role.ELDER]).order_by("role", "first_name"),
     })
+
+
+def public_activities(request):
+    image_root = Path(settings.BASE_DIR) / "images"
+    allowed = {".jpg", ".jpeg", ".png", ".webp"}
+    images = [
+        f"activity-images/{item.name}" for item in sorted(image_root.iterdir())
+        if item.is_file() and item.suffix.lower() in allowed
+    ] if image_root.is_dir() else []
+    return render(request, "core/public_activities.html", {"activity_images": images})
 
 
 @login_required

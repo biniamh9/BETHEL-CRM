@@ -3,10 +3,10 @@
 {% block content %}
 <div class="wrap"><div class="card auth-card" style="max-width:520px">
   <h2>Create a member account</h2>
-  <p class="muted small">Members can see their own giving history. Ministry leaders get portal access from Pastor Abraham after signing up.</p>
+  <p class="muted small">Create a member account, or request ministry management access. Access requests are reviewed by a church administrator and never approved automatically.</p>
   <form method="post">{% csrf_token %}
     <div class="form-row">{% form_fields form "first_name,last_name" %}</div>
-    {% form_fields form "username,email,phone,password1,password2" %}
+    {% form_fields form "username,email,phone,purpose,requested_ministries,access_reason,password1,password2" %}
     <button class="btn btn-primary btn-block">Create account</button>
   </form>
   <p class="small" style="margin-top:16px">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>

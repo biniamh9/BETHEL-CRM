@@ -9,4 +9,4 @@ def church(request):
 
 def public_navigation(request):
     """Supply the ministry submenu on every public page."""
-    return {"navigation_ministries": Ministry.objects.only("name", "slug", "color")}
+    return {"navigation_ministries": Ministry.objects.filter(is_public=True).only("name", "slug", "color")}
