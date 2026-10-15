@@ -83,6 +83,7 @@ class MinistryInquiry(models.Model):
     name = models.CharField(max_length=160)
     email = models.EmailField()
     phone = models.CharField(max_length=30, blank=True)
+    area_interest = models.CharField(max_length=160, blank=True)
     message = models.TextField()
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -156,6 +157,10 @@ class Activity(models.Model):
     volunteer_hours = models.DecimalField(max_digits=6, decimal_places=1, default=0)
     summary = models.TextField(blank=True, help_text="What happened, decisions, prayer requests, follow-ups.")
     follow_up = models.TextField(blank=True)
+    is_public = models.BooleanField(
+        default=False, db_index=True,
+        help_text="Show this activity on the public website. Never publish private follow-up notes.",
+    )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

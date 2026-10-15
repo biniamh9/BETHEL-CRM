@@ -48,6 +48,7 @@
       {% if user.can_manage_users %}
         <h4>Administration</h4>
         <a href="{% url 'accounts:team' %}" class="{% if '/accounts/team' in path %}on{% endif %}">{% include "partials/icon.html" with i="team" %}Team &amp; logins</a>
+        <a href="{% url 'accounts:access_requests' %}" class="{% if '/accounts/access-requests' in path %}on{% endif %}">{% include "partials/icon.html" with i="user" %}Access requests</a>
         <a href="{% url 'admin:index' %}">{% include "partials/icon.html" with i="db" %}Database admin</a>
       {% endif %}
 

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -115,3 +116,20 @@ class MinistryAccessRequest(models.Model):
 
     def __str__(self):
         return f"{self.user} — {self.get_status_display()}"
+
+    @transaction.atomic
+    def approve(self, reviewer):
+        self.user.led_ministries.add(*self.ministries.all())
+        if self.user.role == User.Role.MEMBER:
+            self.user.role = User.Role.LEADER
+            self.user.save(update_fields=["role"])
+        self.status = self.Status.APPROVED
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+
+    def reject(self, reviewer):
+        self.status = self.Status.REJECTED
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.save(update_fields=["status", "reviewed_by", "reviewed_at"])

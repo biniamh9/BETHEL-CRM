@@ -49,4 +49,6 @@ urlpatterns = [
     path("team/", views.team_list, name="team"),
     path("team/new/", views.team_edit, name="team_new"),
     path("team/<int:pk>/", views.team_edit, name="team_edit"),
+    path("access-requests/", views.access_requests, name="access_requests"),
+    path("access-requests/<int:pk>/review/", views.access_request_review, name="access_request_review"),
 ]

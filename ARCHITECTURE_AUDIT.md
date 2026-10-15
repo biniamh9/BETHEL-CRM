@@ -78,6 +78,16 @@ Before production deployment, take a Supabase database backup or point-in-time r
 - A full leader-facing announcement editor and inquiry status editor can build on the included models after workflow ownership is confirmed; administrators can manage both safely in Django admin now.
 - Account email verification and CAPTCHA are intentionally not simulated with an insecure home-grown system.
 
+## Phase 2 workflow refinements
+
+- The public header and authentication experience consistently use **Sign In**.
+- Leader-access ministry selection is conditionally disclosed during registration and remains pending until reviewed.
+- Church administrators have a dedicated portal screen for approving or rejecting access requests; approval assigns only selected ministries and never grants Django staff or superuser status.
+- Assigned leaders can update the public profile fields for their own ministries and cannot edit another ministry.
+- Contact and participation requests remain separate. Participation requests include an area of interest, and Youth & Kids requests display a parent/guardian privacy notice.
+- Leaders can mark their ministry inquiries as contacted or declined from the existing ministry dashboard.
+- Activity publication is explicit opt-in. Historical activity records remain private after migration, and the public page never exposes attendance, attendee names, follow-up notes, or volunteer-hour data.
+
 ## Deployment checklist
 
 1. Create a Supabase backup/recovery checkpoint.
@@ -87,4 +97,3 @@ Before production deployment, take a Supabase database backup or point-in-time r
 5. Production build runs `manage.py migrate --noinput`; monitor build and runtime logs.
 6. In Django admin, approve public resources individually and review pending access requests with the provided actions.
 7. Smoke-test public ministry pages, registration, login, password reset, a leader portal, and finance access.
-

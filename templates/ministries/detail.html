@@ -6,6 +6,7 @@
     <div class="muted small">Led by {{ ministry.leader_display|default:"—" }}{% with ls=ministry.leaders.all %}{% if ls %} · Portal access: {{ ls|join:", " }}{% endif %}{% endwith %}</div></div>
   <div class="actions">
     {% if can_edit %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'ministries:profile_edit' ministry.slug %}">Edit public page</a>
       <a class="btn btn-primary btn-sm" href="{% url 'ministries:activity_new' ministry.slug %}">+ Record activity</a>
       <a class="btn btn-ghost btn-sm" href="{% url 'ministries:participant_new' ministry.slug %}">+ Add person</a>
     {% endif %}
@@ -17,7 +18,7 @@
 <section class="panel" style="margin-bottom:24px">
   <div class="panel-head"><div><span class="eyebrow">Needs follow-up</span><h2>New ministry inquiries</h2></div></div>
   <div class="table-wrap"><table><thead><tr><th>Received</th><th>Type</th><th>Name</th><th>Contact</th><th>Message</th></tr></thead><tbody>
-    {% for inquiry in pending_inquiries %}<tr><td>{{ inquiry.created_at|date:"M j, Y" }}</td><td>{{ inquiry.get_kind_display }}</td><td>{{ inquiry.name }}</td><td><a href="mailto:{{ inquiry.email }}">{{ inquiry.email }}</a>{% if inquiry.phone %}<br>{{ inquiry.phone }}{% endif %}</td><td>{{ inquiry.message|truncatewords:24 }}</td></tr>{% endfor %}
+    {% for inquiry in pending_inquiries %}<tr><td>{{ inquiry.created_at|date:"M j, Y" }}</td><td>{{ inquiry.get_kind_display }}{% if inquiry.area_interest %}<br><span class="small muted">{{ inquiry.area_interest }}</span>{% endif %}</td><td>{{ inquiry.name }}</td><td><a href="mailto:{{ inquiry.email }}">{{ inquiry.email }}</a>{% if inquiry.phone %}<br>{{ inquiry.phone }}{% endif %}</td><td>{{ inquiry.message|truncatewords:24 }}<form method="post" action="{% url 'ministries:inquiry_status' ministry.slug inquiry.pk %}" style="margin-top:8px">{% csrf_token %}<button class="btn btn-ghost btn-sm" name="status" value="contacted">Mark contacted</button><button class="btn btn-ghost btn-sm" name="status" value="declined">Decline</button></form></td></tr>{% endfor %}
   </tbody></table></div>
 </section>
 {% endif %}

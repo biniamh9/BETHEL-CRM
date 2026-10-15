@@ -6,6 +6,8 @@ app_name = "ministries"
 
 urlpatterns = [
     path("", views.ministry_list, name="list"),
+    path("<slug:slug>/profile/edit/", views.ministry_profile_edit, name="profile_edit"),
+    path("<slug:slug>/inquiries/<int:pk>/status/", views.inquiry_status, name="inquiry_status"),
     path("<slug:slug>/", views.ministry_detail, name="detail"),
     path("<slug:slug>/activities/new/", views.activity_edit, name="activity_new"),
     path("<slug:slug>/activities/<int:pk>/", views.activity_edit, name="activity_edit"),

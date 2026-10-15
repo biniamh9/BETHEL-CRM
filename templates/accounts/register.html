@@ -6,9 +6,23 @@
   <p class="muted small">Create a member account, or request ministry management access. Access requests are reviewed by a church administrator and never approved automatically.</p>
   <form method="post">{% csrf_token %}
     <div class="form-row">{% form_fields form "first_name,last_name" %}</div>
-    {% form_fields form "username,email,phone,purpose,requested_ministries,access_reason,password1,password2" %}
+    {% form_fields form "username,email,phone,purpose" %}
+    <div id="leader-access-fields" hidden>{% form_fields form "requested_ministries,access_reason" %}</div>
+    {% form_fields form "password1,password2" %}
     <button class="btn btn-primary btn-block">Create account</button>
   </form>
-  <p class="small" style="margin-top:16px">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
+  <p class="small" style="margin-top:16px">Already have an account? <a href="{% url 'accounts:login' %}">Sign In</a></p>
 </div></div>
+<script>
+(() => {
+  const fields = document.getElementById('leader-access-fields');
+  const choices = document.querySelectorAll('input[name="purpose"]');
+  const update = () => {
+    const selected = document.querySelector('input[name="purpose"]:checked');
+    fields.hidden = !selected || selected.value !== 'leader';
+  };
+  choices.forEach(choice => choice.addEventListener('change', update));
+  update();
+})();
+</script>
 {% endblock %}

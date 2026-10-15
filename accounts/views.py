@@ -7,7 +7,7 @@ from fundraising.models import Donation
 
 from .decorators import admin_required
 from .forms import ProfileForm, RegistrationForm, TeamMemberForm
-from .models import User
+from .models import MinistryAccessRequest, User
 
 
 def register(request):
@@ -61,3 +61,25 @@ def team_edit(request, pk=None):
         messages.success(request, f"Saved login for {saved}.")
         return redirect("accounts:team")
     return render(request, "accounts/team_form.html", {"form": form, "member": member})
+
+
+@admin_required
+def access_requests(request):
+    requests = MinistryAccessRequest.objects.select_related("user", "reviewed_by").prefetch_related("ministries")
+    return render(request, "accounts/access_requests.html", {"access_requests": requests})
+
+
+@admin_required
+def access_request_review(request, pk):
+    access_request = get_object_or_404(
+        MinistryAccessRequest.objects.select_related("user").prefetch_related("ministries"), pk=pk
+    )
+    if request.method == "POST" and access_request.status == MinistryAccessRequest.Status.PENDING:
+        decision = request.POST.get("decision")
+        if decision == "approve":
+            access_request.approve(request.user)
+            messages.success(request, "Ministry access approved.")
+        elif decision == "reject":
+            access_request.reject(request.user)
+            messages.success(request, "Ministry access request rejected.")
+    return redirect("accounts:access_requests")

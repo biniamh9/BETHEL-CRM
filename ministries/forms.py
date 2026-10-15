@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Activity, MinistryInquiry, Participant
+from .models import Activity, Ministry, MinistryInquiry, Participant
 
 
 class DateInput(forms.DateInput):
@@ -16,7 +16,7 @@ class ActivityForm(forms.ModelForm):
         model = Activity
         fields = (
             "title", "kind", "date", "start_time", "location", "attendance",
-            "attendees", "volunteer_hours", "summary", "follow_up",
+            "attendees", "volunteer_hours", "summary", "follow_up", "is_public",
         )
         widgets = {
             "date": DateInput(),
@@ -45,7 +45,7 @@ class ParticipantForm(forms.ModelForm):
         widgets = {"joined_on": DateInput(), "notes": forms.Textarea(attrs={"rows": 3})}
 
 
-class MinistryInquiryForm(forms.ModelForm):
+class MinistryContactForm(forms.ModelForm):
     website = forms.CharField(required=False, widget=forms.HiddenInput, label="Leave blank")
 
     class Meta:
@@ -58,3 +58,22 @@ class MinistryInquiryForm(forms.ModelForm):
         if value:
             raise forms.ValidationError("Unable to submit this form.")
         return value
+
+
+class MinistryJoinForm(MinistryContactForm):
+    class Meta(MinistryContactForm.Meta):
+        fields = ("name", "email", "phone", "area_interest", "message")
+        labels = {"area_interest": "Area of interest", "message": "Additional message"}
+
+
+class MinistryProfileForm(forms.ModelForm):
+    class Meta:
+        model = Ministry
+        fields = ("description", "mission", "serves", "regular_activities", "participation")
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 4}),
+            "mission": forms.Textarea(attrs={"rows": 4}),
+            "serves": forms.Textarea(attrs={"rows": 3}),
+            "regular_activities": forms.Textarea(attrs={"rows": 4}),
+            "participation": forms.Textarea(attrs={"rows": 3}),
+        }

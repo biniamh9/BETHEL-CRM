@@ -7,6 +7,10 @@ A Django website for Bethel Eritrean Alliance Church Atlanta with three parts:
 3. **Ministry portals** — each ministry leader logs in and records activities (attendance, volunteer hours, notes, follow-ups) and keeps a roster for their ministry only.
 4. **Activities, Calendar, Upcoming events and Resources** for the whole church (see below).
 
+Public visitors can browse ministry information at `/ministries/`, approved activity recaps at `/activities/`,
+approved resources at `/resources/`, and public events at `/events/`. Operational ministry records remain under
+`/portal/` and require an assigned login.
+
 ## Portal menu
 
 | Menu | What it does |

@@ -29,7 +29,10 @@ def public_activities(request):
         f"activity-images/{item.name}" for item in sorted(image_root.iterdir())
         if item.is_file() and item.suffix.lower() in allowed
     ] if image_root.is_dir() else []
-    return render(request, "core/public_activities.html", {"activity_images": images})
+    return render(request, "core/public_activities.html", {
+        "activity_images": images,
+        "public_activities": Activity.objects.filter(is_public=True).select_related("ministry")[:24],
+    })
 
 
 @login_required

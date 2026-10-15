@@ -1,7 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.db import transaction
-from django.utils import timezone
 
 from .models import MinistryAccessRequest, User
 
@@ -24,22 +22,10 @@ class MinistryAccessRequestAdmin(admin.ModelAdmin):
 
     @admin.action(description="Approve selected requests and grant ministry access")
     def approve_requests(self, request, queryset):
-        with transaction.atomic():
-            for access_request in queryset.select_related("user").prefetch_related("ministries"):
-                user = access_request.user
-                user.led_ministries.add(*access_request.ministries.all())
-                if user.role == User.Role.MEMBER:
-                    user.role = User.Role.LEADER
-                    user.save(update_fields=["role"])
-                access_request.status = MinistryAccessRequest.Status.APPROVED
-                access_request.reviewed_by = request.user
-                access_request.reviewed_at = timezone.now()
-                access_request.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+        for access_request in queryset.select_related("user").prefetch_related("ministries"):
+            access_request.approve(request.user)
 
     @admin.action(description="Reject selected requests without granting access")
     def reject_requests(self, request, queryset):
-        queryset.update(
-            status=MinistryAccessRequest.Status.REJECTED,
-            reviewed_by=request.user,
-            reviewed_at=timezone.now(),
-        )
+        for access_request in queryset:
+            access_request.reject(request.user)

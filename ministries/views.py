@@ -11,7 +11,7 @@ from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ActivityForm, MinistryInquiryForm, ParticipantForm
+from .forms import ActivityForm, MinistryContactForm, MinistryJoinForm, MinistryProfileForm, ParticipantForm
 from .models import Activity, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
@@ -38,7 +38,8 @@ def public_ministry_inquiry(request, slug, kind):
     ministry = get_object_or_404(Ministry.objects.filter(is_public=True), slug=slug)
     if kind not in {MinistryInquiry.Kind.CONTACT, MinistryInquiry.Kind.JOIN}:
         raise PermissionDenied
-    form = MinistryInquiryForm(request.POST or None)
+    form_class = MinistryJoinForm if kind == MinistryInquiry.Kind.JOIN else MinistryContactForm
+    form = form_class(request.POST or None)
     if request.method == "POST" and form.is_valid():
         forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
         client = forwarded or request.META.get("REMOTE_ADDR", "unknown")
@@ -160,6 +161,33 @@ def ministry_detail(request, slug):
         "can_edit": request.user.can_edit_ministry(ministry),
         "pending_inquiries": ministry.inquiries.filter(status=MinistryInquiry.Status.PENDING)[:8],
     })
+
+
+@login_required
+def ministry_profile_edit(request, slug):
+    ministry = _get_ministry(request, slug, edit=True)
+    form = MinistryProfileForm(request.POST or None, instance=ministry)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Public ministry information updated.")
+        return redirect("ministries:detail", slug=ministry.slug)
+    return render(request, "ministries/form.html", {
+        "form": form, "ministry": ministry, "title": "Edit public ministry information",
+    })
+
+
+@login_required
+def inquiry_status(request, slug, pk):
+    ministry = _get_ministry(request, slug, edit=True)
+    inquiry = get_object_or_404(MinistryInquiry, pk=pk, ministry=ministry)
+    if request.method == "POST":
+        allowed = {choice for choice, _ in MinistryInquiry.Status.choices}
+        status = request.POST.get("status")
+        if status in allowed:
+            inquiry.status = status
+            inquiry.save(update_fields=["status", "updated_at"])
+            messages.success(request, "Inquiry status updated.")
+    return redirect("ministries:detail", slug=ministry.slug)
 
 
 @login_required

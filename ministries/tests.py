@@ -29,11 +29,13 @@ class PublicMinistryTests(TestCase):
         for kind in ("contact", "join"):
             response = self.client.post(
                 reverse(f"public_ministries:{kind}", args=[self.ministry.slug]),
-                {"name": "Visitor", "email": "visitor@example.com", "message": "Please contact me."},
+                {"name": "Visitor", "email": "visitor@example.com", "area_interest": "Community service",
+                 "message": "Please contact me."},
             )
             self.assertRedirects(response, self.ministry.get_public_url())
         self.assertEqual(MinistryInquiry.objects.filter(ministry=self.ministry).count(), 2)
         self.assertEqual(set(MinistryInquiry.objects.values_list("status", flat=True)), {"pending"})
+        self.assertEqual(MinistryInquiry.objects.get(kind="join").area_interest, "Community service")
 
     def test_only_published_announcements_are_public(self):
         MinistryAnnouncement.objects.create(
@@ -74,3 +76,58 @@ class PublicMinistryTests(TestCase):
         self.assertNotContains(response, private.title)
         self.assertEqual(self.client.get(reverse("public_resources:open", args=[private.pk])).status_code, 404)
 
+    def test_administrator_approval_assigns_only_requested_ministry(self):
+        admin = User.objects.create_user("admin", password="Valid-Test-Pass-42", role=User.Role.ADMIN)
+        member = User.objects.create_user("member", password="Valid-Test-Pass-42")
+        other = Ministry.objects.create(name="Choir Ministry")
+        access_request = MinistryAccessRequest.objects.create(user=member)
+        access_request.ministries.add(self.ministry)
+        self.client.force_login(admin)
+        response = self.client.post(
+            reverse("accounts:access_request_review", args=[access_request.pk]), {"decision": "approve"}
+        )
+        self.assertRedirects(response, reverse("accounts:access_requests"))
+        member.refresh_from_db()
+        access_request.refresh_from_db()
+        self.assertEqual(member.role, User.Role.LEADER)
+        self.assertTrue(member.led_ministries.filter(pk=self.ministry.pk).exists())
+        self.assertFalse(member.led_ministries.filter(pk=other.pk).exists())
+        self.assertFalse(member.is_staff)
+        self.assertEqual(access_request.status, MinistryAccessRequest.Status.APPROVED)
+
+    def test_leader_profile_and_inquiry_actions_are_ministry_scoped(self):
+        leader = User.objects.create_user("leader", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        other = Ministry.objects.create(name="Media Ministry")
+        inquiry = MinistryInquiry.objects.create(
+            ministry=self.ministry, kind="join", name="Visitor", email="v@example.com", message="Interested"
+        )
+        self.client.force_login(leader)
+        response = self.client.post(reverse("ministries:profile_edit", args=[self.ministry.slug]), {
+            "description": "Updated public description", "mission": "Mission", "serves": "Families",
+            "regular_activities": "Confirmed activities", "participation": "Contact us",
+        })
+        self.assertRedirects(response, self.ministry.get_absolute_url())
+        self.ministry.refresh_from_db()
+        self.assertEqual(self.ministry.description, "Updated public description")
+        self.assertEqual(
+            self.client.post(reverse("ministries:profile_edit", args=[other.slug]), {}).status_code, 403
+        )
+        self.client.post(
+            reverse("ministries:inquiry_status", args=[self.ministry.slug, inquiry.pk]), {"status": "contacted"}
+        )
+        inquiry.refresh_from_db()
+        self.assertEqual(inquiry.status, "contacted")
+
+    def test_only_opted_in_activities_are_public(self):
+        from datetime import date
+        from .models import Activity
+
+        Activity.objects.create(ministry=self.ministry, title="Private notes", date=date.today(), is_public=False)
+        Activity.objects.create(
+            ministry=self.ministry, title="Community gathering", date=date.today(), summary="A public recap.",
+            is_public=True,
+        )
+        response = self.client.get(reverse("core:public_activities"))
+        self.assertContains(response, "Community gathering")
+        self.assertNotContains(response, "Private notes")
