@@ -1,27 +1,22 @@
 {% extends "base_public.html" %}{% load static church %}
+{% block header_class %}home-header{% endblock %}
 {% block content %}
 <section class="editorial-hero">
   <div class="hero-photo" style="background-image:url('{% static 'activity-images/20260621_113635.jpg' %}')"></div>
   <div class="hero-shade"></div>
-  <div class="wrap editorial-hero-inner">
-    <div class="hero-copy">
-      <span class="hero-kicker"><i></i> Eritrean faith · Atlanta home</span>
+  <div class="wrap editorial-hero-inner cinematic-inner">
+    <div class="hero-copy cinematic-copy">
+      <span class="hero-kicker"><i></i> Bethel Eritrean Church · Atlanta <i></i></span>
       <div class="hero-tigrinya ethiopic">{{ church.tigrinya_name }}</div>
-      <h1>Rooted in faith.<br><em>Rising together.</em></h1>
-      <p>We are a Christ-centered Eritrean family where generations worship, belong, and grow—together in the heart of Metro Atlanta.</p>
+      <h1>Rooted in Christ.<br><em>Growing together.</em></h1>
+      <p>A faith that forms us. A family that holds us. A future we are building together.</p>
       <div class="hero-actions">
-        <a class="btn btn-light" href="{% url 'events:public' %}">Plan your visit <span>→</span></a>
-        <a class="text-link light" href="#story">Discover our story <span>↘</span></a>
+        <a class="btn btn-light" href="{% url 'events:public' %}">Plan your visit</a>
+        <a class="btn btn-glass" href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener"><span class="play-symbol">▶</span> Watch online</a>
       </div>
     </div>
-    <aside class="service-note">
-      <span class="service-label">Join us Sunday</span>
-      <strong>Worship &amp; fellowship</strong>
-      <span>Metro Atlanta, Georgia</span>
-      <a href="{% url 'events:public' %}">View upcoming gatherings →</a>
-    </aside>
   </div>
-  <a class="hero-scroll" href="#story" aria-label="Scroll to our story"><span></span> Our story</a>
+  <div class="hero-lower-bar"><span>Sunday worship · Metro Atlanta</span><a href="#story">Discover Bethel <b>↓</b></a><span>Faith · Family · Future</span></div>
 </section>
 
 <section class="welcome-band" id="story">
@@ -87,6 +82,17 @@
         <a href="{% url 'resources:list' %}?category=archive">Archive <span>→</span></a>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="watch-stage">
+  <div class="watch-stage-photo" style="background-image:url('{% static 'activity-images/20260621_111520.jpg' %}')"></div>
+  <div class="watch-stage-overlay"></div>
+  <div class="wrap watch-stage-content">
+    <span class="eyebrow gold">Worship wherever you are</span>
+    <h2>Church is more than<br>a Sunday morning.</h2>
+    <p>Join our livestream, revisit worship, and share a message with someone who needs hope.</p>
+    <a class="watch-button" href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener"><span>▶</span><div><small>Visit our channel</small><b>Watch Bethel on YouTube</b></div><i>↗</i></a>
   </div>
 </section>
 

@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% load static %}
 {% block body %}
-<header class="site-head">
+<header class="site-head {% block header_class %}{% endblock %}">
   <div class="wrap">
     <a class="brand" href="{% url 'core:home' %}">
       <img src="{% static 'img/logo-mark.png' %}" alt="">
@@ -20,6 +20,7 @@
         </div>
       </details>
       <a href="{% url 'activities' %}">Activities</a>
+      <a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch</a>
       <details class="nav-dropdown">
         <summary>Resources <span class="nav-caret" aria-hidden="true"></span></summary>
         <div class="nav-dropdown-menu">
@@ -54,6 +55,7 @@
           </div>
         </details>
         <a href="{% url 'activities' %}">Activities</a>
+        <a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch on YouTube</a>
         <details class="nav-mobile-group">
           <summary>Resources <span class="nav-caret" aria-hidden="true"></span></summary>
           <div>
@@ -84,7 +86,7 @@
     <div class="footer-brand"><img src="{% static 'img/logo-mark.png' %}" alt=""><div><strong>{{ church.short_name }}</strong><span class="ethiopic">{{ church.tigrinya_name }}</span></div></div>
     <div><span class="footer-label">Visit</span><p>{{ church.address }}<br>Metro Atlanta, Georgia</p></div>
     <div><span class="footer-label">Explore</span><a href="{% url 'core:home' %}#ministries">Ministries</a><a href="{% url 'activities' %}">Activities</a><a href="{% url 'resources:list' %}">Resources</a></div>
-    <div><span class="footer-label">Connect</span><a href="{% url 'events:public' %}">Upcoming events</a><a href="{% url 'accounts:login' %}">Member login</a><a href="{% url 'fundraising:give' %}">Give</a></div>
+    <div><span class="footer-label">Connect</span><a href="{% url 'events:public' %}">Upcoming events</a><a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch on YouTube</a><a href="{% url 'accounts:login' %}">Member login</a><a href="{% url 'fundraising:give' %}">Give</a></div>
   </div>
   <div class="wrap footer-bottom"><span>© {% now "Y" %} {{ church.short_name }}</span><span>Faith · Family · Future</span><span>501(c)(3){% if church.ein %} · EIN {{ church.ein }}{% endif %}</span></div>
 </footer>
