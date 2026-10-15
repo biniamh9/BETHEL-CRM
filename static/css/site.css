@@ -74,7 +74,7 @@ p { margin: 0 0 1em; }
 .nav-dropdown > summary:hover, .nav-dropdown[open] > summary { background: #efe9dd; }
 .nav-caret { width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-2px); transition: transform .15s; }
 .nav-dropdown[open] > summary .nav-caret, .nav-mobile[open] > summary .nav-caret, .nav-mobile-group[open] > summary .nav-caret { transform: rotate(225deg) translate(-2px, -1px); }
-.nav-dropdown-menu { position: absolute; top: calc(100% + 9px); left: 0; z-index: 50; width: max-content; min-width: 230px; max-width: 310px; padding: 8px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.nav-dropdown-menu { position: absolute; top: calc(100% - 1px); left: 0; z-index: 50; width: max-content; min-width: 230px; max-width: 310px; padding: 14px 8px 8px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
 .nav .nav-dropdown-menu a { display: block; padding: 9px 11px; font-size: .9rem; }
 .nav-mobile { display: none; position: relative; }
 .nav-mobile > summary { display: flex; align-items: center; gap: 9px; padding: .55em .9em; border: 1px solid var(--line); border-radius: 999px; color: var(--navy); font-weight: 600; }

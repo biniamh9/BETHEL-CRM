@@ -94,8 +94,14 @@
 </footer>
 <script>
 document.querySelectorAll('.nav-desktop .nav-dropdown').forEach(menu => {
-  menu.addEventListener('mouseenter', () => { menu.open = true; });
-  menu.addEventListener('mouseleave', () => { menu.open = false; });
+  let closeTimer;
+  menu.addEventListener('mouseenter', () => {
+    window.clearTimeout(closeTimer);
+    menu.open = true;
+  });
+  menu.addEventListener('mouseleave', () => {
+    closeTimer = window.setTimeout(() => { menu.open = false; }, 220);
+  });
 });
 document.addEventListener('click', event => {
   document.querySelectorAll('.nav-dropdown[open]').forEach(menu => {
