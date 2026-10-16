@@ -107,7 +107,7 @@ def edit(request, pk=None):
             initial["date"] = request.GET["date"]
         if request.GET.get("ministry"):
             initial["ministry"] = Ministry.objects.filter(slug=request.GET["ministry"]).first()
-    form = EventForm(request.POST or None, instance=event, user=request.user, initial=initial)
+    form = EventForm(request.POST or None, request.FILES or None, instance=event, user=request.user, initial=initial)
     if request.method == "POST" and form.is_valid():
         obj = form.save(commit=False)
         if not obj.created_by_id:
@@ -136,3 +136,15 @@ def public_events(request):
     for occ in Event.occurrences_between(today, today + timedelta(days=90), Event.objects.filter(is_public=True)):
         grouped[occ.date].append(occ)
     return render(request, "events/public.html", {"groups": sorted(grouped.items())})
+
+
+def public_event_detail(request, pk):
+    event = get_object_or_404(Event.objects.select_related("ministry"), pk=pk, is_public=True)
+    today = date.today()
+    occurrences = event.occurrences(today, today + timedelta(days=365))
+    occurrence = occurrences[0] if occurrences else None
+    return render(request, "events/public_detail.html", {
+        "event": event,
+        "occurrence": occurrence,
+        "gcal": event.google_calendar_url(occurrence),
+    })

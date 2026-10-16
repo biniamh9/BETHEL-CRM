@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -58,6 +59,14 @@ class Event(models.Model):
     all_day = models.BooleanField(default=False)
     location = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
+    banner = models.FileField(
+        upload_to="events/%Y/%m/", blank=True,
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"])],
+        help_text="Event flyer or landscape banner (JPG, PNG, or WebP).",
+    )
+    banner_url = models.URLField(
+        blank=True, help_text="Alternatively, link to an approved externally hosted flyer image.",
+    )
     repeat = models.CharField(max_length=10, choices=Repeat.choices, default=Repeat.NONE)
     repeat_until = models.DateField(null=True, blank=True, help_text="Last date it repeats. Leave empty to repeat indefinitely.")
     is_public = models.BooleanField("Show on the public website", default=False, help_text="Visitors will see it on the Events page and home page.")
@@ -76,6 +85,17 @@ class Event(models.Model):
     def clean(self):
         if self.end and self.start and self.end < self.start:
             raise ValidationError("The end must be after the start.")
+        if self.banner and self.banner.size > 4 * 1024 * 1024:
+            raise ValidationError({"banner": "Event images must be 4 MB or smaller."})
+
+    @property
+    def banner_image_url(self):
+        if self.banner:
+            try:
+                return self.banner.url
+            except (NotImplementedError, ValueError):
+                pass
+        return self.banner_url
 
     @property
     def color(self):

@@ -89,6 +89,30 @@ class EventPagesTest(SeededTestCase):
                                                       "start_time": "18:00", "end_time": "17:00", "repeat": "none"})
         self.assertContains(r, "end must be after")
 
+    def test_public_event_banner_appears_on_home_and_detail_page(self):
+        event = Event.objects.create(
+            title="Kids Outdoor Activity",
+            kind=Event.Kind.YOUTH,
+            start=aware(date.today() + timedelta(days=5), 14),
+            location="To be confirmed",
+            description="A family outdoor gathering.",
+            banner_url="https://images.example.org/kids-outdoor-flyer.jpg",
+            is_public=True,
+        )
+        home = self.client.get(reverse("core:home"))
+        self.assertContains(home, "Kids Outdoor Activity")
+        self.assertContains(home, event.banner_url)
+        detail_url = reverse("events:public_detail", args=[event.pk])
+        detail = self.client.get(detail_url)
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "Add to calendar")
+
+    def test_private_event_has_no_public_detail(self):
+        event = Event.objects.create(
+            title="Private planning meeting", start=aware(date.today() + timedelta(days=4)), is_public=False
+        )
+        self.assertEqual(self.client.get(reverse("events:public_detail", args=[event.pk])).status_code, 404)
+
 
 class ActivitiesPageTest(SeededTestCase):
     def test_leader_sees_only_own_ministry_activities(self):

@@ -25,6 +25,11 @@ approved resources at `/resources/`, and public events at `/events/`. Operationa
 
 **Events** can repeat every week, every 2 weeks or every month (e.g. Sunday service, choir rehearsal, elders' meeting). Tick *Show on the public website* to list an event on the public Events page and home page, with an "Add to calendar" button. The Pastor and elders can create church-wide events; ministry leaders create events for their own ministries.
 
+Public events have dedicated homepage banners and public detail pages. Add an event flyer using the event's
+**Banner** upload, or use **Banner URL** when the flyer is already hosted in approved persistent storage. On Vercel,
+direct uploads require the configured Supabase Storage bucket; banner URLs remain available without it. Events with
+no artwork receive an accessible branded banner automatically.
+
 **Resources** have three access levels: everyone with a login, leadership only, or only that ministry's leaders (plus the Pastor and elders). Files are never publicly linked; every download checks the person's access.
 
 ## Who can see what

@@ -2,12 +2,13 @@
 {% block page_title %}{% if event %}Edit event{% else %}New event{% endif %}{% endblock %}
 {% block content %}
 <div class="page-head"><div><span class="eyebrow">Events</span><h1>{% if event %}Edit {{ event.title }}{% else %}New event{% endif %}</h1></div></div>
-<form method="post" class="form-panel">{% csrf_token %}
+<form method="post" enctype="multipart/form-data" class="form-panel">{% csrf_token %}
   {{ form.non_field_errors }}
   <div class="panel"><div class="panel-head"><h3>What</h3></div><div class="panel-body">
     {% form_fields form "title" %}
     <div class="form-row">{% form_fields form "kind,ministry" %}</div>
     {% form_fields form "location,description" %}
+    {% form_fields form "banner,banner_url" %}
   </div></div>
   <div class="panel"><div class="panel-head"><h3>When</h3></div><div class="panel-body">
     <div class="form-row">{% form_fields form "date,end_date,start_time,end_time" %}</div>

@@ -103,14 +103,12 @@
       <div><span class="eyebrow">Come as you are</span><h2>Life together.</h2></div>
       <a class="text-link" href="{% url 'events:public' %}">All events <span>→</span></a>
     </header>
-    <div class="event-editorial-list">
+    <div class="event-banner-grid">
       {% for o in events %}
-      <article class="event-editorial-row">
-        <time datetime="{{ o.start|date:'c' }}"><b>{{ o.start|date:"d" }}</b><span>{{ o.start|date:"M" }}</span></time>
-        <div><span class="event-kind">Gathering</span><h3>{{ o.event.title }}</h3></div>
-        <p>{% if o.event.all_day %}All day{% else %}{{ o.start|time:"g:i A" }}{% endif %}{% if o.event.location %}<br>{{ o.event.location }}{% endif %}</p>
-        <a class="circle-arrow" href="{{ o.google_url }}" target="_blank" rel="noopener" aria-label="Add {{ o.event.title }} to calendar">↗</a>
-      </article>
+      <a class="event-banner-card c-{{ o.event.color }}{% if not o.event.banner_image_url %} event-banner-generated{% endif %}" href="{% url 'events:public_detail' o.event.pk %}"{% if o.event.banner_image_url %} style="background-image:linear-gradient(0deg,rgba(7,12,24,.9),rgba(7,12,24,.12)),url('{{ o.event.banner_image_url }}')"{% endif %}>
+        <div class="event-banner-date"><b>{{ o.start|date:"d" }}</b><span>{{ o.start|date:"M" }}</span></div>
+        <div class="event-banner-copy"><span class="eyebrow gold">{{ o.event.get_kind_display }}</span><h3>{{ o.event.title }}</h3><p>{% if o.event.all_day %}All day{% else %}{{ o.start|time:"g:i A" }}{% endif %}{% if o.event.location %} · {{ o.event.location }}{% endif %}</p><span class="text-link">Event details →</span></div>
+      </a>
       {% endfor %}
     </div>
   </div>

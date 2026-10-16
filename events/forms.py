@@ -1,6 +1,7 @@
 from datetime import datetime, time, timedelta
 
 from django import forms
+from django.conf import settings
 from django.utils import timezone
 
 from .models import Event
@@ -17,18 +18,21 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        fields = ("title", "kind", "ministry", "all_day", "location", "description", "repeat", "repeat_until", "is_public")
+        fields = ("title", "kind", "ministry", "all_day", "location", "description", "banner", "banner_url", "repeat", "repeat_until", "is_public")
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
             "repeat_until": forms.DateInput(attrs={"type": "date"}),
         }
 
     field_order = ("title", "kind", "ministry", "date", "start_time", "end_time", "end_date", "all_day",
-                   "location", "description", "repeat", "repeat_until", "is_public")
+                   "location", "description", "banner", "banner_url", "repeat", "repeat_until", "is_public")
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
+        if not settings.UPLOADS_ENABLED:
+            self.fields.pop("banner")
+            self.fields["banner_url"].help_text = "File uploads are not configured here. Paste an approved flyer image URL."
         self.fields["ministry"].queryset = user.editable_ministries()
         if not user.can_create_churchwide_events:
             self.fields["ministry"].required = True

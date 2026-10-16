@@ -1,9 +1,9 @@
 <li class="event-row c-{{ occ.event.color }}">
   <div class="event-time">{% if occ.event.all_day %}All day{% else %}{{ occ.start|time:"g:i A" }}{% if occ.end and occ.end.date == occ.start.date %}<span> – {{ occ.end|time:"g:i A" }}</span>{% endif %}{% endif %}</div>
   <div class="event-body">
-    {% if public %}<b>{{ occ.event.title }}</b>{% else %}<a href="{{ occ.event.get_absolute_url }}"><b>{{ occ.event.title }}</b></a>{% endif %}
+    {% if public %}<a href="{% url 'events:public_detail' occ.event.pk %}"><b>{{ occ.event.title }}</b></a>{% else %}<a href="{{ occ.event.get_absolute_url }}"><b>{{ occ.event.title }}</b></a>{% endif %}
     <div class="small muted"><span class="dot"></span>{{ occ.event.ministry.name|default:"Church-wide" }} · {{ occ.event.get_kind_display }}{% if occ.event.location %} · {{ occ.event.location }}{% endif %}{% if occ.event.repeat != 'none' %} · <span title="Repeats">↻ {{ occ.event.get_repeat_display|lower }}</span>{% endif %}</div>
     {% if public and occ.event.description %}<p class="small" style="margin:.4em 0 0">{{ occ.event.description|truncatewords:40 }}</p>{% endif %}
   </div>
-  {% if public %}<a class="btn btn-ghost btn-sm" href="{{ occ.google_url }}" target="_blank" rel="noopener">Add to calendar</a>{% endif %}
+  {% if public %}<a class="btn btn-ghost btn-sm" href="{% url 'events:public_detail' occ.event.pk %}">View event</a>{% endif %}
 </li>
