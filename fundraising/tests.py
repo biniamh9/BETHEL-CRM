@@ -36,6 +36,8 @@ class PublicPagesTest(SeededTestCase):
         self.assertContains(response, "Why We Need Your Support")
         self.assertContains(response, "Provide a welcoming sanctuary for worship and prayer.")
         self.assertContains(response, "Make a donation of any amount.")
+        self.assertContains(response, "Donate on GoFundMe")
+        self.assertContains(response, "gofundme.com/f/building-a-home-for-bethel-eritrean-church-in-atlanta")
 
     def test_progress_includes_opening_balance(self):
         donated = sum(d.amount for d in Donation.objects.filter(status="succeeded"))

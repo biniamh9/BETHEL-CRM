@@ -40,7 +40,17 @@
       </div>
 
       <div id="t-give" class="tab-panel">
+        {% if church.gofundme_url %}
+        <div class="gofundme-callout">
+          <span class="eyebrow">Secure online giving</span>
+          <h3>Support our campaign on GoFundMe</h3>
+          <p>Your gift helps Bethel build a permanent home for worship, families, and future generations.</p>
+          <a class="btn btn-primary btn-block" href="{{ church.gofundme_url }}" target="_blank" rel="noopener noreferrer">Donate on GoFundMe ↗</a>
+          <p class="muted small center">You’ll continue to GoFundMe to complete your donation securely.</p>
+        </div>
+        {% endif %}
         {% if stripe_enabled %}
+        <div class="giving-separator"><span>or give directly</span></div>
         <form method="post" action="{% url 'fundraising:donate' campaign.slug %}">{% csrf_token %}
           <label class="field" style="display:block;font-weight:600;color:var(--navy);font-size:.88rem;margin-bottom:6px">Choose an amount</label>
           <div class="amounts">{% for a in presets %}<button type="button" data-amt="{{ a }}">${{ a }}</button>{% endfor %}</div>
@@ -51,7 +61,7 @@
           <p class="muted small center" style="margin:.8em 0 0">Card, bank account, Apple Pay or Google Pay through Stripe. You'll get an emailed tax receipt.</p>
         </form>
         {% else %}
-        <p><b>Online giving is coming soon.</b> In the meantime you can give by Zelle, check or cash, or make a pledge and our finance team will follow up.</p>
+        {% if not church.gofundme_url %}<p><b>Online giving is coming soon.</b> In the meantime you can give by Zelle, check or cash, or make a pledge and our finance team will follow up.</p>{% endif %}
         <button type="button" class="btn btn-ghost btn-block" data-go="t-other">See Zelle and check details</button>
         {% endif %}
       </div>

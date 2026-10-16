@@ -214,6 +214,10 @@ CHURCH = {
     "ein": os.environ.get("CHURCH_EIN", "20-0604532"),
     "zelle": os.environ.get("CHURCH_ZELLE", "678-974-6608"),
     "check_payable_to": os.environ.get("CHURCH_CHECK_PAYABLE", "Bethel Eritrean Alliance Church"),
+    "gofundme_url": os.environ.get(
+        "GOFUNDME_URL",
+        "https://www.gofundme.com/f/building-a-home-for-bethel-eritrean-church-in-atlanta",
+    ),
     "mailing_address": os.environ.get("CHURCH_MAILING_ADDRESS", "5915 Lawrenceville Hwy, Tucker, GA 30084"),
     "founded": 2011,
 }

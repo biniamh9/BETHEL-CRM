@@ -121,7 +121,7 @@
 <section class="building-callout">
   <div class="wrap building-callout-inner">
     <div><span class="eyebrow gold">{{ campaign.name }}</span><h2>Help us build what<br>the next generation needs.</h2></div>
-    <div><p>Our vision is bigger than a building. It is a lasting spiritual home for families, children, and generations still to come.</p><a class="btn btn-gold" href="{% url 'fundraising:give' %}">Give to the vision <span>→</span></a></div>
+    <div><p>Our vision is bigger than a building. It is a lasting spiritual home for families, children, and generations still to come.</p><div class="hero-actions"><a class="btn btn-gold" href="{% url 'fundraising:give' %}">Explore the campaign <span>→</span></a>{% if church.gofundme_url %}<a class="text-link" href="{{ church.gofundme_url }}" target="_blank" rel="noopener noreferrer">Donate on GoFundMe ↗</a>{% endif %}</div></div>
   </div>
 </section>
 {% endif %}

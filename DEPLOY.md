@@ -123,6 +123,11 @@ You're live. 🎉
 
 Add each variable in Vercel → Settings → Environment Variables, then Redeploy.
 
+**GoFundMe campaign**
+
+The Building Fund page links to Bethel's GoFundMe campaign by default. To replace it later, set `GOFUNDME_URL`
+to the new campaign address. Set it to an empty value to hide GoFundMe links without changing code.
+
 **Online giving (Stripe)**
 1. Create a Stripe account for the church (church EIN and bank account). Ask Stripe for nonprofit pricing with your 501(c)(3) letter.
 2. Stripe → Developers → API keys: add `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY`.
