@@ -15,17 +15,15 @@
     {% include "partials/fund_card.html" %}
 
     <div class="story" style="margin-top:36px">
-      <h2>Why we're building</h2>
+      <h2>Our story</h2>
       <hr class="divider">
-      {% for p in paragraphs %}<p>{{ p }}</p>{% endfor %}
+      {% for block in story_blocks %}
+        {% if block.kind == 'heading' %}<h2>{{ block.text }}</h2>
+        {% elif block.kind == 'list' %}<ul class="uses campaign-story-list">{% for item in block.items %}<li>{{ item }}</li>{% endfor %}</ul>
+        {% elif block.kind == 'ordered' %}<ol class="campaign-help-list">{% for item in block.items %}<li>{{ item }}</li>{% endfor %}</ol>
+        {% else %}<p>{{ block.text|linebreaksbr }}</p>{% endif %}
+      {% endfor %}
     </div>
-
-    <h3 style="margin-top:28px">What the new building will hold</h3>
-    <ul class="uses">
-      <li>Main sanctuary for worship</li><li>Classrooms for 32 children</li>
-      <li>Youth center for 42 students</li><li>Family counseling rooms</li>
-      <li>Community meeting rooms</li><li>Workshop and learning spaces</li>
-    </ul>
 
     {% if wall %}
     <h3 style="margin-top:32px">Recent givers</h3>

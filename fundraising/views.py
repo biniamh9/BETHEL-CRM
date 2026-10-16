@@ -36,10 +36,19 @@ def _campaign_context(campaign, gift_form=None, pledge_form=None):
     if campaign.show_donor_wall:
         wall = (campaign.succeeded().filter(show_on_wall=True).exclude(donor=None)
                 .select_related("donor").order_by("-received_on", "-created_at")[:24])
-    paragraphs = [p.strip() for p in campaign.story.split("\n\n") if p.strip()]
+    story_blocks = []
+    for block in (p.strip() for p in campaign.story.split("\n\n") if p.strip()):
+        if block.startswith("## "):
+            story_blocks.append({"kind": "heading", "text": block[3:].strip()})
+        elif all(line.startswith("- ") for line in block.splitlines()):
+            story_blocks.append({"kind": "list", "items": [line[2:].strip() for line in block.splitlines()]})
+        elif all(". " in line and line.partition(". ")[0].isdigit() for line in block.splitlines()):
+            story_blocks.append({"kind": "ordered", "items": [line.split(". ", 1)[1] for line in block.splitlines()]})
+        else:
+            story_blocks.append({"kind": "paragraph", "text": block})
     return {
         "campaign": campaign,
-        "paragraphs": paragraphs,
+        "story_blocks": story_blocks,
         "wall": wall,
         "gift_form": gift_form or PublicGiftForm(),
         "pledge_form": pledge_form or PublicPledgeForm(),

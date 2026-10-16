@@ -29,7 +29,13 @@ class PublicPagesTest(SeededTestCase):
         for url in (reverse("core:home"), self.campaign.get_absolute_url()):
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertContains(r, "New Church Building Fund")
+            self.assertContains(r, "Help Bethel Eritrean Church Build a Permanent Home")
+
+    def test_campaign_story_renders_safe_headings_and_lists(self):
+        response = self.client.get(self.campaign.get_absolute_url())
+        self.assertContains(response, "Why We Need Your Support")
+        self.assertContains(response, "Provide a welcoming sanctuary for worship and prayer.")
+        self.assertContains(response, "Make a donation of any amount.")
 
     def test_progress_includes_opening_balance(self):
         donated = sum(d.amount for d in Donation.objects.filter(status="succeeded"))
