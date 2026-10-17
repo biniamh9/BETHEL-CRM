@@ -69,7 +69,10 @@ class MinistryJoinForm(MinistryContactForm):
 class MinistryProfileForm(forms.ModelForm):
     class Meta:
         model = Ministry
-        fields = ("description", "mission", "serves", "regular_activities", "participation")
+        fields = (
+            "description", "mission", "serves", "regular_activities", "participation",
+            "cash_app", "zelle",
+        )
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
             "mission": forms.Textarea(attrs={"rows": 4}),
@@ -77,3 +80,11 @@ class MinistryProfileForm(forms.ModelForm):
             "regular_activities": forms.Textarea(attrs={"rows": 4}),
             "participation": forms.Textarea(attrs={"rows": 3}),
         }
+
+    def clean_cash_app(self):
+        value = self.cleaned_data.get("cash_app", "").strip()
+        if value and not value.startswith("$"):
+            value = f"${value}"
+        if value and (" " in value or len(value) < 2):
+            raise forms.ValidationError("Enter a valid public $Cashtag, such as $BethelYouth.")
+        return value

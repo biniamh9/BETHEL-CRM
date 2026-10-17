@@ -106,10 +106,13 @@ class PublicMinistryTests(TestCase):
         response = self.client.post(reverse("ministries:profile_edit", args=[self.ministry.slug]), {
             "description": "Updated public description", "mission": "Mission", "serves": "Families",
             "regular_activities": "Confirmed activities", "participation": "Contact us",
+            "cash_app": "BethelYouth", "zelle": "youth@example.com",
         })
         self.assertRedirects(response, self.ministry.get_absolute_url())
         self.ministry.refresh_from_db()
         self.assertEqual(self.ministry.description, "Updated public description")
+        self.assertEqual(self.ministry.cash_app, "$BethelYouth")
+        self.assertEqual(self.ministry.zelle, "youth@example.com")
         self.assertEqual(
             self.client.post(reverse("ministries:profile_edit", args=[other.slug]), {}).status_code, 403
         )

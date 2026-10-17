@@ -7,6 +7,18 @@
       <span class="eyebrow">Youth &amp; Kids registration</span>
       <h1>Register for<br>{{ event.title }}</h1>
       <p>Complete this form as the child’s parent or legal guardian. Your submission goes directly to authorized {{ ministry.name }} leaders in the church portal.</p>
+      {% if ministry.accepts_external_payments %}
+      <div class="external-payment-card">
+        <span class="eyebrow">Registration payment</span>
+        <h2>Pay from your phone</h2>
+        <p>If this event has a registration fee, use one of the ministry accounts below after submitting this form. The website does not collect or process the payment.</p>
+        <div class="payment-handles">
+          {% if ministry.cash_app %}<div><span>Cash App</span><strong>{{ ministry.cash_app }}</strong><button type="button" data-copy="{{ ministry.cash_app }}">Copy</button></div>{% endif %}
+          {% if ministry.zelle %}<div><span>Zelle</span><strong>{{ ministry.zelle }}</strong><button type="button" data-copy="{{ ministry.zelle }}">Copy</button></div>{% endif %}
+        </div>
+        <small>Include the child’s first name and event name in your payment note.</small>
+      </div>
+      {% endif %}
       <div class="privacy-note"><strong>Children’s privacy</strong><p>Please provide only first names and ages. Do not include medical records, school information, or other sensitive details. A ministry leader can follow up privately if needed.</p></div>
     </div>
     <div class="card auth-card">
@@ -18,4 +30,15 @@
     </div>
   </div>
 </section>
+<script>
+document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(button.dataset.copy);
+    button.textContent = 'Copied';
+    window.setTimeout(() => { button.textContent = 'Copy'; }, 1800);
+  } catch (_) {
+    button.previousElementSibling.focus?.();
+  }
+}));
+</script>
 {% endblock %}

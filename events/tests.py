@@ -128,13 +128,20 @@ class EventPagesTest(SeededTestCase):
     def test_parent_registration_notifies_youth_ministry_portal(self):
         cache.clear()
         youth = Ministry.objects.get(slug="youth-kids-ministry")
+        youth.cash_app = "$BethelYouth"
+        youth.zelle = "youth@example.com"
+        youth.save(update_fields=["cash_app", "zelle"])
         event = Event.objects.create(
             title="Kids Field Day", kind=Event.Kind.YOUTH, ministry=youth,
             start=aware(date.today() + timedelta(days=8)), repeat=Event.Repeat.NONE,
             is_public=True,
         )
         registration_url = reverse("events:public_register", args=[event.pk])
-        self.assertContains(self.client.get(registration_url), "Register for")
+        registration_page = self.client.get(registration_url)
+        self.assertContains(registration_page, "Register for")
+        self.assertContains(registration_page, "$BethelYouth")
+        self.assertContains(registration_page, "youth@example.com")
+        self.assertContains(registration_page, "does not collect or process the payment")
         response = self.client.post(registration_url, {
             "parent_name": "Parent Example", "email": "parent@example.com",
             "phone": "404-555-0101", "children": "Sara, age 8; Noah, age 11",

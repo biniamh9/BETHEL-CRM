@@ -17,6 +17,14 @@ class Ministry(models.Model):
     serves = models.TextField(blank=True, help_text="Who this ministry serves.")
     regular_activities = models.TextField(blank=True)
     participation = models.TextField(blank=True, help_text="How visitors can participate.")
+    cash_app = models.CharField(
+        "Cash App ID", max_length=100, blank=True,
+        help_text="Public $Cashtag only (for example, $BethelYouth). Never enter a password or bank information.",
+    )
+    zelle = models.CharField(
+        "Zelle ID", max_length=100, blank=True,
+        help_text="Public Zelle email address or phone number only. Never enter a password or bank information.",
+    )
     is_public = models.BooleanField(default=True, db_index=True)
     color = models.CharField(max_length=10, choices=COLORS, default="navy")
     leader_display = models.CharField(
@@ -46,6 +54,10 @@ class Ministry(models.Model):
 
     def get_public_url(self):
         return reverse("public_ministries:detail", args=[self.slug])
+
+    @property
+    def accepts_external_payments(self):
+        return bool(self.cash_app or self.zelle)
 
 
 class MinistryAnnouncement(models.Model):

@@ -548,6 +548,16 @@ tbody tr:hover { background: #fcfaf6; }
 .featured-event-actions .text-link { margin: 0; color: #fff; }
 .portal-alert-panel { border-left: 4px solid var(--gold); box-shadow: 0 12px 30px rgba(38,50,79,.09); }
 .event-registration-page .auth-card { border-top: 4px solid var(--gold); }
+.external-payment-card { margin: 30px 0; padding: 26px; border: 1px solid #dacb9e; background: #fff9e8; }
+.external-payment-card h2 { margin: .25em 0; color: var(--midnight); font-size: clamp(2rem,4vw,3.2rem); }
+.external-payment-card > p { color: #555e6e; line-height: 1.65; }
+.external-payment-card > small { display: block; margin-top: 16px; color: #6d634c; line-height: 1.5; }
+.payment-handles { display: grid; gap: 10px; margin-top: 20px; }
+.payment-handles > div { display: grid; grid-template-columns: 90px 1fr auto; align-items: center; gap: 12px; padding: 13px 14px; border: 1px solid #dfd2aa; background: #fff; }
+.payment-handles span { color: #6b7280; font-size: .67rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.payment-handles strong { overflow-wrap: anywhere; color: var(--midnight); }
+.payment-handles button { padding: 7px 10px; border: 1px solid #d8d1c4; border-radius: 4px; background: #fff; color: var(--maroon); cursor: pointer; font-weight: 700; }
+.payment-handles button:hover { border-color: var(--maroon); }
 .gathering-ribbon { background: #d2a43b; color: #101827; }
 .gathering-ribbon-grid { display: grid; grid-template-columns: repeat(3, 1fr) auto; align-items: stretch; }
 .gathering-ribbon-grid > div { display: grid; gap: 3px; padding: 25px 26px; border-right: 1px solid rgba(16,24,39,.18); }
