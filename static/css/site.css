@@ -553,9 +553,13 @@ tbody tr:hover { background: #fcfaf6; }
 .value-grid p { color: var(--muted); line-height: 1.7; }
 .pastor-story { padding: clamp(80px,10vw,140px) 0; background: #10192d; color: #fff; }
 .pastor-story-grid { display: grid; grid-template-columns: minmax(280px,.75fr) 1.25fr; gap: clamp(55px,9vw,130px); align-items: center; }
-.pastor-monogram { aspect-ratio: 4/5; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.2); background: radial-gradient(circle at 50% 35%,#34415b,#111a2e 65%); text-align: center; }
-.pastor-monogram span { font: 600 clamp(6rem,11vw,10rem)/1 var(--serif); color: #d4ac50; }
-.pastor-monogram small { margin-top: 25px; color: rgba(255,255,255,.65); font-size: .7rem; line-height: 1.7; letter-spacing: .13em; text-transform: uppercase; }
+.pastor-portrait { position: relative; aspect-ratio: 4/5; margin: 0; overflow: hidden; border: 1px solid rgba(255,255,255,.2); background: #283248; }
+.pastor-portrait::after { content: ""; position: absolute; inset: 45% 0 0; background: linear-gradient(transparent,rgba(5,9,18,.88)); pointer-events: none; }
+.pastor-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; filter: saturate(.86) contrast(1.04); }
+.pastor-portrait figcaption { position: absolute; z-index: 1; inset: auto 30px 28px; }
+.pastor-portrait strong,.pastor-portrait span { display: block; }
+.pastor-portrait strong { color: #fff; font: 600 1.35rem var(--serif); }
+.pastor-portrait span { margin-top: 5px; color: rgba(255,255,255,.68); font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; }
 .pastor-story h2 { margin: .25em 0; color: #fff; font-size: clamp(3rem,6vw,5.5rem); line-height: .92; }
 .pastor-story .page-lead { color: #fff; }
 .pastor-story article > p:not(.page-lead) { color: rgba(255,255,255,.7); line-height: 1.8; }
@@ -608,7 +612,7 @@ tbody tr:hover { background: #fcfaf6; }
   .home-header .wrap { height: 84px; padding-block: 5px; }.home-header .brand img { width: 56px; height: 70px; }.home-header .brand span { display: none; }.cinematic-inner { padding: 130px 0 150px; }.cinematic-copy { width: 100%; }.cinematic-copy h1 { font-size: clamp(3.35rem, 15vw, 5rem); letter-spacing: -.045em; }.cinematic-copy .hero-actions { display: grid; justify-content: stretch; max-width: 260px; margin-inline: auto; }.cinematic-copy .btn { width: 100%; }.hero-lower-bar { grid-template-columns: 1fr; justify-items: center; }.hero-lower-bar > span { display: none; }
   .watch-stage { min-height: 650px; }.watch-stage-overlay { background: linear-gradient(90deg, rgba(8,13,25,.9), rgba(8,13,25,.5)), linear-gradient(0deg, rgba(8,13,25,.5), transparent); }.watch-stage h2 { font-size: 3.8rem; }.watch-button { grid-template-columns: 48px 1fr; }.watch-button i { display: none; }
   .gathering-ribbon-grid { grid-template-columns: 1fr; }.gathering-ribbon-grid > div { grid-template-columns: 90px 1fr; align-items: center; padding: 18px 8px; border-right: 0; border-bottom: 1px solid rgba(16,24,39,.18); }.gathering-ribbon-grid small { grid-column: 2; }.gathering-ribbon-grid > a { grid-column: 1; }
-  .about-intro-grid,.visit-layout,.pastor-story-grid,.visit-contact-grid { grid-template-columns: 1fr; gap: 42px; }.value-grid { grid-template-columns: 1fr; }.value-grid article { min-height: 230px; }.value-grid h3 { margin-top: 32px; }.pastor-monogram { max-height: 470px; }.schedule-stack article { grid-template-columns: 1fr; gap: 10px; }
+  .about-intro-grid,.visit-layout,.pastor-story-grid,.visit-contact-grid { grid-template-columns: 1fr; gap: 42px; }.value-grid { grid-template-columns: 1fr; }.value-grid article { min-height: 230px; }.value-grid h3 { margin-top: 32px; }.pastor-portrait { max-height: 560px; }.schedule-stack article { grid-template-columns: 1fr; gap: 10px; }
 }
 
 /* Public ministry and resource architecture */
