@@ -1,0 +1,20 @@
+{% extends "base_public.html" %}
+{% block content %}
+<section class="public-page-hero visit-page-hero"><div class="wrap"><span class="eyebrow gold">You are welcome here</span><h1>Come worship<br>with us.</h1><p>Whether you are new to faith, new to Atlanta, or looking for a church family, there is a place for you at Bethel.</p></div></section>
+
+<section class="wrap public-section visit-layout">
+  <div><span class="eyebrow">Weekly gatherings</span><h2>There is a place for everyone.</h2><p class="page-lead">We gather throughout the week for worship, biblical learning, prayer, and fellowship.</p></div>
+  <div class="schedule-stack">
+    <article><time>Sunday</time><div><h3>Worship Service</h3><strong>10:30 AM–1:00 PM</strong><p>Worship, heartfelt prayer, biblical teaching, children’s ministry, and fellowship.</p></div></article>
+    <article><time>Wednesday</time><div><h3>Prayer Service</h3><strong>6:00–8:00 PM</strong><p>Corporate prayer, Bible study, testimony, and spiritual renewal.</p></div></article>
+    <article><time>Saturday</time><div><h3>Youth Service</h3><strong>6:00–8:00 PM</strong><p>Youth worship, Bible discussion, friendship, and community building.</p></div></article>
+  </div>
+</section>
+
+<section class="visit-contact-band"><div class="wrap visit-contact-grid">
+  <div><span class="eyebrow gold">Find us</span><h2>Bethel Eritrean Church</h2><address>{{ church.address }}</address><a class="btn btn-gold" href="https://www.google.com/maps/search/?api=1&query={{ church.address|urlencode }}" target="_blank" rel="noopener">Get directions ↗</a></div>
+  <div><span class="eyebrow gold">Get in touch</span><ul class="contact-list"><li><span>Phone</span><a href="tel:{{ church.phone }}">{{ church.phone }}</a></li><li><span>Email</span><a href="mailto:{{ church.email }}">{{ church.email }}</a></li><li><span>Online</span><a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch on YouTube ↗</a></li></ul></div>
+</div></section>
+
+<section class="final-invitation"><div class="wrap"><span class="ethiopic">ንዑ እሞ ርኣዩ</span><h2>Come and see.</h2><p>You do not need to have everything figured out. Come as you are—we look forward to meeting you.</p><a class="btn btn-primary" href="mailto:{{ church.email }}?subject=Planning%20a%20visit%20to%20Bethel">Tell us you’re coming</a></div></section>
+{% endblock %}

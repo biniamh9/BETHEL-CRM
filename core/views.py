@@ -22,6 +22,14 @@ def home(request):
     })
 
 
+def about(request):
+    return render(request, "core/about.html")
+
+
+def visit(request):
+    return render(request, "core/visit.html")
+
+
 def public_activities(request):
     image_root = Path(settings.BASE_DIR) / "images"
     allowed = {".jpg", ".jpeg", ".png", ".webp"}

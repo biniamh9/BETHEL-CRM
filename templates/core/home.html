@@ -14,12 +14,21 @@
       <h1>Rooted in Christ.<br><em>Growing together.</em></h1>
       <p>A faith that forms us. A family that holds us. A future we are building together.</p>
       <div class="hero-actions">
-        <a class="btn btn-light" href="{% url 'events:public' %}">Plan your visit</a>
+        <a class="btn btn-light" href="{% url 'core:visit' %}">Plan your visit</a>
         <a class="btn btn-glass" href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener"><span class="play-symbol">▶</span> Watch online</a>
       </div>
     </div>
   </div>
   <div class="hero-lower-bar"><span>Sunday worship · Metro Atlanta</span><a href="#story">Discover Bethel <b>↓</b></a><span>Faith · Family · Future</span></div>
+</section>
+
+<section class="gathering-ribbon" aria-label="Weekly gathering times">
+  <div class="wrap gathering-ribbon-grid">
+    <div><span>Sunday</span><strong>Worship Service</strong><small>10:30 AM–1:00 PM</small></div>
+    <div><span>Wednesday</span><strong>Prayer Service</strong><small>6:00–8:00 PM</small></div>
+    <div><span>Saturday</span><strong>Youth Service</strong><small>6:00–8:00 PM</small></div>
+    <a href="{% url 'core:visit' %}">Plan your visit <b>→</b></a>
+  </div>
 </section>
 
 <section class="welcome-band" id="story">
@@ -31,7 +40,7 @@
     </div>
     <div class="welcome-copy">
       <p>Since {{ church.founded }}, Bethel has been an anchor for Eritrean and East African families—a place where children know their heritage, young people find their calling, and newcomers find family.</p>
-      <a class="text-link" href="#ministries">See how we serve <span>→</span></a>
+      <a class="text-link" href="{% url 'core:about' %}">Our story and beliefs <span>→</span></a>
     </div>
   </div>
 </section>

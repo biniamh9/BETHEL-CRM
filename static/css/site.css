@@ -529,6 +529,52 @@ tbody tr:hover { background: #fcfaf6; }
 .hero-lower-bar { position: absolute; inset: auto 0 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 22px max(28px, calc((100vw - 1160px)/2)); border-top: 1px solid rgba(255,255,255,.22); color: rgba(255,255,255,.68); font-size: .65rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
 .hero-lower-bar a { display: flex; gap: 15px; color: #fff; text-decoration: none; }.hero-lower-bar span:last-child { text-align: right; }
 
+/* Story, beliefs and visit content */
+.gathering-ribbon { background: #d2a43b; color: #101827; }
+.gathering-ribbon-grid { display: grid; grid-template-columns: repeat(3, 1fr) auto; align-items: stretch; }
+.gathering-ribbon-grid > div { display: grid; gap: 3px; padding: 25px 26px; border-right: 1px solid rgba(16,24,39,.18); }
+.gathering-ribbon-grid span { font-size: .63rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.gathering-ribbon-grid strong { font: 600 1.06rem var(--serif); }
+.gathering-ribbon-grid small { font-size: .74rem; }
+.gathering-ribbon-grid > a { display: flex; align-items: center; gap: 18px; padding: 25px 30px; color: #101827; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; }
+.gathering-ribbon-grid > a:hover { background: rgba(255,255,255,.2); }
+.about-page-hero { background: linear-gradient(90deg,rgba(7,12,24,.96),rgba(7,12,24,.48)),url('../activity-images/hero2.jpg') center 40%/cover; }
+.visit-page-hero { background: linear-gradient(90deg,rgba(7,12,24,.94),rgba(7,12,24,.42)),url('../activity-images/hero.jpg') center 42%/cover; }
+.about-intro-grid,.visit-layout { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(55px,9vw,130px); align-items: start; }
+.about-intro-grid h2,.visit-layout h2 { margin: .25em 0; font-size: clamp(3rem,6vw,5.7rem); line-height: .92; letter-spacing: -.045em; }
+.page-lead { font: 500 clamp(1.3rem,2.5vw,1.75rem)/1.55 var(--serif); color: #283248; }
+.about-intro-grid > div:last-child > p:not(.page-lead) { color: var(--muted); font-size: 1.05rem; line-height: 1.8; }
+.mission-statement { padding: clamp(80px,10vw,140px) 0; background: var(--maroon); color: #fff; }
+.mission-statement blockquote { max-width: 1000px; margin: 25px 0 0; font: 600 clamp(2.5rem,5vw,5.4rem)/1.03 var(--serif); letter-spacing: -.035em; }
+.value-grid { display: grid; grid-template-columns: repeat(4,1fr); margin-top: 45px; border-top: 1px solid #cfc7b8; border-left: 1px solid #cfc7b8; }
+.value-grid article { min-height: 300px; padding: 28px; border-right: 1px solid #cfc7b8; border-bottom: 1px solid #cfc7b8; }
+.value-grid article > span { color: var(--gold); font-size: .7rem; font-weight: 800; letter-spacing: .15em; }
+.value-grid h3 { margin: 58px 0 15px; font-size: 2rem; }
+.value-grid p { color: var(--muted); line-height: 1.7; }
+.pastor-story { padding: clamp(80px,10vw,140px) 0; background: #10192d; color: #fff; }
+.pastor-story-grid { display: grid; grid-template-columns: minmax(280px,.75fr) 1.25fr; gap: clamp(55px,9vw,130px); align-items: center; }
+.pastor-monogram { aspect-ratio: 4/5; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.2); background: radial-gradient(circle at 50% 35%,#34415b,#111a2e 65%); text-align: center; }
+.pastor-monogram span { font: 600 clamp(6rem,11vw,10rem)/1 var(--serif); color: #d4ac50; }
+.pastor-monogram small { margin-top: 25px; color: rgba(255,255,255,.65); font-size: .7rem; line-height: 1.7; letter-spacing: .13em; text-transform: uppercase; }
+.pastor-story h2 { margin: .25em 0; color: #fff; font-size: clamp(3rem,6vw,5.5rem); line-height: .92; }
+.pastor-story .page-lead { color: #fff; }
+.pastor-story article > p:not(.page-lead) { color: rgba(255,255,255,.7); line-height: 1.8; }
+.pastor-story .btn { margin-top: 18px; }
+.schedule-stack { border-top: 3px solid var(--gold); }
+.schedule-stack article { display: grid; grid-template-columns: 115px 1fr; gap: 30px; padding: 30px 0; border-bottom: 1px solid #d8d1c4; }
+.schedule-stack time { color: var(--maroon); font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.schedule-stack h3 { margin: 0 0 5px; font-size: 1.7rem; }
+.schedule-stack strong { color: var(--gold-dark,#9b7115); }
+.schedule-stack p { margin-bottom: 0; color: var(--muted); line-height: 1.65; }
+.visit-contact-band { padding: clamp(80px,9vw,120px) 0; background: #10192d; color: #fff; }
+.visit-contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(60px,10vw,150px); }
+.visit-contact-grid h2 { margin: .3em 0; color: #fff; font-size: clamp(2.5rem,5vw,4.7rem); line-height: 1; }
+.visit-contact-grid address { max-width: 390px; margin-bottom: 28px; color: rgba(255,255,255,.72); font-size: 1.12rem; font-style: normal; line-height: 1.7; }
+.contact-list { margin: 20px 0 0; padding: 0; list-style: none; border-top: 1px solid rgba(255,255,255,.18); }
+.contact-list li { display: grid; grid-template-columns: 100px 1fr; padding: 19px 0; border-bottom: 1px solid rgba(255,255,255,.18); }
+.contact-list span { color: rgba(255,255,255,.5); font-size: .67rem; letter-spacing: .13em; text-transform: uppercase; }
+.contact-list a { color: #fff; text-decoration: none; }
+
 .watch-stage { position: relative; min-height: 720px; display: flex; align-items: center; isolation: isolate; color: #fff; }
 .watch-stage-photo, .watch-stage-overlay { position: absolute; inset: 0; z-index: -2; }
 .watch-stage-photo { background-size: cover; background-position: center; }
@@ -546,6 +592,8 @@ tbody tr:hover { background: #fcfaf6; }
   .welcome-grid { grid-template-columns: 90px 1fr; }.welcome-copy { grid-column: 2; border-left: 0; padding-left: 0; }
   .resource-feature-grid, .building-callout-inner { grid-template-columns: 1fr; gap: 55px; }.resource-art { min-height: 320px; }
   .footer-grid { grid-template-columns: 1.4fr 1fr 1fr; }.footer-grid > div:nth-child(2) { display: none; }
+  .gathering-ribbon-grid { grid-template-columns: repeat(3,1fr); }.gathering-ribbon-grid > a { grid-column: 1/-1; justify-content: center; border-top: 1px solid rgba(16,24,39,.18); }
+  .value-grid { grid-template-columns: repeat(2,1fr); }
 }
 @media (max-width: 700px) {
   .editorial-hero { min-height: 860px; }.editorial-hero .hero-photo { inset: 0; background-position: 54% center; }.editorial-hero .hero-photo-secondary { background-position: 50% center; }.hero-shade { background: linear-gradient(90deg, rgba(16,25,45,.82), rgba(16,25,45,.42)), linear-gradient(0deg, #10192d 0%, transparent 60%); }
@@ -559,6 +607,8 @@ tbody tr:hover { background: #fcfaf6; }
   .footer-grid { grid-template-columns: 1fr 1fr; }.footer-brand { grid-column: 1 / -1; }.footer-bottom { flex-direction: column; }
   .home-header .wrap { height: 84px; padding-block: 5px; }.home-header .brand img { width: 56px; height: 70px; }.home-header .brand span { display: none; }.cinematic-inner { padding: 130px 0 150px; }.cinematic-copy { width: 100%; }.cinematic-copy h1 { font-size: clamp(3.35rem, 15vw, 5rem); letter-spacing: -.045em; }.cinematic-copy .hero-actions { display: grid; justify-content: stretch; max-width: 260px; margin-inline: auto; }.cinematic-copy .btn { width: 100%; }.hero-lower-bar { grid-template-columns: 1fr; justify-items: center; }.hero-lower-bar > span { display: none; }
   .watch-stage { min-height: 650px; }.watch-stage-overlay { background: linear-gradient(90deg, rgba(8,13,25,.9), rgba(8,13,25,.5)), linear-gradient(0deg, rgba(8,13,25,.5), transparent); }.watch-stage h2 { font-size: 3.8rem; }.watch-button { grid-template-columns: 48px 1fr; }.watch-button i { display: none; }
+  .gathering-ribbon-grid { grid-template-columns: 1fr; }.gathering-ribbon-grid > div { grid-template-columns: 90px 1fr; align-items: center; padding: 18px 8px; border-right: 0; border-bottom: 1px solid rgba(16,24,39,.18); }.gathering-ribbon-grid small { grid-column: 2; }.gathering-ribbon-grid > a { grid-column: 1; }
+  .about-intro-grid,.visit-layout,.pastor-story-grid,.visit-contact-grid { grid-template-columns: 1fr; gap: 42px; }.value-grid { grid-template-columns: 1fr; }.value-grid article { min-height: 230px; }.value-grid h3 { margin-top: 32px; }.pastor-monogram { max-height: 470px; }.schedule-stack article { grid-template-columns: 1fr; gap: 10px; }
 }
 
 /* Public ministry and resource architecture */

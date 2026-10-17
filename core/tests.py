@@ -11,6 +11,16 @@ from core.middleware import DatabaseConfigCheck
 
 
 class DeploymentTest(TestCase):
+    def test_public_about_and_visit_pages(self):
+        about = self.client.get(reverse("core:about"))
+        self.assertEqual(about.status_code, 200)
+        self.assertContains(about, "Pastor Abraham Yosief")
+        self.assertContains(about, "Our mission")
+        visit = self.client.get(reverse("core:visit"))
+        self.assertEqual(visit.status_code, 200)
+        self.assertContains(visit, "10:30 AM")
+        self.assertContains(visit, "Get directions")
+
     def test_setup_page_when_database_missing_on_vercel(self):
         sqlite = {"default": {"ENGINE": "django.db.backends.sqlite3"}}
         with override_settings(ON_VERCEL=True, DATABASES=sqlite):

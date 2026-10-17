@@ -1,0 +1,30 @@
+{% extends "base_public.html" %}{% load static %}
+{% block content %}
+<section class="public-page-hero about-page-hero">
+  <div class="wrap"><span class="eyebrow gold">About Bethel</span><h1>A place of faith,<br>hope &amp; love.</h1><p>We are an Eritrean church family in Metro Atlanta seeking to love God, live by His Word, and welcome every generation into a life of faith.</p></div>
+</section>
+
+<section class="wrap public-section about-intro-grid">
+  <div><span class="eyebrow">Our church</span><h2>Building a community of faith.</h2></div>
+  <div><p class="page-lead">Since {{ church.founded }}, Bethel has been a spiritual home where families worship, children learn biblical values, young people find encouragement, and generations grow together.</p><p>We invite you to join us on the journey as we seek to live in a way that honors God and shares His hope with Metro Atlanta.</p></div>
+</section>
+
+<section class="mission-statement"><div class="wrap"><span class="eyebrow gold">Our mission</span><blockquote>To glorify God by making disciples who love Jesus, serve others, and share the hope of the Gospel with our community and the world.</blockquote></div></section>
+
+<section class="wrap public-section">
+  <header class="section-heading split-heading"><div><span class="eyebrow">What shapes us</span><h2>Faith lived<br><em>together.</em></h2></div><p>These commitments guide how we worship, care for one another, teach Scripture, and serve our neighbors.</p></header>
+  <div class="value-grid">
+    <article><span>01</span><h3>Love</h3><p>We believe in Christ-centered love that transforms lives and builds lasting relationships.</p></article>
+    <article><span>02</span><h3>Community</h3><p>We grow stronger together, carrying one another through every season of life.</p></article>
+    <article><span>03</span><h3>Truth</h3><p>Grounded in Scripture, we seek to understand God’s Word and put it into practice.</p></article>
+    <article><span>04</span><h3>Service</h3><p>We are called to serve others with humility, compassion, faithfulness, and generosity.</p></article>
+  </div>
+</section>
+
+<section class="pastor-story">
+  <div class="wrap pastor-story-grid">
+    <div class="pastor-monogram"><span>AY</span><small>More than five decades<br>of Christian ministry</small></div>
+    <article><span class="eyebrow gold">Our pastor</span><h2>Pastor Abraham Yosief</h2><p class="page-lead">Pastor Abraham has served in Christian ministry across East Africa, Europe, and North America for more than five decades.</p><p>His ministry journey includes pastoral and regional leadership in Addis Ababa, evangelism and discipleship work throughout Eritrea and Ethiopia, pastoral service in Nairobi and London, and leadership among Eritrean evangelical church fellowships in Europe and North America.</p><p>Through seasons of sacrifice—including imprisonment for preaching the Gospel—he has remained steadfast in his calling. Today, he shepherds Bethel’s congregation with cross-cultural wisdom, a heart for discipleship, and a deep commitment to abundant life in Christ.</p><a class="btn btn-gold" href="{% url 'core:visit' %}">Come worship with us</a></article>
+  </div>
+</section>
+{% endblock %}
