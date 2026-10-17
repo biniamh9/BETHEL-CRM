@@ -113,6 +113,40 @@ class EventPagesTest(SeededTestCase):
         )
         self.assertEqual(self.client.get(reverse("events:public_detail", args=[event.pk])).status_code, 404)
 
+    @override_settings(UPLOADS_ENABLED=False)
+    def test_event_flyer_upload_is_persisted_and_served_from_database(self):
+        self.login("abraham")
+        flyer = SimpleUploadedFile(
+            "kids-outdoor.png", b"\x89PNG\r\n\x1a\n" + b"safe-test-image-data", content_type="image/png"
+        )
+        response = self.client.post(reverse("events:new"), {
+            "title": "Kids Outdoor Day", "kind": "youth",
+            "date": (date.today() + timedelta(days=10)).isoformat(), "start_time": "13:00",
+            "repeat": "none", "description": "Outdoor activities for children and families.",
+            "is_public": "on", "flyer_upload": flyer,
+        })
+        event = Event.objects.get(title="Kids Outdoor Day")
+        self.assertRedirects(response, event.get_absolute_url())
+        self.assertEqual(event.banner_content_type, "image/png")
+        self.assertTrue(event.banner_blob)
+        banner = self.client.get(reverse("events:public_banner", args=[event.pk]))
+        self.assertEqual(banner.status_code, 200)
+        self.assertEqual(banner["Content-Type"], "image/png")
+        self.assertTrue(banner.content.startswith(b"\x89PNG"))
+
+    @override_settings(UPLOADS_ENABLED=False)
+    def test_event_flyer_rejects_disguised_non_image(self):
+        self.login("abraham")
+        fake = SimpleUploadedFile("flyer.png", b"not really an image", content_type="image/png")
+        response = self.client.post(reverse("events:new"), {
+            "title": "Unsafe upload", "kind": "youth",
+            "date": (date.today() + timedelta(days=10)).isoformat(), "start_time": "13:00",
+            "repeat": "none", "is_public": "on", "flyer_upload": fake,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Upload a valid JPG, PNG, or WebP image")
+        self.assertFalse(Event.objects.filter(title="Unsafe upload").exists())
+
 
 class ActivitiesPageTest(SeededTestCase):
     def test_leader_sees_only_own_ministry_activities(self):

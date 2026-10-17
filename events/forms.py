@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta
+from pathlib import Path
 
 from django import forms
 from django.conf import settings
@@ -15,6 +16,12 @@ class EventForm(forms.ModelForm):
     end_time = forms.TimeField(required=False, widget=forms.TimeInput(attrs={"type": "time"}))
     end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}),
                                help_text="Only for events that run over several days (e.g. a retreat).")
+    flyer_upload = forms.FileField(
+        required=False,
+        label="Flyer or banner image",
+        help_text="JPG, PNG, or WebP; maximum 3 MB.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+    )
 
     class Meta:
         model = Event
@@ -25,14 +32,16 @@ class EventForm(forms.ModelForm):
         }
 
     field_order = ("title", "kind", "ministry", "date", "start_time", "end_time", "end_date", "all_day",
-                   "location", "description", "banner", "banner_url", "repeat", "repeat_until", "is_public")
+                   "location", "description", "banner", "flyer_upload", "banner_url", "repeat", "repeat_until", "is_public")
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
         if not settings.UPLOADS_ENABLED:
             self.fields.pop("banner")
-            self.fields["banner_url"].help_text = "File uploads are not configured here. Paste an approved flyer image URL."
+            self.fields["flyer_upload"].help_text = "Stored securely with the event in the church database. JPG, PNG, or WebP; maximum 3 MB."
+        else:
+            self.fields.pop("flyer_upload")
         self.fields["ministry"].queryset = user.editable_ministries()
         if not user.can_create_churchwide_events:
             self.fields["ministry"].required = True
@@ -46,6 +55,40 @@ class EventForm(forms.ModelForm):
                 self.initial["end_time"] = None if self.instance.all_day else e.time()
                 if e.date() != s.date():
                     self.initial["end_date"] = e.date()
+
+    def clean_flyer_upload(self):
+        upload = self.cleaned_data.get("flyer_upload")
+        if not upload:
+            return upload
+        if upload.size > 3 * 1024 * 1024:
+            raise forms.ValidationError("The flyer must be 3 MB or smaller.")
+        suffix = Path(upload.name).suffix.lower()
+        head = upload.read(16)
+        upload.seek(0)
+        detected = None
+        if head.startswith(b"\x89PNG\r\n\x1a\n"):
+            detected = "image/png"
+        elif head.startswith(b"\xff\xd8\xff"):
+            detected = "image/jpeg"
+        elif head.startswith(b"RIFF") and head[8:12] == b"WEBP":
+            detected = "image/webp"
+        allowed_suffixes = {".jpg", ".jpeg", ".png", ".webp"}
+        if suffix not in allowed_suffixes or detected is None:
+            raise forms.ValidationError("Upload a valid JPG, PNG, or WebP image.")
+        upload.detected_content_type = detected
+        return upload
+
+    def save(self, commit=True):
+        event = super().save(commit=False)
+        upload = self.cleaned_data.get("flyer_upload")
+        if upload:
+            event.banner_blob = upload.read()
+            event.banner_content_type = upload.detected_content_type
+            event.banner_filename = Path(upload.name).name[:180]
+        if commit:
+            event.save()
+            self.save_m2m()
+        return event
 
     def clean(self):
         data = super().clean()

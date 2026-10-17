@@ -2,7 +2,10 @@
 {% block header_class %}home-header{% endblock %}
 {% block content %}
 <section class="editorial-hero">
-  <div class="hero-photo" style="background-image:url('{% static 'activity-images/20260621_113635.jpg' %}')"></div>
+  <div class="hero-gallery" aria-hidden="true">
+    <div class="hero-photo hero-photo-primary" style="background-image:url('{% static 'activity-images/hero.jpg' %}')"></div>
+    <div class="hero-photo hero-photo-secondary" style="background-image:url('{% static 'activity-images/hero2.jpg' %}')"></div>
+  </div>
   <div class="hero-shade"></div>
   <div class="wrap editorial-hero-inner cinematic-inner">
     <div class="hero-copy cinematic-copy">

@@ -67,6 +67,9 @@ class Event(models.Model):
     banner_url = models.URLField(
         blank=True, help_text="Alternatively, link to an approved externally hosted flyer image.",
     )
+    banner_blob = models.BinaryField(blank=True, null=True, editable=False)
+    banner_content_type = models.CharField(max_length=30, blank=True, editable=False)
+    banner_filename = models.CharField(max_length=180, blank=True, editable=False)
     repeat = models.CharField(max_length=10, choices=Repeat.choices, default=Repeat.NONE)
     repeat_until = models.DateField(null=True, blank=True, help_text="Last date it repeats. Leave empty to repeat indefinitely.")
     is_public = models.BooleanField("Show on the public website", default=False, help_text="Visitors will see it on the Events page and home page.")
@@ -95,6 +98,8 @@ class Event(models.Model):
                 return self.banner.url
             except (NotImplementedError, ValueError):
                 pass
+        if self.banner_blob and self.pk:
+            return reverse("events:public_banner", args=[self.pk])
         return self.banner_url
 
     @property

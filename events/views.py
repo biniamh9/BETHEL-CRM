@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
@@ -148,3 +149,16 @@ def public_event_detail(request, pk):
         "occurrence": occurrence,
         "gcal": event.google_calendar_url(occurrence),
     })
+
+
+def public_event_banner(request, pk):
+    event = get_object_or_404(Event.objects.only(
+        "banner_blob", "banner_content_type", "banner_filename", "is_public"
+    ), pk=pk, is_public=True)
+    if not event.banner_blob or event.banner_content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = HttpResponse(bytes(event.banner_blob), content_type=event.banner_content_type)
+    filename = (event.banner_filename or "event-flyer").replace('"', "")
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    response["Cache-Control"] = "public, max-age=86400"
+    return response
