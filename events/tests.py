@@ -2,6 +2,7 @@ import shutil
 import tempfile
 from datetime import date, datetime, time, timedelta
 
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
@@ -123,6 +124,39 @@ class EventPagesTest(SeededTestCase):
         self.assertNotIn(field_day, [occurrence.event for occurrence in response.context["events"]])
         self.assertContains(response, "Featured upcoming event")
         self.assertContains(response, "View event details")
+
+    def test_parent_registration_notifies_youth_ministry_portal(self):
+        cache.clear()
+        youth = Ministry.objects.get(slug="youth-kids-ministry")
+        event = Event.objects.create(
+            title="Kids Field Day", kind=Event.Kind.YOUTH, ministry=youth,
+            start=aware(date.today() + timedelta(days=8)), repeat=Event.Repeat.NONE,
+            is_public=True,
+        )
+        registration_url = reverse("events:public_register", args=[event.pk])
+        self.assertContains(self.client.get(registration_url), "Register for")
+        response = self.client.post(registration_url, {
+            "parent_name": "Parent Example", "email": "parent@example.com",
+            "phone": "404-555-0101", "children": "Sara, age 8; Noah, age 11",
+            "notes": "First time attending.", "consent": "on", "website": "",
+        })
+        self.assertRedirects(response, reverse("events:public_detail", args=[event.pk]))
+        inquiry = youth.inquiries.get(name="Parent Example")
+        self.assertEqual(inquiry.status, "pending")
+        self.assertIn("Kids Field Day", inquiry.area_interest)
+        self.assertIn("Sara, age 8", inquiry.message)
+        self.login("biniam")
+        portal = self.client.get(reverse("core:portal"))
+        self.assertContains(portal, "New ministry requests")
+        self.assertContains(portal, "Parent Example")
+
+    def test_registration_is_not_available_for_non_youth_event(self):
+        event = Event.objects.create(
+            title="General Meeting", kind=Event.Kind.MEETING,
+            start=aware(date.today() + timedelta(days=3)), repeat=Event.Repeat.NONE,
+            is_public=True,
+        )
+        self.assertEqual(self.client.get(reverse("events:public_register", args=[event.pk])).status_code, 404)
 
     def test_private_event_has_no_public_detail(self):
         event = Event.objects.create(

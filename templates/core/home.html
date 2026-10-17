@@ -34,6 +34,7 @@
     {% if featured_event.event.description %}<p class="featured-event-description">{{ featured_event.event.description|truncatewords:32 }}</p>{% endif %}
     <div class="featured-event-actions">
       <a class="btn btn-gold" href="{% url 'events:public_detail' featured_event.event.pk %}">View event details <span>→</span></a>
+      {% if featured_event.event.kind == 'youth' %}<a class="btn btn-outline-light" href="{% url 'events:public_register' featured_event.event.pk %}">Register your children</a>{% endif %}
       <a class="text-link" href="{{ featured_event.google_url }}" target="_blank" rel="noopener">Add to calendar ↗</a>
     </div>
   </div>

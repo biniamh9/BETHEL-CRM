@@ -56,6 +56,8 @@ p { margin: 0 0 1em; }
 .btn-ghost { background: transparent; color: var(--navy); border-color: var(--line); }
 .btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
 .btn-gold { background: var(--gold); color: #fff; }
+.btn-outline-light { border-color: rgba(255,255,255,.62); background: transparent; color: #fff; }
+.btn-outline-light:hover { border-color: #fff; background: #fff; color: var(--midnight); }
 .btn-sm { padding: .5em .95em; font-size: .85rem; }
 .btn-block { width: 100%; }
 .btn-danger { background: transparent; color: var(--bad); border-color: #e9c6c6; }
@@ -544,6 +546,8 @@ tbody tr:hover { background: #fcfaf6; }
 .featured-event-description { max-width: 590px; margin-top: 18px; color: rgba(255,255,255,.7); font-size: 1rem; line-height: 1.75; }
 .featured-event-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 28px; margin-top: 30px; }
 .featured-event-actions .text-link { margin: 0; color: #fff; }
+.portal-alert-panel { border-left: 4px solid var(--gold); box-shadow: 0 12px 30px rgba(38,50,79,.09); }
+.event-registration-page .auth-card { border-top: 4px solid var(--gold); }
 .gathering-ribbon { background: #d2a43b; color: #101827; }
 .gathering-ribbon-grid { display: grid; grid-template-columns: repeat(3, 1fr) auto; align-items: stretch; }
 .gathering-ribbon-grid > div { display: grid; gap: 3px; padding: 25px 26px; border-right: 1px solid rgba(16,24,39,.18); }

@@ -6,6 +6,15 @@
   {% if my_ministries %}<div class="actions">{% for m in my_ministries %}<a class="btn btn-primary btn-sm" href="{% url 'ministries:activity_new' m.slug %}">+ Log {{ m.name }} activity</a>{% endfor %}</div>{% endif %}
 </div>
 
+{% if pending_ministry_inquiries %}
+<div class="panel portal-alert-panel">
+  <div class="panel-head"><h3>New ministry requests</h3><span class="badge pending">{{ pending_ministry_inquiries|length }} pending</span></div>
+  <ul class="feed">{% for inquiry in pending_ministry_inquiries %}
+    <li class="c-{{ inquiry.ministry.color }}"><time>NEW</time><div><span class="dot"></span><a href="{{ inquiry.ministry.get_absolute_url }}"><b>{{ inquiry.area_interest|default:inquiry.get_kind_display }}</b></a><div class="small muted">{{ inquiry.name }} · {{ inquiry.ministry.name }} · {{ inquiry.created_at|date:"M j, g:i A" }}</div></div></li>
+  {% endfor %}</ul>
+</div>
+{% endif %}
+
 {% if campaign and user.can_view_fund_totals %}
 <div class="kpis">
   <div class="kpi accent"><span>Building fund raised</span><b>{{ campaign.raised|usd }}</b><div class="mini-bar"><i style="width:{{ campaign.percent }}%"></i></div></div>

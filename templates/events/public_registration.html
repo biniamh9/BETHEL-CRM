@@ -1,0 +1,21 @@
+{% extends "base_public.html" %}{% load church %}
+{% block content %}
+<section class="form-page event-registration-page">
+  <div class="wrap form-page-grid">
+    <div>
+      <a class="back-link" href="{% url 'events:public_detail' event.pk %}">← Back to event</a>
+      <span class="eyebrow">Youth &amp; Kids registration</span>
+      <h1>Register for<br>{{ event.title }}</h1>
+      <p>Complete this form as the child’s parent or legal guardian. Your submission goes directly to authorized {{ ministry.name }} leaders in the church portal.</p>
+      <div class="privacy-note"><strong>Children’s privacy</strong><p>Please provide only first names and ages. Do not include medical records, school information, or other sensitive details. A ministry leader can follow up privately if needed.</p></div>
+    </div>
+    <div class="card auth-card">
+      <form method="post">{% csrf_token %}
+        {% form_fields form "parent_name,email,phone,children,notes,consent,website" %}
+        <button class="btn btn-primary btn-block">Submit registration</button>
+      </form>
+      <p class="small muted center" style="margin:16px 0 0">Submitting this form does not create a portal account.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

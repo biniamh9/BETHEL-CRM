@@ -8,6 +8,31 @@ from django.utils import timezone
 from .models import Event
 
 
+class ChildEventRegistrationForm(forms.Form):
+    parent_name = forms.CharField(max_length=160, label="Parent or guardian name")
+    email = forms.EmailField(label="Parent or guardian email")
+    phone = forms.CharField(max_length=30, label="Parent or guardian phone")
+    children = forms.CharField(
+        label="Children attending",
+        help_text="List each child’s first name and age (for example: Sara, age 8; Noah, age 11).",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+    notes = forms.CharField(
+        required=False, label="Anything the ministry team should know?",
+        help_text="Optional. Do not include medical records or other sensitive information.",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    consent = forms.BooleanField(
+        label="I am the parent or legal guardian and may register these children for this event."
+    )
+    website = forms.CharField(required=False, widget=forms.HiddenInput, label="Leave blank")
+
+    def clean_website(self):
+        if self.cleaned_data.get("website"):
+            raise forms.ValidationError("Unable to submit this form.")
+        return ""
+
+
 class EventForm(forms.ModelForm):
     """Date and times are separate inputs (easier on phones); combined into start/end on save."""
 

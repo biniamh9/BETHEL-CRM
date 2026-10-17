@@ -4,14 +4,15 @@ from datetime import date, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from ministries.models import Activity, Ministry
+from ministries.models import Activity, Ministry, MinistryInquiry
 
-from .forms import EventForm
+from .forms import ChildEventRegistrationForm, EventForm
 from .models import Event
 
 
@@ -148,6 +149,48 @@ def public_event_detail(request, pk):
         "event": event,
         "occurrence": occurrence,
         "gcal": event.google_calendar_url(occurrence),
+    })
+
+
+def public_event_registration(request, pk):
+    event = get_object_or_404(
+        Event.objects.select_related("ministry"), pk=pk, is_public=True,
+        repeat=Event.Repeat.NONE, kind=Event.Kind.YOUTH,
+    )
+    ministry = event.ministry or Ministry.objects.filter(slug="youth-kids-ministry").first()
+    if not ministry:
+        ministry = Ministry.objects.filter(name__icontains="youth").first()
+    if not ministry:
+        raise Http404
+    form = ChildEventRegistrationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+        client = forwarded or request.META.get("REMOTE_ADDR", "unknown")
+        throttle_key = f"event-registration:{client}:{event.pk}"
+        attempts = cache.get(throttle_key, 0)
+        if attempts >= 5:
+            form.add_error(None, "Too many submissions. Please wait a few minutes and try again.")
+        else:
+            cache.set(throttle_key, attempts + 1, 600)
+            details = [
+                f"Event registration: {event.title}",
+                f"Children attending: {form.cleaned_data['children']}",
+            ]
+            if form.cleaned_data.get("notes"):
+                details.append(f"Parent notes: {form.cleaned_data['notes']}")
+            MinistryInquiry.objects.create(
+                ministry=ministry,
+                kind=MinistryInquiry.Kind.JOIN,
+                name=form.cleaned_data["parent_name"],
+                email=form.cleaned_data["email"],
+                phone=form.cleaned_data["phone"],
+                area_interest=f"Event registration · {event.title}"[:160],
+                message="\n\n".join(details),
+            )
+            messages.success(request, "Registration received. The Youth & Kids ministry team will follow up with you.")
+            return redirect("events:public_detail", pk=event.pk)
+    return render(request, "events/public_registration.html", {
+        "event": event, "form": form, "ministry": ministry,
     })
 
 

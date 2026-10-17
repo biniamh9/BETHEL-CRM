@@ -9,7 +9,7 @@ from django.conf import settings
 from accounts.models import User
 from events.models import Event
 from fundraising.models import Campaign, Donation
-from ministries.models import Activity, Ministry
+from ministries.models import Activity, Ministry, MinistryInquiry
 
 
 def home(request):
@@ -72,6 +72,9 @@ def portal(request):
         "campaign": Campaign.objects.filter(is_active=True).first(),
         "month_activities": Activity.objects.filter(ministry__in=user.visible_ministries(), date__gte=since).count(),
         "upcoming": Event.occurrences_between(date.today(), date.today() + timedelta(days=14))[:8],
+        "pending_ministry_inquiries": MinistryInquiry.objects.filter(
+            ministry__in=user.visible_ministries(), status=MinistryInquiry.Status.PENDING
+        ).select_related("ministry")[:8],
     }
     if user.role == User.Role.MEMBER and not user.is_superuser:
         ctx["my_gifts_total"] = Donation.objects.filter(
