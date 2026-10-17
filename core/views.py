@@ -14,8 +14,20 @@ from ministries.models import Activity, Ministry
 
 def home(request):
     today = date.today()
+    upcoming = Event.occurrences_between(
+        today, today + timedelta(days=45), Event.objects.filter(is_public=True)
+    )
+    one_time = [occurrence for occurrence in upcoming if occurrence.event.repeat == Event.Repeat.NONE]
+    featured_event = next(
+        (occurrence for occurrence in one_time if occurrence.event.banner_image_url),
+        one_time[0] if one_time else None,
+    )
     return render(request, "core/home.html", {
-        "events": Event.occurrences_between(today, today + timedelta(days=45), Event.objects.filter(is_public=True))[:6],
+        "featured_event": featured_event,
+        "events": [
+            occurrence for occurrence in upcoming
+            if not featured_event or occurrence.event.pk != featured_event.event.pk
+        ][:6],
         "campaign": Campaign.objects.filter(is_active=True, is_public=True).first(),
         "ministries": Ministry.objects.all(),
         "elders": User.objects.filter(is_active=True, role__in=[User.Role.ADMIN, User.Role.ELDER]).order_by("role", "first_name"),

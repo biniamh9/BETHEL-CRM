@@ -107,6 +107,23 @@ class EventPagesTest(SeededTestCase):
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, "Add to calendar")
 
+    def test_one_time_event_is_promoted_above_recurring_events(self):
+        today = date.today()
+        Event.objects.create(
+            title="Weekly gathering", start=aware(today + timedelta(days=1)),
+            repeat=Event.Repeat.WEEKLY, is_public=True,
+        )
+        field_day = Event.objects.create(
+            title="Field Day", kind=Event.Kind.YOUTH,
+            start=aware(today + timedelta(days=8)), repeat=Event.Repeat.NONE,
+            description="Outdoor fun for children and families.", is_public=True,
+        )
+        response = self.client.get(reverse("core:home"))
+        self.assertEqual(response.context["featured_event"].event, field_day)
+        self.assertNotIn(field_day, [occurrence.event for occurrence in response.context["events"]])
+        self.assertContains(response, "Featured upcoming event")
+        self.assertContains(response, "View event details")
+
     def test_private_event_has_no_public_detail(self):
         event = Event.objects.create(
             title="Private planning meeting", start=aware(date.today() + timedelta(days=4)), is_public=False
