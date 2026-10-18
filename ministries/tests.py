@@ -25,6 +25,18 @@ class PublicMinistryTests(TestCase):
         ):
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
+    def test_choir_and_youth_photos_appear_on_public_pages(self):
+        choir = Ministry.objects.create(name="Choir Ministry", slug="choir-ministry")
+        listing = self.client.get(reverse("public_ministries:list"))
+        self.assertContains(listing, "KidsYouth4.jpg")
+        self.assertContains(listing, "choir4.jpg")
+        youth_detail = self.client.get(self.ministry.get_public_url())
+        self.assertContains(youth_detail, "kidsYouth1.jpg")
+        self.assertContains(youth_detail, "KidsYouth2.jpg")
+        choir_detail = self.client.get(choir.get_public_url())
+        self.assertContains(choir_detail, "choir1.jpg")
+        self.assertContains(choir_detail, "choir3.jpg")
+
     def test_contact_and_join_requests_are_saved_without_privileges(self):
         for kind in ("contact", "join"):
             response = self.client.post(

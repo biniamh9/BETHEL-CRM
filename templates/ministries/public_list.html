@@ -1,4 +1,4 @@
-{% extends "base_public.html" %}
+{% extends "base_public.html" %}{% load static %}
 {% block title %}Ministries · {{ church.short_name }}{% endblock %}
 {% block content %}
 <section class="public-page-hero">
@@ -7,7 +7,9 @@
 <section class="wrap public-section">
   <div class="public-card-grid">
     {% for ministry in ministries %}
-      <a class="public-ministry-card c-{{ ministry.color }}" href="{{ ministry.get_public_url }}">
+      <a class="public-ministry-card c-{{ ministry.color }}{% if ministry.slug == 'choir-ministry' or ministry.slug == 'youth-kids-ministry' %} has-photo{% endif %}" href="{{ ministry.get_public_url }}">
+        {% if ministry.slug == 'choir-ministry' %}<span class="ministry-card-photo" style="background-image:url('{% static 'activity-images/choir4.jpg' %}')" role="img" aria-label="Bethel choir leading worship"></span>{% endif %}
+        {% if ministry.slug == 'youth-kids-ministry' %}<span class="ministry-card-photo" style="background-image:url('{% static 'activity-images/KidsYouth4.jpg' %}')" role="img" aria-label="Bethel children and youth ministry"></span>{% endif %}
         <span class="ministry-number">{{ forloop.counter|stringformat:"02d" }}</span>
         <div><span class="eyebrow">Ministry</span><h2>{{ ministry.name }}</h2><p>{{ ministry.description|default:"Learn about this ministry, its purpose, and ways to participate." }}</p><span class="text-link">Explore ministry →</span></div>
       </a>

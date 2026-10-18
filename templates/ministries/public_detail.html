@@ -1,9 +1,14 @@
-{% extends "base_public.html" %}
+{% extends "base_public.html" %}{% load static %}
 {% block title %}{{ ministry.name }} · {{ church.short_name }}{% endblock %}
 {% block content %}
-<section class="ministry-detail-hero c-{{ ministry.color }}">
+<section class="ministry-detail-hero c-{{ ministry.color }}{% if ministry.slug == 'choir-ministry' or ministry.slug == 'youth-kids-ministry' %} has-photo{% endif %}"{% if ministry.slug == 'choir-ministry' %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.94),rgba(7,12,24,.34)),url('{% static 'activity-images/choir1.jpg' %}')"{% elif ministry.slug == 'youth-kids-ministry' %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.94),rgba(7,12,24,.34)),url('{% static 'activity-images/kidsYouth1.jpg' %}')"{% endif %}>
   <div class="wrap"><a class="back-link" href="{% url 'public_ministries:list' %}">← All ministries</a><span class="eyebrow">A ministry of Bethel</span><h1>{{ ministry.name }}</h1><p>{{ ministry.description|default:"This ministry serves our church family through faith, fellowship, and service." }}</p><div class="hero-actions"><a class="btn btn-primary" href="{% url 'public_ministries:join' ministry.slug %}">Join this ministry</a><a class="btn btn-light" href="{% url 'public_ministries:contact' ministry.slug %}">Contact ministry team</a></div></div>
 </section>
+{% if ministry.slug == 'choir-ministry' %}
+<section class="ministry-photo-story" aria-label="Choir ministry gallery"><div class="wrap ministry-photo-grid"><figure class="wide"><img src="{% static 'activity-images/choir2.jpg' %}" alt="Bethel choir singing during worship" loading="lazy"></figure><figure><img src="{% static 'activity-images/choir3.jpg' %}" alt="Choir members worshipping together" loading="lazy"></figure><figure><img src="{% static 'activity-images/choir4.jpg' %}" alt="Bethel worship team leading the congregation" loading="lazy"></figure></div></section>
+{% elif ministry.slug == 'youth-kids-ministry' %}
+<section class="ministry-photo-story" aria-label="Kids and Youth ministry gallery"><div class="wrap ministry-photo-grid"><figure class="wide"><img src="{% static 'activity-images/KidsYouth2.jpg' %}" alt="Bethel children and youth gathered together" loading="lazy"></figure><figure><img src="{% static 'activity-images/KidsYouth3.jpg' %}" alt="Young people participating in church life" loading="lazy"></figure><figure><img src="{% static 'activity-images/KidsYouth4.jpg' %}" alt="Bethel Kids and Youth ministry worship gathering" loading="lazy"></figure></div></section>
+{% endif %}
 <section class="wrap public-section ministry-story-grid">
   <article><span class="eyebrow">Purpose</span><h2>Growing in faith, together.</h2><p>{{ ministry.mission|default:ministry.description|default:"Detailed mission information will be published after it is confirmed by the ministry team." }}</p></article>
   <aside class="ministry-facts">
