@@ -141,3 +141,13 @@ class GalleryPhotoForm(forms.ModelForm):
         if commit:
             photo.save()
         return photo
+
+
+class PortalGalleryPhotoForm(GalleryPhotoForm):
+    ministry = forms.ModelChoiceField(queryset=Ministry.objects.none())
+
+    field_order = ("ministry", "image", "caption", "occasion", "year", "is_public")
+
+    def __init__(self, *args, ministries=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["ministry"].queryset = ministries if ministries is not None else Ministry.objects.none()

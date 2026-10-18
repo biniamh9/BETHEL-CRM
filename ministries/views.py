@@ -11,7 +11,10 @@ from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ActivityForm, GalleryPhotoForm, MinistryContactForm, MinistryJoinForm, MinistryProfileForm, ParticipantForm
+from .forms import (
+    ActivityForm, GalleryPhotoForm, MinistryContactForm, MinistryJoinForm,
+    MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
+)
 from .models import Activity, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
@@ -189,6 +192,26 @@ def gallery_manage(request, slug):
         return redirect("ministries:gallery", slug=ministry.slug)
     return render(request, "ministries/gallery.html", {
         "ministry": ministry, "form": form, "photos": ministry.gallery_photos.all(),
+    })
+
+
+@login_required
+def gallery_hub(request):
+    """One discoverable gallery workspace for every ministry the user can edit."""
+    ministries = request.user.editable_ministries().order_by("name")
+    if not ministries.exists():
+        raise PermissionDenied
+    form = PortalGalleryPhotoForm(request.POST or None, request.FILES or None, ministries=ministries)
+    if request.method == "POST" and form.is_valid():
+        photo = form.save(commit=False)
+        photo.ministry = form.cleaned_data["ministry"]
+        photo.created_by = request.user
+        photo.save()
+        messages.success(request, "Photo uploaded and added to the public activity gallery.")
+        return redirect("ministries:gallery_hub")
+    photos = GalleryPhoto.objects.filter(ministry__in=ministries).select_related("ministry")
+    return render(request, "ministries/gallery_hub.html", {
+        "form": form, "photos": photos, "ministries": ministries,
     })
 
 

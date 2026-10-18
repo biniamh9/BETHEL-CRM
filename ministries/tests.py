@@ -62,6 +62,23 @@ class PublicMinistryTests(TestCase):
         other = Ministry.objects.create(name="Other Ministry")
         self.assertEqual(self.client.get(reverse("ministries:gallery", args=[other.slug])).status_code, 403)
 
+    def test_photo_gallery_is_available_from_activity_portal(self):
+        leader = User.objects.create_user("hublead", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        self.client.force_login(leader)
+        portal = self.client.get(reverse("core:portal"))
+        self.assertContains(portal, "Photo gallery")
+        self.assertEqual(self.client.get(reverse("ministries:gallery_hub")).status_code, 200)
+        photo_file = SimpleUploadedFile(
+            "outdoor.jpg", b"\xff\xd8\xff" + b"gallery-image", content_type="image/jpeg"
+        )
+        response = self.client.post(reverse("ministries:gallery_hub"), {
+            "ministry": self.ministry.pk, "caption": "Children outdoors", "occasion": "outdoor",
+            "year": "2026", "is_public": "on", "image": photo_file,
+        })
+        self.assertRedirects(response, reverse("ministries:gallery_hub"))
+        self.assertTrue(GalleryPhoto.objects.filter(caption="Children outdoors", ministry=self.ministry).exists())
+
     def test_contact_and_join_requests_are_saved_without_privileges(self):
         for kind in ("contact", "join"):
             response = self.client.post(

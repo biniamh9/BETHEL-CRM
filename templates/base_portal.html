@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% load static %}
 {% block title %}{% block page_title %}Portal{% endblock %} · Bethel CRM{% endblock %}
 {% block body %}
-{% with path=request.path ms=user.visible_ministries %}
+{% with path=request.path ms=user.visible_ministries ems=user.editable_ministries %}
 <div class="portal">
   <aside class="side" id="side">
     <a class="brand" href="{% url 'core:portal' %}">
@@ -22,7 +22,13 @@
           {% endfor %}
         </div>
       </details>
-      <a href="{% url 'activities' %}" class="{% if path == '/portal/activities/' %}on{% endif %}">{% include "partials/icon.html" with i="activities" %}Activities</a>
+      <details class="side-group" {% if '/portal/activities/' in path or '/portal/ministries/photos/' in path %}open{% endif %}>
+        <summary class="{% if '/portal/activities/' in path or '/portal/ministries/photos/' in path %}on{% endif %}">{% include "partials/icon.html" with i="activities" %}Activities<span class="caret"></span></summary>
+        <div class="side-sub">
+          <a href="{% url 'activities' %}" class="{% if path == '/portal/activities/' %}on{% endif %}">Activity records</a>
+          {% if ems %}<a href="{% url 'ministries:gallery_hub' %}" class="{% if '/portal/ministries/photos/' in path %}on{% endif %}">Photo gallery</a>{% endif %}
+        </div>
+      </details>
       {% endif %}
 
       <a href="{% url 'events:calendar' %}" class="{% if '/portal/calendar/' in path %}on{% endif %}">{% include "partials/icon.html" with i="calendar" %}Calendar</a>
