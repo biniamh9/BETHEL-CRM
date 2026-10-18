@@ -1,0 +1,9 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}{{ ministry.name }} photos{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Public gallery</span><h1>Manage photos</h1><p class="muted">Add a caption, occasion, and year so visitors can browse meaningful collections.</p></div><a class="btn btn-ghost" href="{{ ministry.get_absolute_url }}">Back to ministry</a></div>
+<div class="cols">
+  <form method="post" enctype="multipart/form-data" class="panel"><div class="panel-head"><h3>Upload a photo</h3></div><div class="panel-body">{% csrf_token %}{% form_fields form %}<button class="btn btn-primary btn-block">Upload photo</button></div></form>
+  <div class="panel"><div class="panel-head"><h3>Gallery</h3><span class="small muted">{{ photos|length }} photos</span></div><div class="portal-photo-list">{% for photo in photos %}<article><img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}"><div><b>{{ photo.caption }}</b><span>{{ photo.get_occasion_display }} · {{ photo.year }}{% if not photo.is_public %} · Private{% endif %}</span><form method="post" action="{% url 'ministries:gallery_delete' ministry.slug photo.pk %}" onsubmit="return confirm('Remove this photo?')">{% csrf_token %}<button class="btn btn-danger btn-sm">Remove</button></form></div></article>{% empty %}<div class="empty">No gallery photos yet.</div>{% endfor %}</div></div>
+</div>
+{% endblock %}

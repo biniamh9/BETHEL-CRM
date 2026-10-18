@@ -187,3 +187,34 @@ class Activity(models.Model):
     @property
     def head_count(self):
         return max(self.attendance, self.attendees.count()) if self.pk else self.attendance
+
+
+class GalleryPhoto(models.Model):
+    class Occasion(models.TextChoices):
+        CONFERENCE = "conference", "Conference"
+        OUTDOOR = "outdoor", "Outdoor activity"
+        WORSHIP = "worship", "Worship"
+        FELLOWSHIP = "fellowship", "Fellowship"
+        YOUTH = "youth", "Kids & youth"
+        MINISTRY = "ministry", "Ministry activity"
+        OTHER = "other", "Other"
+
+    ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="gallery_photos")
+    caption = models.CharField(max_length=220)
+    occasion = models.CharField(max_length=20, choices=Occasion.choices)
+    year = models.PositiveSmallIntegerField(db_index=True)
+    image_blob = models.BinaryField(editable=False)
+    content_type = models.CharField(max_length=30, editable=False)
+    filename = models.CharField(max_length=180, editable=False)
+    is_public = models.BooleanField(default=True, db_index=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["occasion", "-year", "-created_at"]
+
+    def __str__(self):
+        return f"{self.caption} ({self.year})"
+
+    def get_image_url(self):
+        return reverse("core:gallery_image", args=[self.pk])

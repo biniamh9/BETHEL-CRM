@@ -7,6 +7,7 @@
   <div class="actions">
     {% if can_edit %}
       <a class="btn btn-ghost btn-sm" href="{% url 'ministries:profile_edit' ministry.slug %}">Edit public page</a>
+      <a class="btn btn-ghost btn-sm" href="{% url 'ministries:gallery' ministry.slug %}">Manage photos</a>
       <a class="btn btn-primary btn-sm" href="{% url 'ministries:activity_new' ministry.slug %}">+ Record activity</a>
       <a class="btn btn-ghost btn-sm" href="{% url 'ministries:participant_new' ministry.slug %}">+ Add person</a>
     {% endif %}

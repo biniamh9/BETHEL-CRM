@@ -11,8 +11,8 @@ from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ActivityForm, MinistryContactForm, MinistryJoinForm, MinistryProfileForm, ParticipantForm
-from .models import Activity, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
+from .forms import ActivityForm, GalleryPhotoForm, MinistryContactForm, MinistryJoinForm, MinistryProfileForm, ParticipantForm
+from .models import Activity, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
 
@@ -174,6 +174,32 @@ def ministry_profile_edit(request, slug):
     return render(request, "ministries/form.html", {
         "form": form, "ministry": ministry, "title": "Edit public ministry information",
     })
+
+
+@login_required
+def gallery_manage(request, slug):
+    ministry = _get_ministry(request, slug, edit=True)
+    form = GalleryPhotoForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        photo = form.save(commit=False)
+        photo.ministry = ministry
+        photo.created_by = request.user
+        photo.save()
+        messages.success(request, "Photo uploaded to the ministry gallery.")
+        return redirect("ministries:gallery", slug=ministry.slug)
+    return render(request, "ministries/gallery.html", {
+        "ministry": ministry, "form": form, "photos": ministry.gallery_photos.all(),
+    })
+
+
+@login_required
+def gallery_delete(request, slug, pk):
+    ministry = _get_ministry(request, slug, edit=True)
+    photo = get_object_or_404(GalleryPhoto, pk=pk, ministry=ministry)
+    if request.method == "POST":
+        photo.delete()
+        messages.success(request, "Photo removed.")
+    return redirect("ministries:gallery", slug=ministry.slug)
 
 
 @login_required

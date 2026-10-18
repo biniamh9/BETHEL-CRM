@@ -1,15 +1,14 @@
 from datetime import date, timedelta
-from pathlib import Path
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
-from django.shortcuts import render
-from django.conf import settings
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, render
 
 from accounts.models import User
 from events.models import Event
 from fundraising.models import Campaign, Donation
-from ministries.models import Activity, Ministry, MinistryInquiry
+from ministries.models import Activity, GalleryPhoto, Ministry, MinistryInquiry
 
 
 def home(request):
@@ -43,16 +42,24 @@ def visit(request):
 
 
 def public_activities(request):
-    image_root = Path(settings.BASE_DIR) / "images"
-    allowed = {".jpg", ".jpeg", ".png", ".webp"}
-    images = [
-        f"activity-images/{item.name}" for item in sorted(image_root.iterdir())
-        if item.is_file() and item.suffix.lower() in allowed
-    ] if image_root.is_dir() else []
     return render(request, "core/public_activities.html", {
-        "activity_images": images,
+        "gallery_photos": GalleryPhoto.objects.filter(is_public=True).select_related("ministry"),
         "public_activities": Activity.objects.filter(is_public=True).select_related("ministry")[:24],
     })
+
+
+def gallery_image(request, pk):
+    photo = get_object_or_404(GalleryPhoto.objects.select_related("ministry"), pk=pk)
+    if not photo.is_public and (
+        not request.user.is_authenticated or not request.user.can_view_ministry(photo.ministry)
+    ):
+        raise Http404
+    if photo.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = HttpResponse(bytes(photo.image_blob), content_type=photo.content_type)
+    response["Content-Disposition"] = f'inline; filename="{photo.filename.replace(chr(34), "")}"'
+    response["Cache-Control"] = "public, max-age=86400" if photo.is_public else "private, no-store"
+    return response
 
 
 @login_required

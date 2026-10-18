@@ -5,7 +5,7 @@ from django.urls import reverse
 from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
-from .models import Ministry, MinistryAnnouncement, MinistryInquiry
+from .models import GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry
 
 
 class PublicMinistryTests(TestCase):
@@ -27,6 +27,7 @@ class PublicMinistryTests(TestCase):
 
     def test_choir_and_youth_photos_appear_on_public_pages(self):
         choir = Ministry.objects.create(name="Choir Ministry", slug="choir-ministry")
+        women = Ministry.objects.create(name="Women Service", slug="women-service")
         listing = self.client.get(reverse("public_ministries:list"))
         self.assertContains(listing, "KidsYouth4.jpg")
         self.assertContains(listing, "choir4.jpg")
@@ -36,6 +37,30 @@ class PublicMinistryTests(TestCase):
         choir_detail = self.client.get(choir.get_public_url())
         self.assertContains(choir_detail, "choir1.jpg")
         self.assertContains(choir_detail, "choir3.jpg")
+        self.assertContains(self.client.get(women.get_public_url()), "women1.jpg")
+
+    def test_leader_uploads_captioned_grouped_gallery_photo(self):
+        leader = User.objects.create_user("gallerylead", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        self.client.force_login(leader)
+        photo_file = SimpleUploadedFile(
+            "conference.png", b"\x89PNG\r\n\x1a\n" + b"gallery-image", content_type="image/png"
+        )
+        response = self.client.post(reverse("ministries:gallery", args=[self.ministry.slug]), {
+            "caption": "Youth conference worship", "occasion": "conference", "year": "2026",
+            "is_public": "on", "image": photo_file,
+        })
+        self.assertRedirects(response, reverse("ministries:gallery", args=[self.ministry.slug]))
+        photo = GalleryPhoto.objects.get(caption="Youth conference worship")
+        public = self.client.get(reverse("core:public_activities"))
+        self.assertContains(public, "Conference")
+        self.assertContains(public, "2026")
+        self.assertContains(public, "Youth conference worship")
+        image = self.client.get(photo.get_image_url())
+        self.assertEqual(image.status_code, 200)
+        self.assertEqual(image["Content-Type"], "image/png")
+        other = Ministry.objects.create(name="Other Ministry")
+        self.assertEqual(self.client.get(reverse("ministries:gallery", args=[other.slug])).status_code, 403)
 
     def test_contact_and_join_requests_are_saved_without_privileges(self):
         for kind in ("contact", "join"):

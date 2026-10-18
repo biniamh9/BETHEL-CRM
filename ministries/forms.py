@@ -1,6 +1,9 @@
 from django import forms
 
-from .models import Activity, Ministry, MinistryInquiry, Participant
+from pathlib import Path
+from datetime import date
+
+from .models import Activity, GalleryPhoto, Ministry, MinistryInquiry, Participant
 
 
 class DateInput(forms.DateInput):
@@ -88,3 +91,53 @@ class MinistryProfileForm(forms.ModelForm):
         if value and (" " in value or len(value) < 2):
             raise forms.ValidationError("Enter a valid public $Cashtag, such as $BethelYouth.")
         return value
+
+
+class GalleryPhotoForm(forms.ModelForm):
+    image = forms.FileField(
+        label="Photo", help_text="JPG, PNG, or WebP; maximum 4 MB.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+    )
+
+    class Meta:
+        model = GalleryPhoto
+        fields = ("caption", "occasion", "year", "is_public")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["year"].initial = date.today().year
+
+    def clean_year(self):
+        year = self.cleaned_data["year"]
+        if not 2000 <= year <= date.today().year + 1:
+            raise forms.ValidationError("Enter a year between 2000 and next year.")
+        return year
+
+    def clean_image(self):
+        upload = self.cleaned_data["image"]
+        if upload.size > 4 * 1024 * 1024:
+            raise forms.ValidationError("The photo must be 4 MB or smaller.")
+        head = upload.read(16)
+        upload.seek(0)
+        suffix = Path(upload.name).suffix.lower()
+        detected = None
+        if head.startswith(b"\x89PNG\r\n\x1a\n"):
+            detected = "image/png"
+        elif head.startswith(b"\xff\xd8\xff"):
+            detected = "image/jpeg"
+        elif head.startswith(b"RIFF") and head[8:12] == b"WEBP":
+            detected = "image/webp"
+        if suffix not in {".jpg", ".jpeg", ".png", ".webp"} or not detected:
+            raise forms.ValidationError("Upload a valid JPG, PNG, or WebP image.")
+        upload.detected_content_type = detected
+        return upload
+
+    def save(self, commit=True):
+        photo = super().save(commit=False)
+        upload = self.cleaned_data["image"]
+        photo.image_blob = upload.read()
+        photo.content_type = upload.detected_content_type
+        photo.filename = Path(upload.name).name[:180]
+        if commit:
+            photo.save()
+        return photo
