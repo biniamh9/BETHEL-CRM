@@ -15,6 +15,15 @@ class TimeInput(forms.TimeInput):
 
 
 class ActivityForm(forms.ModelForm):
+    image = forms.FileField(
+        required=False, label="Activity photo",
+        help_text="Optional JPG, PNG, or WebP; maximum 4 MB. You can add another photo each time you edit.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+    )
+    image_caption = forms.CharField(
+        required=False, max_length=220, label="Photo caption",
+        help_text="Describe who or what is shown. Required when uploading a photo.",
+    )
     class Meta:
         model = Activity
         fields = (
@@ -36,6 +45,16 @@ class ActivityForm(forms.ModelForm):
         self.fields["attendees"].required = False
         if not qs.exists():
             self.fields.pop("attendees")
+
+    def clean_image(self):
+        upload = self.cleaned_data.get("image")
+        return validate_gallery_image(upload) if upload else upload
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("image") and not cleaned.get("image_caption", "").strip():
+            self.add_error("image_caption", "Add a caption for this photo.")
+        return cleaned
 
 
 class ParticipantForm(forms.ModelForm):
@@ -114,23 +133,7 @@ class GalleryPhotoForm(forms.ModelForm):
         return year
 
     def clean_image(self):
-        upload = self.cleaned_data["image"]
-        if upload.size > 4 * 1024 * 1024:
-            raise forms.ValidationError("The photo must be 4 MB or smaller.")
-        head = upload.read(16)
-        upload.seek(0)
-        suffix = Path(upload.name).suffix.lower()
-        detected = None
-        if head.startswith(b"\x89PNG\r\n\x1a\n"):
-            detected = "image/png"
-        elif head.startswith(b"\xff\xd8\xff"):
-            detected = "image/jpeg"
-        elif head.startswith(b"RIFF") and head[8:12] == b"WEBP":
-            detected = "image/webp"
-        if suffix not in {".jpg", ".jpeg", ".png", ".webp"} or not detected:
-            raise forms.ValidationError("Upload a valid JPG, PNG, or WebP image.")
-        upload.detected_content_type = detected
-        return upload
+        return validate_gallery_image(self.cleaned_data["image"])
 
     def save(self, commit=True):
         photo = super().save(commit=False)
@@ -151,3 +154,22 @@ class PortalGalleryPhotoForm(GalleryPhotoForm):
     def __init__(self, *args, ministries=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["ministry"].queryset = ministries if ministries is not None else Ministry.objects.none()
+
+
+def validate_gallery_image(upload):
+    if upload.size > 4 * 1024 * 1024:
+        raise forms.ValidationError("The photo must be 4 MB or smaller.")
+    head = upload.read(16)
+    upload.seek(0)
+    suffix = Path(upload.name).suffix.lower()
+    detected = None
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):
+        detected = "image/png"
+    elif head.startswith(b"\xff\xd8\xff"):
+        detected = "image/jpeg"
+    elif head.startswith(b"RIFF") and head[8:12] == b"WEBP":
+        detected = "image/webp"
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp"} or not detected:
+        raise forms.ValidationError("Upload a valid JPG, PNG, or WebP image.")
+    upload.detected_content_type = detected
+    return upload

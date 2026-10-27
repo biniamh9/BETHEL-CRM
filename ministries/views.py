@@ -34,6 +34,7 @@ def public_ministry_detail(request, slug):
             date.today(), date.today() + timedelta(days=90), ministry.events.filter(is_public=True)
         )[:6],
         "announcements": ministry.announcements.filter(status=MinistryAnnouncement.Status.PUBLISHED)[:6],
+        "gallery_photos": ministry.gallery_photos.filter(is_public=True)[:12],
     })
 
 
@@ -96,7 +97,7 @@ def ministry_list(request):
 def all_activities(request):
     """Every recorded activity across the ministries this person can see."""
     visible = request.user.visible_ministries()
-    qs = Activity.objects.filter(ministry__in=visible).select_related("ministry", "created_by")
+    qs = Activity.objects.filter(ministry__in=visible).select_related("ministry", "created_by").prefetch_related("gallery_photos")
     slug = request.GET.get("ministry")
     if slug:
         qs = qs.filter(ministry__slug=slug)
@@ -244,7 +245,10 @@ def activity_edit(request, slug, pk=None):
     ministry = _get_ministry(request, slug, edit=True)
     activity = get_object_or_404(Activity, pk=pk, ministry=ministry) if pk else None
     initial = {} if activity else {"date": date.today()}
-    form = ActivityForm(request.POST or None, instance=activity, ministry=ministry, initial=initial)
+    form = ActivityForm(
+        request.POST or None, request.FILES or None,
+        instance=activity, ministry=ministry, initial=initial,
+    )
     if request.method == "POST" and form.is_valid():
         obj = form.save(commit=False)
         obj.ministry = ministry
@@ -252,10 +256,20 @@ def activity_edit(request, slug, pk=None):
             obj.created_by = request.user
         obj.save()
         form.save_m2m()
+        upload = form.cleaned_data.get("image")
+        if upload:
+            GalleryPhoto.objects.create(
+                ministry=ministry, activity=obj,
+                caption=form.cleaned_data["image_caption"].strip(),
+                occasion=GalleryPhoto.Occasion.MINISTRY, year=obj.date.year,
+                image_blob=upload.read(), content_type=upload.detected_content_type,
+                filename=Path(upload.name).name[:180], is_public=obj.is_public,
+                created_by=request.user,
+            )
         if obj.attendees.exists() and obj.attendance < obj.attendees.count():
             obj.attendance = obj.attendees.count()
             obj.save(update_fields=["attendance"])
-        messages.success(request, "Activity saved.")
+        messages.success(request, "Activity and photo saved." if upload else "Activity saved.")
         return redirect(ministry)
     return render(request, "ministries/form.html", {
         "form": form, "ministry": ministry,

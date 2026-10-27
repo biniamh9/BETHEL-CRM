@@ -200,6 +200,10 @@ class GalleryPhoto(models.Model):
         OTHER = "other", "Other"
 
     ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="gallery_photos")
+    activity = models.ForeignKey(
+        Activity, null=True, blank=True, on_delete=models.CASCADE, related_name="gallery_photos",
+        help_text="Optional activity this photo belongs to.",
+    )
     caption = models.CharField(max_length=220)
     occasion = models.CharField(max_length=20, choices=Occasion.choices)
     year = models.PositiveSmallIntegerField(db_index=True)

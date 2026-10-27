@@ -39,11 +39,13 @@
   <div class="activity-grid">
     {% for a in activities %}
       <article class="activity-card c-{{ a.ministry.color }}">
-        {% if a.image_static_path %}
+        {% with photo=a.gallery_photos.all|first %}{% if photo %}
+          <img class="activity-photo" src="{{ photo.get_image_url }}" alt="{{ photo.caption }}" loading="lazy">
+        {% elif a.image_static_path %}
           <img class="activity-photo" src="{% static a.image_static_path %}" alt="Church activity: {{ a.title }}" loading="lazy">
         {% else %}
           <div class="activity-photo activity-fallback"><span>{{ a.title|first|upper }}</span></div>
-        {% endif %}
+        {% endif %}{% endwith %}
         <div class="activity-card-body">
           <div class="activity-meta">
             <time datetime="{{ a.date|date:'Y-m-d' }}">{{ a.date|date:"M j, Y" }}</time>

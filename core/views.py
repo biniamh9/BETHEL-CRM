@@ -44,7 +44,7 @@ def visit(request):
 def public_activities(request):
     return render(request, "core/public_activities.html", {
         "gallery_photos": GalleryPhoto.objects.filter(is_public=True).select_related("ministry"),
-        "public_activities": Activity.objects.filter(is_public=True).select_related("ministry")[:24],
+        "public_activities": Activity.objects.filter(is_public=True).select_related("ministry").prefetch_related("gallery_photos")[:24],
     })
 
 

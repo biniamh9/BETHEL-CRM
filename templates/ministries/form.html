@@ -2,7 +2,7 @@
 {% block page_title %}{{ title }}{% endblock %}
 {% block content %}
 <div class="page-head c-{{ ministry.color }}"><div><span class="eyebrow" style="color:var(--c)">{{ ministry.name }}</span><h1>{{ title }}</h1></div></div>
-<form method="post" class="form-panel">{% csrf_token %}
+<form method="post" enctype="multipart/form-data" class="form-panel">{% csrf_token %}
   <div class="panel"><div class="panel-body">{% form_fields form %}</div></div>
   <div class="form-actions">
     <button class="btn btn-primary">Save</button>

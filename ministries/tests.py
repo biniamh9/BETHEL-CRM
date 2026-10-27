@@ -5,7 +5,7 @@ from django.urls import reverse
 from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
-from .models import GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry
+from .models import Activity, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry
 
 
 class PublicMinistryTests(TestCase):
@@ -78,6 +78,25 @@ class PublicMinistryTests(TestCase):
         })
         self.assertRedirects(response, reverse("ministries:gallery_hub"))
         self.assertTrue(GalleryPhoto.objects.filter(caption="Children outdoors", ministry=self.ministry).exists())
+
+    def test_ministry_leader_can_attach_photo_to_activity(self):
+        leader = User.objects.create_user("activityphoto", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        self.client.force_login(leader)
+        photo_file = SimpleUploadedFile(
+            "bible-study.jpg", b"\xff\xd8\xff" + b"activity-image", content_type="image/jpeg"
+        )
+        response = self.client.post(reverse("ministries:activity_new", args=[self.ministry.slug]), {
+            "title": "Youth Bible study", "kind": "class", "date": "2026-10-25",
+            "attendance": "18", "volunteer_hours": "2", "summary": "Studied together.",
+            "is_public": "on", "image": photo_file, "image_caption": "Youth studying the Bible",
+        })
+        self.assertRedirects(response, self.ministry.get_absolute_url())
+        activity = Activity.objects.get(title="Youth Bible study")
+        photo = activity.gallery_photos.get()
+        self.assertEqual(photo.ministry, self.ministry)
+        self.assertTrue(photo.is_public)
+        self.assertContains(self.client.get(reverse("core:public_activities")), "Youth studying the Bible")
 
     def test_contact_and_join_requests_are_saved_without_privileges(self):
         for kind in ("contact", "join"):

@@ -11,6 +11,7 @@
 {% elif ministry.slug == 'women-service' %}
 <section class="ministry-photo-story" aria-label="Women’s Ministry gallery"><div class="wrap ministry-photo-grid"><figure class="wide"><img src="{% static 'activity-images/women1.jpg' %}" alt="Bethel Women’s Ministry gathered together" loading="lazy"></figure><figure><img src="{% static 'activity-images/women2.jpg' %}" alt="Women sharing fellowship at Bethel" loading="lazy"></figure><figure><img src="{% static 'activity-images/women3.jpg' %}" alt="Bethel Women’s Ministry activity" loading="lazy"></figure></div></section>
 {% endif %}
+{% if gallery_photos %}<section class="ministry-photo-story" aria-label="{{ ministry.name }} uploaded gallery"><div class="wrap ministry-photo-grid">{% for photo in gallery_photos %}<figure{% if forloop.first %} class="wide"{% endif %}><img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}" loading="lazy"><figcaption>{{ photo.caption }}</figcaption></figure>{% endfor %}</div></section>{% endif %}
 <section class="wrap public-section ministry-story-grid">
   <article><span class="eyebrow">Purpose</span><h2>Growing in faith, together.</h2><p>{{ ministry.mission|default:ministry.description|default:"Detailed mission information will be published after it is confirmed by the ministry team." }}</p></article>
   <aside class="ministry-facts">
