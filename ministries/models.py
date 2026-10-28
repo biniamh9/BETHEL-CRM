@@ -189,6 +189,35 @@ class Activity(models.Model):
         return max(self.attendance, self.attendees.count()) if self.pk else self.attendance
 
 
+class GalleryAlbum(models.Model):
+    ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="gallery_albums")
+    title = models.CharField(max_length=160)
+    slug = models.SlugField(max_length=180, unique=True, blank=True)
+    event_date = models.DateField(null=True, blank=True)
+    location = models.CharField(max_length=160, blank=True)
+    description = models.TextField(blank=True)
+    is_public = models.BooleanField(default=True, db_index=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-event_date", "title"]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.title) or "album"
+            slug = base
+            counter = 2
+            while GalleryAlbum.objects.exclude(pk=self.pk).filter(slug=slug).exists():
+                slug = f"{base}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+
 class GalleryPhoto(models.Model):
     class Occasion(models.TextChoices):
         CONFERENCE = "conference", "Conference"
@@ -200,6 +229,9 @@ class GalleryPhoto(models.Model):
         OTHER = "other", "Other"
 
     ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="gallery_photos")
+    album = models.ForeignKey(
+        GalleryAlbum, null=True, blank=True, on_delete=models.CASCADE, related_name="photos",
+    )
     activity = models.ForeignKey(
         Activity, null=True, blank=True, on_delete=models.CASCADE, related_name="gallery_photos",
         help_text="Optional activity this photo belongs to.",
@@ -207,7 +239,8 @@ class GalleryPhoto(models.Model):
     caption = models.CharField(max_length=220)
     occasion = models.CharField(max_length=20, choices=Occasion.choices)
     year = models.PositiveSmallIntegerField(db_index=True)
-    image_blob = models.BinaryField(editable=False)
+    image_blob = models.BinaryField(editable=False, blank=True, default=b"")
+    static_path = models.CharField(max_length=255, blank=True, editable=False)
     content_type = models.CharField(max_length=30, editable=False)
     filename = models.CharField(max_length=180, editable=False)
     is_public = models.BooleanField(default=True, db_index=True)
@@ -221,4 +254,7 @@ class GalleryPhoto(models.Model):
         return f"{self.caption} ({self.year})"
 
     def get_image_url(self):
+        if self.static_path:
+            from django.contrib.staticfiles.storage import staticfiles_storage
+            return staticfiles_storage.url(self.static_path)
         return reverse("core:gallery_image", args=[self.pk])

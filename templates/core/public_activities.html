@@ -5,13 +5,13 @@
 {% if farm_day_photos %}
 <section class="farm-day-story">
   <div class="wrap farm-day-intro">
-    <div><span class="eyebrow">Kids &amp; Youth Ministry · October 24, 2026</span><h2>Farm Day at Pettit Creek Farms</h2></div>
-    <p>Our children enjoyed a beautiful autumn day with animals, outdoor adventures, games, and wonderful fellowship. It was a joyful time for kids, parents, and volunteers to laugh, explore, and grow closer as a church family.</p>
+    <div><span class="eyebrow">{{ featured_album.ministry.name }} · {{ featured_album.event_date|date:"F j, Y" }}</span><h2>{{ featured_album.title }}</h2></div>
+    <p>{{ featured_album.description }}</p>
   </div>
   <div class="wrap farm-day-grid">
     {% for photo in farm_day_photos %}
-    <button class="farm-day-photo{% if forloop.counter > 12 %} album-extra{% endif %}" type="button" data-gallery-image="{% static photo.path %}" data-gallery-caption="{{ photo.caption }}" data-gallery-meta="Kids & Youth Ministry · Farm Day · October 24, 2026">
-      <img src="{% static photo.path %}" alt="{{ photo.caption }}" loading="lazy"><span>{{ photo.caption }}</span>
+    <button class="farm-day-photo{% if forloop.counter > 12 %} album-extra{% endif %}" type="button" data-gallery-image="{{ photo.get_image_url }}" data-gallery-caption="{{ photo.caption }}" data-gallery-meta="{{ featured_album.ministry.name }} · {{ featured_album.title }} · {{ featured_album.event_date|date:'F j, Y' }}">
+      <img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}" loading="lazy"><span>{{ photo.caption }}</span>
     </button>
     {% endfor %}
   </div>

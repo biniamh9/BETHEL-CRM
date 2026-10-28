@@ -3,8 +3,9 @@
 {% block content %}
 <div class="page-head">
   <div><span class="eyebrow">Activities</span><h1>Photo gallery</h1><p class="muted">Upload church photos, organize them by occasion and year, and add captions for visitors.</p></div>
-  <a class="btn btn-ghost" href="{% url 'core:public_activities' %}" target="_blank" rel="noopener">View public gallery</a>
+  <div class="actions"><a class="btn btn-primary" href="{% url 'ministries:gallery_album_new' %}">+ Create album</a><a class="btn btn-ghost" href="{% url 'core:public_activities' %}" target="_blank" rel="noopener">View public gallery</a></div>
 </div>
+{% if albums %}<div class="panel" style="margin-bottom:24px"><div class="panel-head"><h3>Albums</h3><span class="small muted">{{ albums|length }} collections</span></div><div class="album-admin-grid">{% for album in albums %}<article><div><span class="eyebrow">{{ album.event_date|date:"M j, Y"|default:"Photo collection" }}</span><h3>{{ album.title }}</h3><p>{{ album.location }}{% if album.location and album.photos.count %} · {% endif %}{{ album.photos.count }} photos{% if not album.is_public %} · Private{% endif %}</p></div><div class="actions"><a class="btn btn-ghost btn-sm" href="{% url 'ministries:gallery_album_edit' album.pk %}">Edit details</a><form method="post" action="{% url 'ministries:gallery_album_delete' album.pk %}" onsubmit="return confirm('Delete this album and every photo in it?')">{% csrf_token %}<button class="btn btn-danger btn-sm">Delete album</button></form></div></article>{% endfor %}</div></div>{% endif %}
 <div class="cols">
   <form method="post" enctype="multipart/form-data" class="panel">
     <div class="panel-head"><h3>Upload a photo</h3></div>
@@ -14,7 +15,7 @@
     <div class="panel-head"><h3>Uploaded photos</h3><span class="small muted">{{ photos|length }} photos</span></div>
     <div class="portal-photo-list">
       {% for photo in photos %}
-      <article><img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}"><div><b>{{ photo.caption }}</b><span>{{ photo.ministry.name }} · {{ photo.get_occasion_display }} · {{ photo.year }}{% if not photo.is_public %} · Private{% endif %}</span><form method="post" action="{% url 'ministries:gallery_delete' photo.ministry.slug photo.pk %}" onsubmit="return confirm('Remove this photo?')">{% csrf_token %}<button class="btn btn-danger btn-sm">Remove</button></form></div></article>
+      <article><img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}"><div><b>{{ photo.caption }}</b><span>{{ photo.ministry.name }}{% if photo.album %} · {{ photo.album.title }}{% endif %} · {{ photo.get_occasion_display }} · {{ photo.year }}{% if not photo.is_public %} · Private{% endif %}</span><div class="actions"><a class="btn btn-ghost btn-sm" href="{% url 'ministries:gallery_photo_edit' photo.ministry.slug photo.pk %}">Edit</a><form method="post" action="{% url 'ministries:gallery_delete' photo.ministry.slug photo.pk %}" onsubmit="return confirm('Remove this photo?')">{% csrf_token %}<input type="hidden" name="next" value="hub"><button class="btn btn-danger btn-sm">Remove</button></form></div></div></article>
       {% empty %}<div class="empty">No photos yet. Use the upload form to add the first one.</div>{% endfor %}
     </div>
   </div>

@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from accounts.models import User
 from events.models import Event
 from fundraising.models import Campaign, Donation
-from ministries.models import Activity, GalleryPhoto, Ministry, MinistryInquiry
+from ministries.models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry
 
 
 def home(request):
@@ -42,36 +42,12 @@ def visit(request):
 
 
 def public_activities(request):
-    farm_day_captions = [
-        "Arriving together for a day of discovery", "Kids and families beginning the farm adventure",
-        "Friends gathering at Pettit Creek Farms", "Ready to explore the farm together",
-        "Meeting the animals up close", "A curious moment with the farm animals",
-        "Learning about the animals", "A gentle encounter at the petting farm",
-        "Sharing smiles with new animal friends", "Farm Day memories at Pettit Creek Farms",
-        "Exploring the outdoor activities", "A little friendly competition",
-        "Taking turns and cheering each other on", "Fun, laughter, and fellowship",
-        "Enjoying the games together", "Kids making joyful Farm Day memories",
-        "Our volunteers sharing the day", "Kids & Youth Ministry together",
-        "A beautiful day for church family fellowship", "Friends gathered in the autumn sunshine",
-        "Celebrating a wonderful day together", "Our Farm Day group",
-        "Smiles from the Kids & Youth Ministry", "A joyful group moment",
-        "Young explorers enjoying the farm", "Outdoor fun in the autumn sunshine",
-        "Families sharing the experience", "Walking the farm trails together",
-        "A favorite Farm Day photo", "Little ones enjoying the animal exhibits",
-        "Family moments among the flowers", "Growing friendships through fellowship",
-        "Children enjoying Pettit Creek Farms", "A peaceful break during the adventure",
-        "Making memories with friends", "Games and movement outdoors",
-        "A day full of energy and joy", "The group continuing the farm tour",
-        "Exploring more of Pettit Creek Farms", "One of the farm’s tallest residents",
-        "Sharing a meal after the activities", "Fellowship around the table",
-    ]
+    featured_album = GalleryAlbum.objects.filter(is_public=True, slug="farm-day-at-pettit-creek-farms").prefetch_related("photos").first()
     return render(request, "core/public_activities.html", {
         "gallery_photos": GalleryPhoto.objects.filter(is_public=True).select_related("ministry"),
         "public_activities": Activity.objects.filter(is_public=True).select_related("ministry").prefetch_related("gallery_photos")[:24],
-        "farm_day_photos": [
-            {"path": f"activity-images/farm-day/farm-day-{index:02}.webp", "caption": caption}
-            for index, caption in enumerate(farm_day_captions, 1)
-        ],
+        "featured_album": featured_album,
+        "farm_day_photos": featured_album.photos.filter(is_public=True) if featured_album else [],
     })
 
 

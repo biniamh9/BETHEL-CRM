@@ -5,7 +5,7 @@ from django.urls import reverse
 from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
-from .models import Activity, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry
+from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry
 
 
 class PublicMinistryTests(TestCase):
@@ -26,11 +26,21 @@ class PublicMinistryTests(TestCase):
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
     def test_farm_day_story_is_published_in_activities(self):
+        album = GalleryAlbum.objects.create(
+            ministry=self.ministry, title="Farm Day at Pettit Creek Farms",
+            slug="farm-day-at-pettit-creek-farms", event_date="2026-10-24",
+            location="Pettit Creek Farms", description="Animals, games, and fellowship.",
+        )
+        GalleryPhoto.objects.create(
+            ministry=self.ministry, album=album, caption="Farm Day welcome", occasion="outdoor",
+            year=2026, static_path="activity-images/farm-day/farm-day-01.webp",
+            content_type="image/webp", filename="farm-day-01.webp",
+        )
         response = self.client.get(reverse("core:public_activities"))
         self.assertContains(response, "Farm Day at Pettit Creek Farms")
         self.assertContains(response, "October 24, 2026")
         self.assertContains(response, "farm-day-01.webp")
-        self.assertContains(response, "View all 42 photos")
+        self.assertContains(response, "View all 1 photos")
 
     def test_choir_and_youth_photos_appear_on_public_pages(self):
         choir = Ministry.objects.create(name="Choir Ministry", slug="choir-ministry")
@@ -85,6 +95,30 @@ class PublicMinistryTests(TestCase):
         })
         self.assertRedirects(response, reverse("ministries:gallery_hub"))
         self.assertTrue(GalleryPhoto.objects.filter(caption="Children outdoors", ministry=self.ministry).exists())
+
+    def test_leader_can_create_edit_and_delete_gallery_album(self):
+        leader = User.objects.create_user("albumlead", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        self.client.force_login(leader)
+        response = self.client.post(reverse("ministries:gallery_album_new"), {
+            "ministry": self.ministry.pk, "title": "Autumn Fellowship", "event_date": "2026-10-24",
+            "location": "Pettit Creek Farms", "description": "A joyful day.", "is_public": "on",
+        })
+        self.assertRedirects(response, reverse("ministries:gallery_hub"))
+        album = GalleryAlbum.objects.get(title="Autumn Fellowship")
+        self.assertEqual(album.ministry, self.ministry)
+        response = self.client.post(reverse("ministries:gallery_album_edit", args=[album.pk]), {
+            "ministry": self.ministry.pk, "title": "Farm Fellowship", "event_date": "2026-10-24",
+            "location": "Pettit Creek Farms", "description": "Updated.", "is_public": "on",
+        })
+        self.assertRedirects(response, reverse("ministries:gallery_hub"))
+        album.refresh_from_db()
+        self.assertEqual(album.title, "Farm Fellowship")
+        self.assertRedirects(
+            self.client.post(reverse("ministries:gallery_album_delete", args=[album.pk])),
+            reverse("ministries:gallery_hub"),
+        )
+        self.assertFalse(GalleryAlbum.objects.filter(pk=album.pk).exists())
 
     def test_ministry_leader_can_attach_photo_to_activity(self):
         leader = User.objects.create_user("activityphoto", password="Valid-Test-Pass-42", role=User.Role.LEADER)

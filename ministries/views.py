@@ -10,12 +10,13 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from .forms import (
-    ActivityForm, GalleryPhotoForm, MinistryContactForm, MinistryJoinForm,
+    ActivityForm, GalleryAlbumForm, GalleryPhotoForm, GalleryPhotoMetadataForm, MinistryContactForm, MinistryJoinForm,
     MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
 )
-from .models import Activity, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
+from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
 
@@ -206,14 +207,47 @@ def gallery_hub(request):
     if request.method == "POST" and form.is_valid():
         photo = form.save(commit=False)
         photo.ministry = form.cleaned_data["ministry"]
+        photo.album = form.cleaned_data.get("album")
         photo.created_by = request.user
         photo.save()
         messages.success(request, "Photo uploaded and added to the public activity gallery.")
         return redirect("ministries:gallery_hub")
-    photos = GalleryPhoto.objects.filter(ministry__in=ministries).select_related("ministry")
+    photos = GalleryPhoto.objects.filter(ministry__in=ministries).select_related("ministry", "album")
     return render(request, "ministries/gallery_hub.html", {
         "form": form, "photos": photos, "ministries": ministries,
+        "albums": GalleryAlbum.objects.filter(ministry__in=ministries).select_related("ministry"),
     })
+
+
+@login_required
+def gallery_album_edit(request, pk=None):
+    ministries = request.user.editable_ministries().order_by("name")
+    if not ministries.exists():
+        raise PermissionDenied
+    album = get_object_or_404(GalleryAlbum, pk=pk, ministry__in=ministries) if pk else None
+    form = GalleryAlbumForm(request.POST or None, instance=album, ministries=ministries)
+    if request.method == "POST" and form.is_valid():
+        album = form.save(commit=False)
+        if not album.created_by_id:
+            album.created_by = request.user
+        album.save()
+        messages.success(request, "Photo album saved.")
+        return redirect("ministries:gallery_hub")
+    return render(request, "ministries/form.html", {
+        "form": form, "ministry": album.ministry if album else ministries.first(),
+        "title": "Edit photo album" if album else "Create photo album",
+        "cancel_url": reverse("ministries:gallery_hub"),
+    })
+
+
+@login_required
+def gallery_album_delete(request, pk):
+    ministries = request.user.editable_ministries()
+    album = get_object_or_404(GalleryAlbum, pk=pk, ministry__in=ministries)
+    if request.method == "POST":
+        album.delete()
+        messages.success(request, "Album and its photos removed.")
+    return redirect("ministries:gallery_hub")
 
 
 @login_required
@@ -223,7 +257,24 @@ def gallery_delete(request, slug, pk):
     if request.method == "POST":
         photo.delete()
         messages.success(request, "Photo removed.")
+        if request.POST.get("next") == "hub":
+            return redirect("ministries:gallery_hub")
     return redirect("ministries:gallery", slug=ministry.slug)
+
+
+@login_required
+def gallery_photo_edit(request, slug, pk):
+    ministry = _get_ministry(request, slug, edit=True)
+    photo = get_object_or_404(GalleryPhoto, pk=pk, ministry=ministry)
+    form = GalleryPhotoMetadataForm(request.POST or None, instance=photo, ministry=ministry)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Photo details updated.")
+        return redirect("ministries:gallery_hub")
+    return render(request, "ministries/form.html", {
+        "form": form, "ministry": ministry, "title": "Edit photo details",
+        "cancel_url": reverse("ministries:gallery_hub"),
+    })
 
 
 @login_required

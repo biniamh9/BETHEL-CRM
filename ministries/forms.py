@@ -3,7 +3,7 @@ from django import forms
 from pathlib import Path
 from datetime import date
 
-from .models import Activity, GalleryPhoto, Ministry, MinistryInquiry, Participant
+from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, Participant
 
 
 class DateInput(forms.DateInput):
@@ -148,12 +148,44 @@ class GalleryPhotoForm(forms.ModelForm):
 
 class PortalGalleryPhotoForm(GalleryPhotoForm):
     ministry = forms.ModelChoiceField(queryset=Ministry.objects.none())
+    album = forms.ModelChoiceField(queryset=GalleryAlbum.objects.none(), required=False, help_text="Optional photo album.")
 
-    field_order = ("ministry", "image", "caption", "occasion", "year", "is_public")
+    field_order = ("ministry", "album", "image", "caption", "occasion", "year", "is_public")
 
     def __init__(self, *args, ministries=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["ministry"].queryset = ministries if ministries is not None else Ministry.objects.none()
+        self.fields["album"].queryset = GalleryAlbum.objects.filter(ministry__in=self.fields["ministry"].queryset)
+
+    def clean(self):
+        cleaned = super().clean()
+        album, ministry = cleaned.get("album"), cleaned.get("ministry")
+        if album and ministry and album.ministry_id != ministry.pk:
+            self.add_error("album", "Choose an album belonging to the selected ministry.")
+        return cleaned
+
+
+class GalleryAlbumForm(forms.ModelForm):
+    ministry = forms.ModelChoiceField(queryset=Ministry.objects.none())
+
+    class Meta:
+        model = GalleryAlbum
+        fields = ("ministry", "title", "event_date", "location", "description", "is_public")
+        widgets = {"event_date": DateInput(), "description": forms.Textarea(attrs={"rows": 4})}
+
+    def __init__(self, *args, ministries=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["ministry"].queryset = ministries if ministries is not None else Ministry.objects.none()
+
+
+class GalleryPhotoMetadataForm(forms.ModelForm):
+    class Meta:
+        model = GalleryPhoto
+        fields = ("album", "caption", "occasion", "year", "is_public")
+
+    def __init__(self, *args, ministry=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["album"].queryset = ministry.gallery_albums.all() if ministry else GalleryAlbum.objects.none()
 
 
 def validate_gallery_image(upload):
