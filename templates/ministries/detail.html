@@ -31,6 +31,19 @@
   <div class="kpi"><span>Active people</span><b>{{ participants|length }}</b></div>
 </div>
 
+<section class="panel" id="member-spotlights" style="margin-bottom:24px">
+  <div class="panel-head"><div><span class="eyebrow">Public ministry page</span><h3>Member spotlights</h3></div>{% if can_edit %}<a class="btn btn-primary btn-sm" href="{% url 'ministries:member_spotlight_new' ministry.slug %}">+ Add member profile</a>{% endif %}</div>
+  <div class="portal-spotlight-list">
+    {% for person in member_spotlights %}
+    <article>
+      {% if person.image_blob %}<img src="{{ person.get_image_url }}" alt="{{ person.display_name }}">{% else %}<div class="member-photo-placeholder" aria-hidden="true"><span>{{ person.display_name|first }}</span></div>{% endif %}
+      <div><b>{{ person.display_name }}</b>{% if person.role %}<span>{{ person.role }}</span>{% endif %}<p>{{ person.short_message|truncatewords:28 }}</p>{% if not person.is_public %}<span class="badge">Draft · not public</span>{% endif %}</div>
+      {% if can_edit %}<div class="actions"><a class="btn btn-ghost btn-sm" href="{% url 'ministries:member_spotlight_edit' ministry.slug person.pk %}">Edit</a><form method="post" action="{% url 'ministries:member_spotlight_delete' ministry.slug person.pk %}" onsubmit="return confirm('Remove this public member profile?')">{% csrf_token %}<button class="btn btn-danger btn-sm">Remove</button></form></div>{% endif %}
+    </article>
+    {% empty %}<div class="empty">No public member profiles yet. Add a photo and short message, or use the built-in photo placeholder.</div>{% endfor %}
+  </div>
+</section>
+
 <div class="cols">
   <div class="panel">
     <div class="panel-head"><h3>Activity log</h3>

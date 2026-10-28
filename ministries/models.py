@@ -141,6 +141,35 @@ class Participant(models.Model):
         return f"{self.first_name} {self.last_name}".strip()
 
 
+class MinistryMemberSpotlight(models.Model):
+    """An explicitly approved public introduction, separate from the private roster."""
+
+    ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="member_spotlights")
+    display_name = models.CharField(max_length=120)
+    role = models.CharField(max_length=120, blank=True, help_text="For example: Choir member or Youth volunteer.")
+    short_message = models.TextField(max_length=500, help_text="A short welcome, testimony, or ministry message.")
+    image_blob = models.BinaryField(editable=False, blank=True, default=b"")
+    image_content_type = models.CharField(max_length=30, editable=False, blank=True)
+    image_filename = models.CharField(max_length=180, editable=False, blank=True)
+    is_public = models.BooleanField(
+        default=False, db_index=True,
+        help_text="Publish this profile on the ministry page. Confirm the member or guardian has approved it.",
+    )
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "display_name"]
+
+    def __str__(self):
+        return f"{self.display_name} — {self.ministry}"
+
+    def get_image_url(self):
+        return reverse("public_ministries:member_image", args=[self.ministry.slug, self.pk])
+
+
 class Activity(models.Model):
     """One record of what a ministry did: a rehearsal, a class, a visit, an outreach."""
 

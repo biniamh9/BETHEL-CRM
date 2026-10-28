@@ -7,7 +7,7 @@ from django.urls import reverse
 from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
-from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry
+from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight
 
 
 def test_jpeg(name="IMG_1234.jpg", size=(3000, 2200)):
@@ -65,6 +65,40 @@ class PublicMinistryTests(TestCase):
         self.assertContains(choir_detail, "choir1.jpg")
         self.assertContains(choir_detail, "choir3.jpg")
         self.assertContains(self.client.get(women.get_public_url()), "women1.jpg")
+
+    def test_public_ministry_page_has_member_placeholders(self):
+        response = self.client.get(self.ministry.get_public_url())
+        self.assertContains(response, "Meet the ministry")
+        self.assertContains(response, "Our ministry family", count=3)
+
+    def test_leader_creates_public_member_spotlight_with_optional_photo(self):
+        leader = User.objects.create_user("spotlightlead", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        self.client.force_login(leader)
+        response = self.client.post(reverse("ministries:member_spotlight_new", args=[self.ministry.slug]), {
+            "display_name": "Sara T.", "role": "Youth volunteer",
+            "short_message": "Serving together has helped my faith grow.",
+            "sort_order": "1", "is_public": "on", "image": test_jpeg("sara-portrait.jpg"),
+        })
+        spotlight = MinistryMemberSpotlight.objects.get(display_name="Sara T.")
+        self.assertRedirects(response, f"{self.ministry.get_absolute_url()}#member-spotlights")
+        self.assertTrue(spotlight.image_blob)
+        self.assertLess(len(spotlight.image_blob), 1024 * 1024)
+        public = self.client.get(self.ministry.get_public_url())
+        self.assertContains(public, "Sara T.")
+        self.assertContains(public, "Serving together has helped my faith grow.")
+        image = self.client.get(spotlight.get_image_url())
+        self.assertEqual(image.status_code, 200)
+        self.assertEqual(image["Content-Type"], "image/jpeg")
+
+    def test_draft_member_spotlight_and_image_are_not_public(self):
+        spotlight = MinistryMemberSpotlight.objects.create(
+            ministry=self.ministry, display_name="Draft Member", short_message="Not approved yet.",
+            image_blob=b"private-image", image_content_type="image/jpeg", is_public=False,
+        )
+        public = self.client.get(self.ministry.get_public_url())
+        self.assertNotContains(public, "Draft Member")
+        self.assertEqual(self.client.get(spotlight.get_image_url()).status_code, 404)
 
     def test_leader_uploads_captioned_grouped_gallery_photo(self):
         leader = User.objects.create_user("gallerylead", password="Valid-Test-Pass-42", role=User.Role.LEADER)

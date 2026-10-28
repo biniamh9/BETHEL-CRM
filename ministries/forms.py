@@ -3,7 +3,8 @@ from django import forms
 from pathlib import Path
 from datetime import date
 
-from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, Participant
+from .image_processing import GalleryImageError, optimize_gallery_image
+from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, Participant
 
 
 class DateInput(forms.DateInput):
@@ -65,6 +66,47 @@ class ParticipantForm(forms.ModelForm):
             "guardian_phone", "birth_year", "joined_on", "is_active", "notes",
         )
         widgets = {"joined_on": DateInput(), "notes": forms.Textarea(attrs={"rows": 3})}
+
+
+class MinistryMemberSpotlightForm(forms.ModelForm):
+    image = forms.FileField(
+        required=False, label="Member photo",
+        help_text="Optional JPG, PNG, or WebP. It will be resized below 1 MB.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+    )
+    remove_image = forms.BooleanField(required=False, label="Remove the current photo and use the placeholder")
+
+    class Meta:
+        model = MinistryMemberSpotlight
+        fields = ("display_name", "role", "short_message", "is_public", "sort_order")
+        widgets = {"short_message": forms.Textarea(attrs={"rows": 4, "maxlength": 500})}
+
+    def clean_image(self):
+        upload = self.cleaned_data.get("image")
+        if not upload:
+            return upload
+        upload = validate_gallery_image(upload)
+        try:
+            self.optimized_image = optimize_gallery_image(upload)
+        except GalleryImageError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+        return upload
+
+    def save(self, commit=True):
+        spotlight = super().save(commit=False)
+        if self.cleaned_data.get("remove_image"):
+            spotlight.image_blob = b""
+            spotlight.image_content_type = ""
+            spotlight.image_filename = ""
+        upload = self.cleaned_data.get("image")
+        if upload:
+            data, filename, content_type = self.optimized_image
+            spotlight.image_blob = data
+            spotlight.image_content_type = content_type
+            spotlight.image_filename = filename
+        if commit:
+            spotlight.save()
+        return spotlight
 
 
 class MinistryContactForm(forms.ModelForm):

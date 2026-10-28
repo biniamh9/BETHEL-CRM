@@ -8,16 +8,16 @@ from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from .forms import (
     ActivityForm, GalleryAlbumForm, GalleryPhotoForm, GalleryPhotoMetadataForm, MinistryContactForm, MinistryJoinForm,
-    MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
+    MinistryMemberSpotlightForm, MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
 )
-from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
+from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, Participant
 from .forms import validate_gallery_image
 from .image_processing import GalleryImageError, automatic_caption, optimize_gallery_image
 
@@ -39,7 +39,18 @@ def public_ministry_detail(request, slug):
         )[:6],
         "announcements": ministry.announcements.filter(status=MinistryAnnouncement.Status.PUBLISHED)[:6],
         "gallery_photos": ministry.gallery_photos.filter(is_public=True)[:12],
+        "member_spotlights": ministry.member_spotlights.filter(is_public=True),
     })
+
+
+def public_member_spotlight_image(request, slug, pk):
+    spotlight = get_object_or_404(MinistryMemberSpotlight.objects.select_related("ministry"), pk=pk, ministry__slug=slug)
+    allowed = spotlight.is_public or (
+        request.user.is_authenticated and request.user.can_edit_ministry(spotlight.ministry)
+    )
+    if not allowed or not spotlight.image_blob:
+        raise Http404
+    return HttpResponse(bytes(spotlight.image_blob), content_type=spotlight.image_content_type or "image/jpeg")
 
 
 def public_ministry_inquiry(request, slug, kind):
@@ -162,6 +173,7 @@ def ministry_detail(request, slug):
         "ministry": ministry,
         "activities": activities.prefetch_related("attendees")[:50],
         "participants": ministry.participants.filter(is_active=True),
+        "member_spotlights": ministry.member_spotlights.all(),
         "inactive_count": ministry.participants.filter(is_active=False).count(),
         "stats": stats,
         "kinds": Activity.Kind.choices,
@@ -398,6 +410,37 @@ def participant_edit(request, slug, pk=None):
         "form": form, "ministry": ministry,
         "title": f"Edit {person}" if person else "Add a person",
     })
+
+
+@login_required
+def member_spotlight_edit(request, slug, pk=None):
+    ministry = _get_ministry(request, slug, edit=True)
+    spotlight = get_object_or_404(MinistryMemberSpotlight, pk=pk, ministry=ministry) if pk else None
+    form = MinistryMemberSpotlightForm(request.POST or None, request.FILES or None, instance=spotlight)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.ministry = ministry
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj.save()
+        messages.success(request, f"Saved public member profile for {obj.display_name}.")
+        return redirect(f"{ministry.get_absolute_url()}#member-spotlights")
+    return render(request, "ministries/form.html", {
+        "form": form, "ministry": ministry, "spotlight": spotlight,
+        "title": f"Edit {spotlight.display_name}" if spotlight else "Add public member profile",
+        "cancel_url": f"{ministry.get_absolute_url()}#member-spotlights",
+    })
+
+
+@login_required
+def member_spotlight_delete(request, slug, pk):
+    ministry = _get_ministry(request, slug, edit=True)
+    spotlight = get_object_or_404(MinistryMemberSpotlight, pk=pk, ministry=ministry)
+    if request.method == "POST":
+        name = spotlight.display_name
+        spotlight.delete()
+        messages.success(request, f"Removed public member profile for {name}.")
+    return redirect(f"{ministry.get_absolute_url()}#member-spotlights")
 
 
 @login_required
