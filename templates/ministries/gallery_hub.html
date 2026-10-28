@@ -6,6 +6,20 @@
   <div class="actions"><a class="btn btn-primary" href="{% url 'ministries:gallery_album_new' %}">+ Create album</a><a class="btn btn-ghost" href="{% url 'core:public_activities' %}" target="_blank" rel="noopener">View public gallery</a></div>
 </div>
 {% if albums %}<div class="panel" style="margin-bottom:24px"><div class="panel-head"><h3>Albums</h3><span class="small muted">{{ albums|length }} collections</span></div><div class="album-admin-grid">{% for album in albums %}<article><div><span class="eyebrow">{{ album.event_date|date:"M j, Y"|default:"Photo collection" }}</span><h3>{{ album.title }}</h3><p>{{ album.location }}{% if album.location and album.photos.count %} · {% endif %}{{ album.photos.count }} photos{% if not album.is_public %} · Private{% endif %}</p></div><div class="actions"><a class="btn btn-ghost btn-sm" href="{% url 'ministries:gallery_album_edit' album.pk %}">Edit details</a><form method="post" action="{% url 'ministries:gallery_album_delete' album.pk %}" onsubmit="return confirm('Delete this album and every photo in it?')">{% csrf_token %}<button class="btn btn-danger btn-sm">Delete album</button></form></div></article>{% endfor %}</div></div>{% endif %}
+<form class="panel batch-gallery-uploader" id="batch-gallery-uploader" data-upload-url="{% url 'ministries:gallery_batch_upload' %}">
+  <div class="panel-head"><div><h3>Batch upload to an album</h3><p class="small muted">Choose many photos at once. Each image is resized below 1 MB, given an automatic caption, and uploaded individually so large collections remain reliable.</p></div></div>
+  <div class="panel-body batch-upload-fields">
+    {% csrf_token %}
+    <label>Ministry<select name="ministry" id="batch-ministry" required><option value="">Choose ministry</option>{% for ministry in ministries %}<option value="{{ ministry.pk }}">{{ ministry.name }}</option>{% endfor %}</select></label>
+    <label>Album<select name="album" id="batch-album" required><option value="">Choose album</option>{% for album in albums %}<option value="{{ album.pk }}" data-ministry="{{ album.ministry_id }}">{{ album.title }}</option>{% endfor %}</select></label>
+    <label>Occasion<select name="occasion" required>{% for value,label in occasion_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+    <label>Year<input type="number" name="year" min="2000" max="2100" value="{% now 'Y' %}" required></label>
+    <label class="batch-file-field">Photos<input type="file" name="images" id="batch-images" accept="image/jpeg,image/png,image/webp" multiple required><small>Select JPG, PNG, or WebP files. Captions are generated from descriptive filenames; camera filenames use the album title.</small></label>
+    <label class="checkbox"><input type="checkbox" name="is_public" checked> Publish photos in the public gallery</label>
+    <button class="btn btn-primary" type="submit" id="batch-upload-button">Optimize and upload photos</button>
+    <div class="batch-upload-progress" id="batch-upload-progress" hidden><progress value="0" max="1"></progress><b></b><span class="muted"></span></div>
+  </div>
+</form>
 <div class="cols">
   <form method="post" enctype="multipart/form-data" class="panel">
     <div class="panel-head"><h3>Upload a photo</h3></div>
@@ -20,4 +34,57 @@
     </div>
   </div>
 </div>
+<script>
+(() => {
+  const form = document.getElementById('batch-gallery-uploader'); if (!form) return;
+  const ministry = document.getElementById('batch-ministry'), album = document.getElementById('batch-album');
+  const filesInput = document.getElementById('batch-images'), button = document.getElementById('batch-upload-button');
+  const status = document.getElementById('batch-upload-progress'), bar = status.querySelector('progress'), headline = status.querySelector('b'), detail = status.querySelector('span');
+  const options = [...album.options].slice(1);
+  ministry.addEventListener('change', () => {
+    album.value = '';
+    options.forEach(option => option.hidden = option.dataset.ministry !== ministry.value);
+  });
+  const captionFor = (name, albumTitle, position) => {
+    const stem = name.replace(/\.[^.]+$/, '');
+    if (/^(img|dsc|dscn|pxl|photo|image)[-_ ]?\d+$/i.test(stem) || !/[a-z]/i.test(stem)) return `${albumTitle} — Photo ${position}`;
+    const words = stem.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  };
+  const canvasBlob = (canvas, quality) => new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+  const optimize = async file => {
+    const bitmap = await createImageBitmap(file, {imageOrientation: 'from-image'});
+    let width = bitmap.width, height = bitmap.height, scale = Math.min(1, 2400 / Math.max(width, height));
+    width = Math.round(width * scale); height = Math.round(height * scale);
+    const canvas = document.createElement('canvas'), context = canvas.getContext('2d', {alpha: false});
+    const render = () => { canvas.width = width; canvas.height = height; context.fillStyle = '#fff'; context.fillRect(0, 0, width, height); context.drawImage(bitmap, 0, 0, width, height); };
+    render(); let quality = .88, blob = await canvasBlob(canvas, quality);
+    while (blob.size > 950 * 1024 && quality > .52) { quality -= .07; blob = await canvasBlob(canvas, quality); }
+    while (blob.size > 950 * 1024 && Math.max(width, height) > 900) { width = Math.round(width * .82); height = Math.round(height * .82); render(); blob = await canvasBlob(canvas, .78); }
+    bitmap.close();
+    if (blob.size > 1024 * 1024) throw new Error(`${file.name} could not be reduced below 1 MB.`);
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {type: 'image/jpeg'});
+  };
+  form.addEventListener('submit', async event => {
+    event.preventDefault(); const files = [...filesInput.files]; if (!files.length || !form.reportValidity()) return;
+    button.disabled = true; status.hidden = false; bar.max = files.length; bar.value = 0;
+    const albumTitle = album.options[album.selectedIndex].text; let completed = 0;
+    try {
+      for (let index = 0; index < files.length; index++) {
+        const source = files[index]; headline.textContent = `Preparing ${index + 1} of ${files.length}`; detail.textContent = source.name;
+        const optimized = await optimize(source), payload = new FormData();
+        payload.append('csrfmiddlewaretoken', form.querySelector('[name=csrfmiddlewaretoken]').value);
+        for (const field of ['ministry', 'album', 'occasion', 'year']) payload.append(field, form.elements[field].value);
+        if (form.elements.is_public.checked) payload.append('is_public', 'on');
+        payload.append('caption', captionFor(source.name, albumTitle, index + 1)); payload.append('image', optimized);
+        headline.textContent = `Uploading ${index + 1} of ${files.length}`;
+        const response = await fetch(form.dataset.uploadUrl, {method: 'POST', body: payload, credentials: 'same-origin'}), result = await response.json();
+        if (!response.ok) throw new Error(result.error || `Could not upload ${source.name}.`);
+        completed++; bar.value = completed;
+      }
+      headline.textContent = `${completed} photos uploaded`; detail.textContent = 'Refreshing the gallery…'; window.location.reload();
+    } catch (error) { headline.textContent = `${completed} of ${files.length} photos uploaded`; detail.textContent = error.message; button.disabled = false; }
+  });
+})();
+</script>
 {% endblock %}

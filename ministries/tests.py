@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -6,6 +8,14 @@ from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
 from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry
+
+
+def test_jpeg(name="IMG_1234.jpg", size=(3000, 2200)):
+    from PIL import Image
+
+    output = BytesIO()
+    Image.new("RGB", size, (48, 92, 138)).save(output, format="JPEG", quality=98)
+    return SimpleUploadedFile(name, output.getvalue(), content_type="image/jpeg")
 
 
 class PublicMinistryTests(TestCase):
@@ -119,6 +129,39 @@ class PublicMinistryTests(TestCase):
             reverse("ministries:gallery_hub"),
         )
         self.assertFalse(GalleryAlbum.objects.filter(pk=album.pk).exists())
+
+    def test_batch_upload_optimizes_and_adds_photo_to_album(self):
+        leader = User.objects.create_user("batchlead", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        album = GalleryAlbum.objects.create(
+            ministry=self.ministry, title="Autumn Fellowship", event_date="2026-10-24",
+            is_public=True, created_by=leader,
+        )
+        self.client.force_login(leader)
+        response = self.client.post(reverse("ministries:gallery_batch_upload"), {
+            "ministry": self.ministry.pk, "album": album.pk, "occasion": "outdoor",
+            "year": "2026", "is_public": "on", "caption": "Autumn Fellowship — Photo 1",
+            "image": test_jpeg(),
+        })
+        self.assertEqual(response.status_code, 201)
+        photo = album.photos.get()
+        self.assertEqual(photo.caption, "Autumn Fellowship — Photo 1")
+        self.assertEqual(photo.content_type, "image/jpeg")
+        self.assertLess(len(photo.image_blob), 1024 * 1024)
+        self.assertTrue(photo.is_public)
+
+    def test_batch_upload_cannot_use_another_ministry_album(self):
+        leader = User.objects.create_user("restrictedbatch", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        other = Ministry.objects.create(name="Other Ministry")
+        album = GalleryAlbum.objects.create(ministry=other, title="Private team album", is_public=True)
+        self.client.force_login(leader)
+        response = self.client.post(reverse("ministries:gallery_batch_upload"), {
+            "ministry": self.ministry.pk, "album": album.pk, "occasion": "outdoor", "year": "2026",
+            "image": test_jpeg(),
+        })
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(GalleryPhoto.objects.filter(album=album).exists())
 
     def test_ministry_leader_can_attach_photo_to_activity(self):
         leader = User.objects.create_user("activityphoto", password="Valid-Test-Pass-42", role=User.Role.LEADER)

@@ -6,17 +6,20 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from .forms import (
     ActivityForm, GalleryAlbumForm, GalleryPhotoForm, GalleryPhotoMetadataForm, MinistryContactForm, MinistryJoinForm,
     MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
 )
 from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
+from .forms import validate_gallery_image
+from .image_processing import GalleryImageError, automatic_caption, optimize_gallery_image
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
 
@@ -216,7 +219,48 @@ def gallery_hub(request):
     return render(request, "ministries/gallery_hub.html", {
         "form": form, "photos": photos, "ministries": ministries,
         "albums": GalleryAlbum.objects.filter(ministry__in=ministries).select_related("ministry"),
+        "occasion_choices": GalleryPhoto.Occasion.choices,
     })
+
+
+@login_required
+@require_POST
+def gallery_batch_upload(request):
+    """Accept one optimized photo at a time from the portal's sequential batch uploader."""
+    ministries = request.user.editable_ministries()
+    ministry = get_object_or_404(ministries, pk=request.POST.get("ministry"))
+    album = None
+    if request.POST.get("album"):
+        album = get_object_or_404(GalleryAlbum, pk=request.POST["album"], ministry=ministry)
+    occasion = request.POST.get("occasion")
+    valid_occasions = {value for value, _label in GalleryPhoto.Occasion.choices}
+    if occasion not in valid_occasions:
+        return JsonResponse({"error": "Choose a valid occasion."}, status=400)
+    try:
+        year = int(request.POST.get("year", ""))
+    except ValueError:
+        year = 0
+    if not 2000 <= year <= date.today().year + 1:
+        return JsonResponse({"error": "Choose a valid year."}, status=400)
+    upload = request.FILES.get("image")
+    if not upload:
+        return JsonResponse({"error": "Choose a photo."}, status=400)
+    try:
+        validate_gallery_image(upload)
+        data, filename, content_type = optimize_gallery_image(upload)
+    except (GalleryImageError, ValidationError) as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    caption = request.POST.get("caption", "").strip()[:220] or automatic_caption(
+        upload.name, album.title if album else ""
+    )
+    photo = GalleryPhoto.objects.create(
+        ministry=ministry, album=album, caption=caption, occasion=occasion, year=year,
+        image_blob=data, content_type=content_type, filename=filename,
+        is_public=request.POST.get("is_public") == "on", created_by=request.user,
+    )
+    return JsonResponse({
+        "id": photo.pk, "caption": photo.caption, "size": len(data), "image_url": photo.get_image_url(),
+    }, status=201)
 
 
 @login_required

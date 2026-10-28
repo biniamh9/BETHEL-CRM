@@ -7,6 +7,7 @@ app_name = "ministries"
 urlpatterns = [
     path("", views.ministry_list, name="list"),
     path("photos/", views.gallery_hub, name="gallery_hub"),
+    path("photos/batch-upload/", views.gallery_batch_upload, name="gallery_batch_upload"),
     path("photos/albums/new/", views.gallery_album_edit, name="gallery_album_new"),
     path("photos/albums/<int:pk>/edit/", views.gallery_album_edit, name="gallery_album_edit"),
     path("photos/albums/<int:pk>/delete/", views.gallery_album_delete, name="gallery_album_delete"),
