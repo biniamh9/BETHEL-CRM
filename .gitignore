@@ -13,3 +13,5 @@ media/
 BETHEL-CRM/
 images/*.ARW
 images/*.arw
+# Local full-resolution imports. Curated web copies live in images/farm-day/.
+images/IMG_*.jpg

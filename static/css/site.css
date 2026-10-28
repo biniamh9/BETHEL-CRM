@@ -354,6 +354,18 @@ tbody tr:hover { background: #fcfaf6; }
 .activity-photo { display: block; width: 100%; height: 190px; object-fit: cover; background: #e9e4da; }
 .public-activity-photo { display:block; width:100%; height:190px; margin:-26px -26px 22px; width:calc(100% + 52px); object-fit:cover; }
 .ministry-photo-grid figcaption { padding-top:8px; color:var(--muted); font-size:.85rem; }
+.farm-day-story { padding:clamp(60px,8vw,110px) 0; background:#f2eadc; }
+.farm-day-intro { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); gap:clamp(30px,7vw,100px); align-items:end; margin-bottom:36px; }
+.farm-day-intro h2 { max-width:760px; margin:8px 0 0; font-size:clamp(2.6rem,6vw,5.7rem); line-height:.91; }
+.farm-day-intro p { margin:0; color:#4e5360; font-size:1.05rem; line-height:1.75; }
+.farm-day-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-auto-rows:230px; gap:10px; }
+.farm-day-photo { position:relative; padding:0; overflow:hidden; border:0; background:#10192d; cursor:zoom-in; text-align:left; }
+.farm-day-photo:nth-child(1),.farm-day-photo:nth-child(8) { grid-column:span 2; grid-row:span 2; }
+.farm-day-photo img { width:100%; height:100%; object-fit:cover; transition:transform .35s ease; }.farm-day-photo:hover img { transform:scale(1.035); }
+.farm-day-photo::after { content:""; position:absolute; inset:55% 0 0; background:linear-gradient(transparent,rgba(5,9,18,.78)); }
+.farm-day-photo span { position:absolute; z-index:1; inset:auto 14px 12px; color:#fff; font-size:.82rem; font-weight:700; }
+.farm-day-photo.album-extra { display:none; }.farm-day-photo.album-extra.shown { display:block; }
+.farm-day-actions { display:flex; gap:12px; justify-content:center; padding-top:30px; }
 .activity-fallback { position: relative; display: grid; place-items: center; overflow: hidden; background: linear-gradient(135deg, var(--c, var(--navy)), #c9962b); }
 .activity-fallback::before, .activity-fallback::after { content: ""; position: absolute; width: 180px; height: 180px; border: 1px solid rgba(255,255,255,.22); border-radius: 50%; }
 .activity-fallback::before { transform: translate(-42%, -34%); }
@@ -372,6 +384,7 @@ tbody tr:hover { background: #fcfaf6; }
 .activity-byline { margin-top: 12px; color: var(--muted); font-size: .72rem; }
 .activity-empty { grid-column: 1 / -1; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
 @media (max-width: 640px) { .activity-grid { grid-template-columns: 1fr; } .activity-photo { height: 210px; } }
+@media (max-width: 760px) { .farm-day-intro { grid-template-columns:1fr; }.farm-day-grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:180px; }.farm-day-photo:nth-child(1),.farm-day-photo:nth-child(8) { grid-column:span 2; grid-row:span 1; }.farm-day-actions { align-items:stretch; flex-direction:column; }.farm-day-actions .btn { text-align:center; } }
 
 /* ---------- dashboard "next two weeks" strip ---------- */
 .next-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; padding: 14px 18px; }

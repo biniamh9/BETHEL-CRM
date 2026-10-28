@@ -1,7 +1,23 @@
-{% extends "base_public.html" %}
+{% extends "base_public.html" %}{% load static %}
 {% block title %}Church Life · {{ church.short_name }}{% endblock %}
 {% block content %}
 <section class="public-page-hero"><div class="wrap"><span class="eyebrow">Life together</span><h1>Faith in motion.</h1><p>Worship, fellowship, service, and the moments that shape our church family.</p></div></section>
+{% if farm_day_photos %}
+<section class="farm-day-story">
+  <div class="wrap farm-day-intro">
+    <div><span class="eyebrow">Kids &amp; Youth Ministry · October 24, 2026</span><h2>Farm Day at Pettit Creek Farms</h2></div>
+    <p>Our children enjoyed a beautiful autumn day with animals, outdoor adventures, games, and wonderful fellowship. It was a joyful time for kids, parents, and volunteers to laugh, explore, and grow closer as a church family.</p>
+  </div>
+  <div class="wrap farm-day-grid">
+    {% for photo in farm_day_photos %}
+    <button class="farm-day-photo{% if forloop.counter > 12 %} album-extra{% endif %}" type="button" data-gallery-image="{% static photo.path %}" data-gallery-caption="{{ photo.caption }}" data-gallery-meta="Kids & Youth Ministry · Farm Day · October 24, 2026">
+      <img src="{% static photo.path %}" alt="{{ photo.caption }}" loading="lazy"><span>{{ photo.caption }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  <div class="wrap farm-day-actions"><button class="btn btn-navy" type="button" id="show-farm-album">View all {{ farm_day_photos|length }} photos</button><a class="btn btn-ghost" href="{% url 'public_ministries:detail' 'youth-kids-ministry' %}">Explore Kids &amp; Youth Ministry</a></div>
+</section>
+{% endif %}
 {% if public_activities %}<section class="public-band"><div class="wrap public-section"><span class="eyebrow">Published activities</span><h2>What we’ve been doing</h2><div class="public-card-grid compact">{% for activity in public_activities %}<article class="info-card">{% with photo=activity.gallery_photos.all|first %}{% if photo %}<img class="public-activity-photo" src="{{ photo.get_image_url }}" alt="{{ photo.caption }}" loading="lazy">{% endif %}{% endwith %}<span>{{ activity.date|date:"M j, Y" }} · {{ activity.ministry.name }}</span><h3>{{ activity.title }}</h3><p>{{ activity.summary|truncatewords:30 }}</p></article>{% endfor %}</div></div></section>{% endif %}
 <section class="wrap public-section gallery-section">
   <header class="section-heading split-heading compact"><div><span class="eyebrow">Photo archive</span><h2>Life at Bethel.</h2></div><p>Browse church moments by occasion and year. Select any photo to open the full gallery.</p></header>
@@ -18,6 +34,8 @@
 <dialog class="gallery-lightbox" aria-label="Photo viewer"><button class="lightbox-close" type="button" aria-label="Close">×</button><button class="lightbox-prev" type="button" aria-label="Previous photo">←</button><figure><img alt=""><figcaption><b></b><span></span></figcaption></figure><button class="lightbox-next" type="button" aria-label="Next photo">→</button></dialog>
 <script>
 (() => {
+  const albumButton = document.getElementById('show-farm-album');
+  if (albumButton) albumButton.addEventListener('click', () => { document.querySelectorAll('.album-extra').forEach(item => item.classList.add('shown')); albumButton.remove(); });
   const items = [...document.querySelectorAll('[data-gallery-image]')], box = document.querySelector('.gallery-lightbox');
   if (!box || !items.length) return;
   const image = box.querySelector('img'), caption = box.querySelector('figcaption b'), meta = box.querySelector('figcaption span'); let index = 0;

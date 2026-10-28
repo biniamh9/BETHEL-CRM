@@ -25,6 +25,13 @@ class PublicMinistryTests(TestCase):
         ):
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
+    def test_farm_day_story_is_published_in_activities(self):
+        response = self.client.get(reverse("core:public_activities"))
+        self.assertContains(response, "Farm Day at Pettit Creek Farms")
+        self.assertContains(response, "October 24, 2026")
+        self.assertContains(response, "farm-day-01.webp")
+        self.assertContains(response, "View all 42 photos")
+
     def test_choir_and_youth_photos_appear_on_public_pages(self):
         choir = Ministry.objects.create(name="Choir Ministry", slug="choir-ministry")
         women = Ministry.objects.create(name="Women Service", slug="women-service")
