@@ -56,6 +56,12 @@ def seed_farm_day_album(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    # PostgreSQL defers the FK index until the schema editor exits. The data seed
+    # below fires FK triggers, so keeping DDL and inserts in one transaction causes
+    # "cannot CREATE INDEX ... because it has pending trigger events". Autocommit
+    # lets the schema/index work finish cleanly before the seed rows are inserted.
+    atomic = False
+
     dependencies = [
         ('ministries', '0006_galleryphoto_activity'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
