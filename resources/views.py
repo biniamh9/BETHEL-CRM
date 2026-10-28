@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -6,6 +8,8 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ministries.models import Ministry
+from ministries.models import GalleryAlbum
+from events.models import Event
 
 from .forms import ResourceForm
 from .models import Resource
@@ -14,10 +18,30 @@ from .models import Resource
 def public_resource_list(request):
     qs = Resource.objects.filter(is_public=True).select_related("ministry")
     category = request.GET.get("category", "")
+    if category == Resource.Category.ARCHIVE:
+        return redirect("public_resources:archive")
     if category:
         qs = qs.filter(category=category)
     return render(request, "resources/public_list.html", {
         "resources": qs, "categories": Resource.Category.choices, "category": category,
+    })
+
+
+def public_archive(request):
+    """A lasting public record of completed special events and approved archive material."""
+    today = date.today()
+    past_events = Event.objects.filter(
+        is_public=True, repeat=Event.Repeat.NONE, start__date__lt=today,
+    ).select_related("ministry").order_by("-start")
+    past_albums = GalleryAlbum.objects.filter(
+        is_public=True, event_date__lt=today,
+    ).select_related("ministry").prefetch_related("photos")
+    return render(request, "resources/public_archive.html", {
+        "past_events": past_events,
+        "past_albums": past_albums,
+        "archive_resources": Resource.objects.filter(
+            is_public=True, category=Resource.Category.ARCHIVE,
+        ).select_related("ministry"),
     })
 
 

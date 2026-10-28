@@ -149,6 +149,7 @@ def public_event_detail(request, pk):
         "event": event,
         "occurrence": occurrence,
         "gcal": event.google_calendar_url(occurrence),
+        "today": today,
     })
 
 

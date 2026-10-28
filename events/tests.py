@@ -171,6 +171,30 @@ class EventPagesTest(SeededTestCase):
         )
         self.assertEqual(self.client.get(reverse("events:public_detail", args=[event.pk])).status_code, 404)
 
+    def test_completed_public_events_move_to_resource_archive(self):
+        past = Event.objects.create(
+            title="Kids Farm Day Reflection", kind=Event.Kind.YOUTH,
+            start=aware(date.today() - timedelta(days=3)), repeat=Event.Repeat.NONE,
+            description="Animals, a corn maze, and joyful fellowship.",
+            banner_url="https://images.example.org/farm-day-flyer.jpg", is_public=True,
+        )
+        Event.objects.create(
+            title="Old weekly service", start=aware(date.today() - timedelta(days=30)),
+            repeat=Event.Repeat.WEEKLY, is_public=True,
+        )
+        archive = self.client.get(reverse("public_resources:archive"))
+        self.assertContains(archive, past.title)
+        self.assertContains(archive, past.banner_url)
+        self.assertContains(archive, "Animals, a corn maze")
+        self.assertNotContains(archive, "Old weekly service")
+        self.assertRedirects(
+            self.client.get(reverse("public_resources:list") + "?category=archive"),
+            reverse("public_resources:archive"),
+        )
+        detail = self.client.get(reverse("events:public_detail", args=[past.pk]))
+        self.assertContains(detail, "Looking back")
+        self.assertNotContains(detail, "Register your children")
+
     @override_settings(UPLOADS_ENABLED=False)
     def test_event_flyer_upload_is_persisted_and_served_from_database(self):
         self.login("abraham")
