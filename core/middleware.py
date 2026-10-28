@@ -30,3 +30,17 @@ class DatabaseConfigCheck:
         if self.missing and not request.path.startswith(settings.STATIC_URL.rstrip("/") or "/static"):
             return HttpResponse(MESSAGE, status=503)
         return self.get_response(request)
+
+
+class PortalNoStore:
+    """Prevent browsers and edge caches from restoring forms with expired CSRF tokens."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.path.startswith("/portal/") or request.path.startswith("/accounts/"):
+            response["Cache-Control"] = "private, no-store, max-age=0"
+            response["Pragma"] = "no-cache"
+        return response

@@ -59,6 +59,22 @@ class DeploymentTest(TestCase):
         with override_settings(UPLOADS_ENABLED=True):
             self.assertContains(self.client.get(reverse("resources:new")), 'type="file"')
 
+    def test_portal_forms_are_never_cached(self):
+        call_command("seed_church", password="Bethel-Test-2026", stdout=open(os.devnull, "w"))
+        self.client.login(username="abraham", password="Bethel-Test-2026")
+        response = self.client.get(reverse("events:new"))
+        self.assertEqual(response["Cache-Control"], "private, no-store, max-age=0")
+        self.assertContains(response, "csrfmiddlewaretoken")
+
+    def test_csrf_failure_page_offers_safe_retry(self):
+        from core.views import csrf_failure
+
+        request = RequestFactory().post("/portal/events/new/")
+        response = csrf_failure(request, "test failure")
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(b"Reload the form", response.content)
+        self.assertNotIn(b"test failure", response.content)
+
 
 class SupabaseConnectionStringTest(TestCase):
     POOLER = "postgresql://postgres.abcd:secret123@aws-0-us-east-1.pooler.supabase.com:6543/postgres"

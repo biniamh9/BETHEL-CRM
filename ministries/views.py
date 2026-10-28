@@ -19,7 +19,7 @@ from .forms import (
 )
 from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, Participant
 from .forms import validate_gallery_image
-from .image_processing import GalleryImageError, automatic_caption, optimize_gallery_image
+from core.image_processing import ImageProcessingError, automatic_caption, optimize_image_upload
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
 
@@ -259,8 +259,8 @@ def gallery_batch_upload(request):
         return JsonResponse({"error": "Choose a photo."}, status=400)
     try:
         validate_gallery_image(upload)
-        data, filename, content_type = optimize_gallery_image(upload)
-    except (GalleryImageError, ValidationError) as exc:
+        data, filename, content_type = optimize_image_upload(upload)
+    except (ImageProcessingError, ValidationError) as exc:
         return JsonResponse({"error": str(exc)}, status=400)
     caption = request.POST.get("caption", "").strip()[:220] or automatic_caption(
         upload.name, album.title if album else ""
@@ -369,8 +369,8 @@ def activity_edit(request, slug, pk=None):
                 ministry=ministry, activity=obj,
                 caption=form.cleaned_data["image_caption"].strip(),
                 occasion=GalleryPhoto.Occasion.MINISTRY, year=obj.date.year,
-                image_blob=upload.read(), content_type=upload.detected_content_type,
-                filename=Path(upload.name).name[:180], is_public=obj.is_public,
+                image_blob=form.optimized_image[0], content_type=form.optimized_image[2],
+                filename=form.optimized_image[1], is_public=obj.is_public,
                 created_by=request.user,
             )
         if obj.attendees.exists() and obj.attendance < obj.attendees.count():

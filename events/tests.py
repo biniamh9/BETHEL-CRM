@@ -1,6 +1,7 @@
 import shutil
 import tempfile
 from datetime import date, datetime, time, timedelta
+from io import BytesIO
 
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -16,6 +17,14 @@ from resources.models import Resource
 
 def aware(d, h=10):
     return timezone.make_aware(datetime.combine(d, time(h)), timezone.get_current_timezone())
+
+
+def test_image(name="event-flyer.jpg", size=(2200, 1500)):
+    from PIL import Image
+
+    output = BytesIO()
+    Image.new("RGB", size, (150, 82, 54)).save(output, format="JPEG", quality=96)
+    return SimpleUploadedFile(name, output.getvalue(), content_type="image/jpeg")
 
 
 class RepeatTest(SeededTestCase):
@@ -225,9 +234,7 @@ class EventPagesTest(SeededTestCase):
     @override_settings(UPLOADS_ENABLED=False)
     def test_event_flyer_upload_is_persisted_and_served_from_database(self):
         self.login("abraham")
-        flyer = SimpleUploadedFile(
-            "kids-outdoor.png", b"\x89PNG\r\n\x1a\n" + b"safe-test-image-data", content_type="image/png"
-        )
+        flyer = test_image("kids-outdoor.jpg")
         response = self.client.post(reverse("events:new"), {
             "title": "Kids Outdoor Day", "kind": "youth",
             "date": (date.today() + timedelta(days=10)).isoformat(), "start_time": "13:00",
@@ -236,12 +243,12 @@ class EventPagesTest(SeededTestCase):
         })
         event = Event.objects.get(title="Kids Outdoor Day")
         self.assertRedirects(response, event.get_absolute_url())
-        self.assertEqual(event.banner_content_type, "image/png")
+        self.assertEqual(event.banner_content_type, "image/jpeg")
         self.assertTrue(event.banner_blob)
         banner = self.client.get(reverse("events:public_banner", args=[event.pk]))
         self.assertEqual(banner.status_code, 200)
-        self.assertEqual(banner["Content-Type"], "image/png")
-        self.assertTrue(banner.content.startswith(b"\x89PNG"))
+        self.assertEqual(banner["Content-Type"], "image/jpeg")
+        self.assertTrue(banner.content.startswith(b"\xff\xd8\xff"))
 
     @override_settings(UPLOADS_ENABLED=False)
     def test_event_flyer_rejects_disguised_non_image(self):

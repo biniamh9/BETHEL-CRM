@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import logging
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
@@ -9,6 +10,14 @@ from accounts.models import User
 from events.models import Event
 from fundraising.models import Campaign, Donation
 from ministries.models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry
+
+logger = logging.getLogger(__name__)
+
+
+def csrf_failure(request, reason=""):
+    """Give portal users a recoverable response while preserving CSRF protection."""
+    logger.warning("CSRF rejected %s %s: %s", request.method, request.path, reason)
+    return render(request, "403_csrf.html", {"retry_url": request.path}, status=403)
 
 
 def home(request):

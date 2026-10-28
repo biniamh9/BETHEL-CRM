@@ -3,7 +3,7 @@ from django import forms
 from pathlib import Path
 from datetime import date
 
-from .image_processing import GalleryImageError, optimize_gallery_image
+from core.image_processing import ImageProcessingError, optimize_image_upload, validate_image_upload
 from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, Participant
 
 
@@ -19,7 +19,7 @@ class ActivityForm(forms.ModelForm):
     image = forms.FileField(
         required=False, label="Activity photo",
         help_text="Optional JPG, PNG, or WebP; maximum 4 MB. You can add another photo each time you edit.",
-        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp", "data-optimize-image": "1"}),
     )
     image_caption = forms.CharField(
         required=False, max_length=220, label="Photo caption",
@@ -49,7 +49,14 @@ class ActivityForm(forms.ModelForm):
 
     def clean_image(self):
         upload = self.cleaned_data.get("image")
-        return validate_gallery_image(upload) if upload else upload
+        if not upload:
+            return upload
+        upload = validate_gallery_image(upload)
+        try:
+            self.optimized_image = optimize_image_upload(upload)
+        except ImageProcessingError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+        return upload
 
     def clean(self):
         cleaned = super().clean()
@@ -72,7 +79,7 @@ class MinistryMemberSpotlightForm(forms.ModelForm):
     image = forms.FileField(
         required=False, label="Member photo",
         help_text="Optional JPG, PNG, or WebP. It will be resized below 1 MB.",
-        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp", "data-optimize-image": "1"}),
     )
     remove_image = forms.BooleanField(required=False, label="Remove the current photo and use the placeholder")
 
@@ -87,8 +94,8 @@ class MinistryMemberSpotlightForm(forms.ModelForm):
             return upload
         upload = validate_gallery_image(upload)
         try:
-            self.optimized_image = optimize_gallery_image(upload)
-        except GalleryImageError as exc:
+            self.optimized_image = optimize_image_upload(upload)
+        except ImageProcessingError as exc:
             raise forms.ValidationError(str(exc)) from exc
         return upload
 
@@ -157,7 +164,7 @@ class MinistryProfileForm(forms.ModelForm):
 class GalleryPhotoForm(forms.ModelForm):
     image = forms.FileField(
         label="Photo", help_text="JPG, PNG, or WebP; maximum 4 MB.",
-        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp", "data-optimize-image": "1"}),
     )
 
     class Meta:
@@ -175,14 +182,17 @@ class GalleryPhotoForm(forms.ModelForm):
         return year
 
     def clean_image(self):
-        return validate_gallery_image(self.cleaned_data["image"])
+        upload = validate_gallery_image(self.cleaned_data["image"])
+        try:
+            self.optimized_image = optimize_image_upload(upload)
+        except ImageProcessingError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+        return upload
 
     def save(self, commit=True):
         photo = super().save(commit=False)
         upload = self.cleaned_data["image"]
-        photo.image_blob = upload.read()
-        photo.content_type = upload.detected_content_type
-        photo.filename = Path(upload.name).name[:180]
+        photo.image_blob, photo.filename, photo.content_type = self.optimized_image
         if commit:
             photo.save()
         return photo
@@ -231,19 +241,7 @@ class GalleryPhotoMetadataForm(forms.ModelForm):
 
 
 def validate_gallery_image(upload):
-    if upload.size > 4 * 1024 * 1024:
-        raise forms.ValidationError("The photo must be 4 MB or smaller.")
-    head = upload.read(16)
-    upload.seek(0)
-    suffix = Path(upload.name).suffix.lower()
-    detected = None
-    if head.startswith(b"\x89PNG\r\n\x1a\n"):
-        detected = "image/png"
-    elif head.startswith(b"\xff\xd8\xff"):
-        detected = "image/jpeg"
-    elif head.startswith(b"RIFF") and head[8:12] == b"WEBP":
-        detected = "image/webp"
-    if suffix not in {".jpg", ".jpeg", ".png", ".webp"} or not detected:
-        raise forms.ValidationError("Upload a valid JPG, PNG, or WebP image.")
-    upload.detected_content_type = detected
-    return upload
+    try:
+        return validate_image_upload(upload)
+    except ImageProcessingError as exc:
+        raise forms.ValidationError(str(exc)) from exc

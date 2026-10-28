@@ -104,9 +104,7 @@ class PublicMinistryTests(TestCase):
         leader = User.objects.create_user("gallerylead", password="Valid-Test-Pass-42", role=User.Role.LEADER)
         leader.led_ministries.add(self.ministry)
         self.client.force_login(leader)
-        photo_file = SimpleUploadedFile(
-            "conference.png", b"\x89PNG\r\n\x1a\n" + b"gallery-image", content_type="image/png"
-        )
+        photo_file = test_jpeg("conference.jpg")
         response = self.client.post(reverse("ministries:gallery", args=[self.ministry.slug]), {
             "caption": "Youth conference worship", "occasion": "conference", "year": "2026",
             "is_public": "on", "image": photo_file,
@@ -119,7 +117,7 @@ class PublicMinistryTests(TestCase):
         self.assertContains(public, "Youth conference worship")
         image = self.client.get(photo.get_image_url())
         self.assertEqual(image.status_code, 200)
-        self.assertEqual(image["Content-Type"], "image/png")
+        self.assertEqual(image["Content-Type"], "image/jpeg")
         other = Ministry.objects.create(name="Other Ministry")
         self.assertEqual(self.client.get(reverse("ministries:gallery", args=[other.slug])).status_code, 403)
 
@@ -130,9 +128,7 @@ class PublicMinistryTests(TestCase):
         portal = self.client.get(reverse("core:portal"))
         self.assertContains(portal, "Photo gallery")
         self.assertEqual(self.client.get(reverse("ministries:gallery_hub")).status_code, 200)
-        photo_file = SimpleUploadedFile(
-            "outdoor.jpg", b"\xff\xd8\xff" + b"gallery-image", content_type="image/jpeg"
-        )
+        photo_file = test_jpeg("outdoor.jpg")
         response = self.client.post(reverse("ministries:gallery_hub"), {
             "ministry": self.ministry.pk, "caption": "Children outdoors", "occasion": "outdoor",
             "year": "2026", "is_public": "on", "image": photo_file,
@@ -201,9 +197,7 @@ class PublicMinistryTests(TestCase):
         leader = User.objects.create_user("activityphoto", password="Valid-Test-Pass-42", role=User.Role.LEADER)
         leader.led_ministries.add(self.ministry)
         self.client.force_login(leader)
-        photo_file = SimpleUploadedFile(
-            "bible-study.jpg", b"\xff\xd8\xff" + b"activity-image", content_type="image/jpeg"
-        )
+        photo_file = test_jpeg("bible-study.jpg")
         response = self.client.post(reverse("ministries:activity_new", args=[self.ministry.slug]), {
             "title": "Youth Bible study", "kind": "class", "date": "2026-10-25",
             "attendance": "18", "volunteer_hours": "2", "summary": "Studied together.",

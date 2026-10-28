@@ -3,7 +3,10 @@ from pathlib import Path
 
 from django import forms
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.utils import timezone
+
+from core.image_processing import ImageProcessingError, optimize_image_upload, validate_image_upload
 
 from .models import Event
 
@@ -45,7 +48,7 @@ class EventForm(forms.ModelForm):
         required=False,
         label="Flyer or banner image",
         help_text="JPG, PNG, or WebP; maximum 3 MB.",
-        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp", "data-optimize-image": "1"}),
     )
 
     class Meta:
@@ -67,6 +70,9 @@ class EventForm(forms.ModelForm):
             self.fields["flyer_upload"].help_text = "Stored securely with the event in the church database. JPG, PNG, or WebP; maximum 3 MB."
         else:
             self.fields.pop("flyer_upload")
+            self.fields["banner"].widget.attrs.update({
+                "accept": "image/jpeg,image/png,image/webp", "data-optimize-image": "1",
+            })
         self.fields["ministry"].queryset = user.editable_ministries()
         if not user.can_create_churchwide_events:
             self.fields["ministry"].required = True
@@ -85,31 +91,31 @@ class EventForm(forms.ModelForm):
         upload = self.cleaned_data.get("flyer_upload")
         if not upload:
             return upload
-        if upload.size > 3 * 1024 * 1024:
-            raise forms.ValidationError("The flyer must be 3 MB or smaller.")
-        suffix = Path(upload.name).suffix.lower()
-        head = upload.read(16)
-        upload.seek(0)
-        detected = None
-        if head.startswith(b"\x89PNG\r\n\x1a\n"):
-            detected = "image/png"
-        elif head.startswith(b"\xff\xd8\xff"):
-            detected = "image/jpeg"
-        elif head.startswith(b"RIFF") and head[8:12] == b"WEBP":
-            detected = "image/webp"
-        allowed_suffixes = {".jpg", ".jpeg", ".png", ".webp"}
-        if suffix not in allowed_suffixes or detected is None:
-            raise forms.ValidationError("Upload a valid JPG, PNG, or WebP image.")
-        upload.detected_content_type = detected
+        try:
+            upload = validate_image_upload(upload)
+            self.optimized_flyer = optimize_image_upload(upload)
+        except ImageProcessingError as exc:
+            raise forms.ValidationError(str(exc)) from exc
         return upload
+
+    def clean_banner(self):
+        upload = self.cleaned_data.get("banner")
+        if not upload or not hasattr(upload, "content_type"):
+            return upload
+        try:
+            validate_image_upload(upload)
+            data, filename, content_type = optimize_image_upload(upload)
+        except ImageProcessingError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+        optimized = ContentFile(data, name=filename)
+        optimized.content_type = content_type
+        return optimized
 
     def save(self, commit=True):
         event = super().save(commit=False)
         upload = self.cleaned_data.get("flyer_upload")
         if upload:
-            event.banner_blob = upload.read()
-            event.banner_content_type = upload.detected_content_type
-            event.banner_filename = Path(upload.name).name[:180]
+            event.banner_blob, event.banner_filename, event.banner_content_type = self.optimized_flyer
         if commit:
             event.save()
             self.save_m2m()

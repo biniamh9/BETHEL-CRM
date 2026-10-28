@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Please refresh this form · Bethel CRM{% endblock %}
+{% block body %}
+<main class="auth-wrap"><section class="auth-card"><span class="eyebrow">Security check</span><h1>Please refresh this form.</h1><p>Your secure form session expired or the page address changed during deployment. Your account and information are safe.</p><div class="actions"><a class="btn btn-primary" href="{{ retry_url }}">Reload the form</a><a class="btn btn-ghost" href="{% url 'core:portal' %}">Return to portal</a></div><p class="small muted">After reloading, choose the image again and submit. If this continues, sign out and sign back in once.</p></section></main>
+{% endblock %}

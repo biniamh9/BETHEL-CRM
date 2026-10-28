@@ -42,6 +42,9 @@ if ON_VERCEL:
             ALLOWED_HOSTS.append(host)
             CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
 
+# Vercel terminates TLS and forwards the public hostname to Django.
+USE_X_FORWARDED_HOST = ON_VERCEL
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -66,6 +69,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "core.middleware.PortalNoStore",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -132,6 +136,8 @@ LOGOUT_REDIRECT_URL = "core:home"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_USE_SESSIONS = True
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 X_FRAME_OPTIONS = "DENY"
 
