@@ -1,0 +1,42 @@
+{% extends "base_public.html" %}
+{% block title %}{{ album.title }} · {{ church.short_name }}{% endblock %}
+{% block content %}
+<section class="archive-album-hero">
+  <div class="wrap">
+    <a class="archive-back-link" href="{% url 'public_resources:archive' %}">← Event archive</a>
+    <span class="eyebrow">{{ album.ministry.name }}{% if album.event_date %} · {{ album.event_date|date:"F j, Y" }}{% endif %}</span>
+    <h1>{{ album.title }}</h1>
+    {% if album.description %}<p>{{ album.description }}</p>{% endif %}
+    {% if album.location %}<span class="archive-album-location">{{ album.location }}</span>{% endif %}
+  </div>
+</section>
+
+<section class="wrap public-section archive-photo-story">
+  <header class="section-heading compact"><span class="eyebrow">Photo gallery</span><h2>Moments from the day.</h2></header>
+  {% if photos %}
+  <div class="managed-gallery-grid">
+    {% for photo in photos %}
+    <button class="gallery-photo" type="button" data-gallery-image="{{ photo.get_image_url }}" data-gallery-caption="{{ photo.caption }}" data-gallery-meta="{{ album.ministry.name }} · {{ album.title }}{% if album.event_date %} · {{ album.event_date|date:'F j, Y' }}{% endif %}">
+      <img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}" loading="lazy"><span><b>{{ photo.caption }}</b><small>{{ album.ministry.name }}</small></span>
+    </button>
+    {% endfor %}
+  </div>
+  {% else %}<div class="public-empty"><h2>Photos are being prepared.</h2><p>Please visit again soon.</p></div>{% endif %}
+</section>
+
+<dialog class="gallery-lightbox" aria-label="Photo viewer"><button class="lightbox-close" type="button" aria-label="Close">×</button><button class="lightbox-prev" type="button" aria-label="Previous photo">←</button><figure><img alt=""><figcaption><b></b><span></span></figcaption></figure><button class="lightbox-next" type="button" aria-label="Next photo">→</button></dialog>
+<script>
+(() => {
+  const items = [...document.querySelectorAll('[data-gallery-image]')], box = document.querySelector('.gallery-lightbox');
+  if (!box || !items.length) return;
+  const image = box.querySelector('img'), caption = box.querySelector('figcaption b'), meta = box.querySelector('figcaption span'); let index = 0;
+  const show = i => { index = (i + items.length) % items.length; const item = items[index]; image.src = item.dataset.galleryImage; image.alt = item.dataset.galleryCaption; caption.textContent = item.dataset.galleryCaption; meta.textContent = item.dataset.galleryMeta; };
+  items.forEach((item, i) => item.addEventListener('click', () => { show(i); box.showModal(); }));
+  box.querySelector('.lightbox-close').addEventListener('click', () => box.close());
+  box.querySelector('.lightbox-prev').addEventListener('click', () => show(index - 1));
+  box.querySelector('.lightbox-next').addEventListener('click', () => show(index + 1));
+  box.addEventListener('click', event => { if (event.target === box) box.close(); });
+  box.addEventListener('keydown', event => { if (event.key === 'ArrowLeft') show(index - 1); if (event.key === 'ArrowRight') show(index + 1); });
+})();
+</script>
+{% endblock %}

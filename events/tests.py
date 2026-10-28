@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from events.models import Event
 from fundraising.tests import SeededTestCase
-from ministries.models import Ministry
+from ministries.models import GalleryAlbum, GalleryPhoto, Ministry
 from resources.models import Resource
 
 
@@ -172,11 +172,22 @@ class EventPagesTest(SeededTestCase):
         self.assertEqual(self.client.get(reverse("events:public_detail", args=[event.pk])).status_code, 404)
 
     def test_completed_public_events_move_to_resource_archive(self):
+        youth = Ministry.objects.get(slug="youth-kids-ministry")
+        event_date = date.today() - timedelta(days=3)
         past = Event.objects.create(
             title="Kids Farm Day Reflection", kind=Event.Kind.YOUTH,
-            start=aware(date.today() - timedelta(days=3)), repeat=Event.Repeat.NONE,
+            ministry=youth, start=aware(event_date), repeat=Event.Repeat.NONE,
             description="Animals, a corn maze, and joyful fellowship.",
             banner_url="https://images.example.org/farm-day-flyer.jpg", is_public=True,
+        )
+        album = GalleryAlbum.objects.create(
+            ministry=youth, title="Kids Farm Day", event_date=event_date,
+            description="A joyful day at the farm.", is_public=True,
+        )
+        GalleryPhoto.objects.create(
+            ministry=youth, album=album, caption="Friends in the corn maze",
+            occasion=GalleryPhoto.Occasion.YOUTH, year=event_date.year,
+            static_path="images/farm-day-test.webp", is_public=True,
         )
         Event.objects.create(
             title="Old weekly service", start=aware(date.today() - timedelta(days=30)),
@@ -186,6 +197,8 @@ class EventPagesTest(SeededTestCase):
         self.assertContains(archive, past.title)
         self.assertContains(archive, past.banner_url)
         self.assertContains(archive, "Animals, a corn maze")
+        self.assertContains(archive, "View photo gallery")
+        self.assertContains(archive, reverse("public_resources:album_detail", args=[album.slug]))
         self.assertNotContains(archive, "Old weekly service")
         self.assertRedirects(
             self.client.get(reverse("public_resources:list") + "?category=archive"),
@@ -194,6 +207,20 @@ class EventPagesTest(SeededTestCase):
         detail = self.client.get(reverse("events:public_detail", args=[past.pk]))
         self.assertContains(detail, "Looking back")
         self.assertNotContains(detail, "Register your children")
+        album_page = self.client.get(reverse("public_resources:album_detail", args=[album.slug]))
+        self.assertContains(album_page, album.title)
+        self.assertContains(album_page, "Friends in the corn maze")
+
+    def test_private_gallery_album_is_not_public(self):
+        youth = Ministry.objects.get(slug="youth-kids-ministry")
+        album = GalleryAlbum.objects.create(
+            ministry=youth, title="Private album", event_date=date.today() - timedelta(days=1),
+            is_public=False,
+        )
+        self.assertEqual(
+            self.client.get(reverse("public_resources:album_detail", args=[album.slug])).status_code,
+            404,
+        )
 
     @override_settings(UPLOADS_ENABLED=False)
     def test_event_flyer_upload_is_persisted_and_served_from_database(self):

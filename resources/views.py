@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from ministries.models import Ministry
 from ministries.models import GalleryAlbum
@@ -30,18 +31,42 @@ def public_resource_list(request):
 def public_archive(request):
     """A lasting public record of completed special events and approved archive material."""
     today = date.today()
-    past_events = Event.objects.filter(
+    past_events = list(Event.objects.filter(
         is_public=True, repeat=Event.Repeat.NONE, start__date__lt=today,
-    ).select_related("ministry").order_by("-start")
-    past_albums = GalleryAlbum.objects.filter(
+    ).select_related("ministry").order_by("-start"))
+    past_albums = list(GalleryAlbum.objects.filter(
         is_public=True, event_date__lt=today,
-    ).select_related("ministry").prefetch_related("photos")
+    ).select_related("ministry").prefetch_related("photos"))
+
+    # Connect a completed event to its photo story when an album was published
+    # for the same day. Prefer the same ministry, while still supporting
+    # church-wide events that have one unambiguous album for that date.
+    for event in past_events:
+        event_date = timezone.localtime(event.start).date()
+        candidates = [album for album in past_albums if album.event_date == event_date]
+        event.archive_album = next(
+            (album for album in candidates if album.ministry_id == event.ministry_id),
+            candidates[0] if len(candidates) == 1 else None,
+        )
     return render(request, "resources/public_archive.html", {
         "past_events": past_events,
         "past_albums": past_albums,
         "archive_resources": Resource.objects.filter(
             is_public=True, category=Resource.Category.ARCHIVE,
         ).select_related("ministry"),
+    })
+
+
+def public_album_detail(request, slug):
+    """Public, focused photo story for one approved gallery album."""
+    album = get_object_or_404(
+        GalleryAlbum.objects.select_related("ministry").prefetch_related("photos"),
+        slug=slug,
+        is_public=True,
+    )
+    return render(request, "resources/public_album_detail.html", {
+        "album": album,
+        "photos": album.photos.filter(is_public=True),
     })
 
 
