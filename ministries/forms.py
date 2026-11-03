@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import date
 
 from core.image_processing import ImageProcessingError, optimize_image_upload, validate_image_upload
-from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, Participant
+from .models import Activity, BirthdayCelebration, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, Participant
 
 
 class DateInput(forms.DateInput):
@@ -114,6 +114,60 @@ class MinistryMemberSpotlightForm(forms.ModelForm):
         if commit:
             spotlight.save()
         return spotlight
+
+
+class BirthdayCelebrationForm(forms.ModelForm):
+    image = forms.FileField(
+        required=False, label="Birthday photo",
+        help_text="Optional JPG, PNG, or WebP. It will be automatically resized below 1 MB.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp", "data-optimize-image": "1"}),
+    )
+    remove_image = forms.BooleanField(required=False, label="Remove the current photo and use the birthday placeholder")
+
+    class Meta:
+        model = BirthdayCelebration
+        fields = ("member_name", "celebration_date", "message", "consent_confirmed", "is_active")
+        widgets = {
+            "celebration_date": DateInput(),
+            "message": forms.Textarea(attrs={"rows": 5, "maxlength": 800}),
+        }
+        labels = {"message": "Birthday message from the ministry"}
+
+    def clean_consent_confirmed(self):
+        if not self.cleaned_data.get("consent_confirmed"):
+            raise forms.ValidationError("Consent is required before a birthday post can be shared with members.")
+        return True
+
+    def clean_image(self):
+        upload = self.cleaned_data.get("image")
+        if not upload:
+            return upload
+        upload = validate_gallery_image(upload)
+        try:
+            self.optimized_image = optimize_image_upload(upload)
+        except ImageProcessingError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+        return upload
+
+    def save(self, commit=True):
+        celebration = super().save(commit=False)
+        if self.cleaned_data.get("remove_image"):
+            celebration.image_blob = b""
+            celebration.image_content_type = ""
+            celebration.image_filename = ""
+        if self.cleaned_data.get("image"):
+            celebration.image_blob, celebration.image_filename, celebration.image_content_type = self.optimized_image
+        if commit:
+            celebration.save()
+        return celebration
+
+
+class BirthdayWishForm(forms.ModelForm):
+    class Meta:
+        model = BirthdayWish
+        fields = ("message",)
+        labels = {"message": "Write a warm birthday wish"}
+        widgets = {"message": forms.Textarea(attrs={"rows": 3, "maxlength": 600, "placeholder": "Share a kind message…"})}
 
 
 class MinistryContactForm(forms.ModelForm):

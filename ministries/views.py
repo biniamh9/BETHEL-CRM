@@ -15,9 +15,9 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     ActivityForm, GalleryAlbumForm, GalleryPhotoForm, GalleryPhotoMetadataForm, MinistryContactForm, MinistryJoinForm,
-    MinistryMemberSpotlightForm, MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
+    BirthdayCelebrationForm, BirthdayWishForm, MinistryMemberSpotlightForm, MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
 )
-from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, Participant
+from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, Participant
 from .forms import validate_gallery_image
 from core.image_processing import ImageProcessingError, automatic_caption, optimize_image_upload
 
@@ -443,6 +443,136 @@ def member_spotlight_delete(request, slug, pk):
         spotlight.delete()
         messages.success(request, f"Removed public member profile for {name}.")
     return redirect(f"{ministry.get_absolute_url()}#member-spotlights")
+
+
+def _birthday_for_member(request, pk, manage=False):
+    celebration = get_object_or_404(BirthdayCelebration.objects.select_related("ministry", "created_by"), pk=pk)
+    can_manage = request.user.can_edit_ministry(celebration.ministry)
+    if manage and not can_manage:
+        raise PermissionDenied
+    if not celebration.is_active and not can_manage:
+        raise Http404
+    return celebration, can_manage
+
+
+@login_required
+def birthday_list(request):
+    editable = request.user.editable_ministries()
+    celebrations = BirthdayCelebration.objects.select_related("ministry").annotate(
+        wish_count=Count("wishes", distinct=True), reaction_count=Count("reactions", distinct=True),
+    ).filter(Q(is_active=True) | Q(ministry__in=editable)).distinct()
+    items = list(celebrations)
+    for item in items:
+        item.can_manage = request.user.can_edit_ministry(item.ministry)
+    return render(request, "ministries/birthday_list.html", {
+        "celebrations": items, "editable_ministries": editable,
+    })
+
+
+@login_required
+def birthday_detail(request, pk):
+    celebration, can_manage = _birthday_for_member(request, pk)
+    reactions = {kind: celebration.reactions.filter(kind=kind).count() for kind, _ in BirthdayReaction.Kind.choices}
+    mine = celebration.reactions.filter(user=request.user).values_list("kind", flat=True).first()
+    emojis = {"love": "♥", "celebrate": "🎉", "blessing": "🙏"}
+    return render(request, "ministries/birthday_detail.html", {
+        "celebration": celebration,
+        "wish_form": BirthdayWishForm(),
+        "wishes": celebration.wishes.select_related("author"),
+        "reaction_buttons": [
+            {"kind": kind, "label": label, "emoji": emojis[kind], "count": reactions[kind]}
+            for kind, label in BirthdayReaction.Kind.choices
+        ],
+        "my_reaction": mine,
+        "can_manage": can_manage,
+        "share_url": request.build_absolute_uri(celebration.get_absolute_url()),
+        "share_text": f"Join our Bethel church family in wishing {celebration.member_name} a happy birthday!",
+    })
+
+
+@login_required
+def birthday_image(request, pk):
+    celebration, _ = _birthday_for_member(request, pk)
+    if not celebration.image_blob or celebration.image_content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = HttpResponse(bytes(celebration.image_blob), content_type=celebration.image_content_type)
+    response["Content-Disposition"] = f'inline; filename="{celebration.image_filename.replace(chr(34), "")}"'
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required
+def birthday_edit(request, slug, pk=None):
+    ministry = _get_ministry(request, slug, edit=True)
+    celebration = get_object_or_404(BirthdayCelebration, pk=pk, ministry=ministry) if pk else None
+    form = BirthdayCelebrationForm(request.POST or None, request.FILES or None, instance=celebration)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.ministry = ministry
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj.save()
+        messages.success(request, f"Birthday celebration for {obj.member_name} was saved.")
+        return redirect(obj)
+    return render(request, "ministries/birthday_form.html", {
+        "form": form, "ministry": ministry, "celebration": celebration,
+    })
+
+
+@login_required
+@require_POST
+def birthday_delete(request, slug, pk):
+    ministry = _get_ministry(request, slug, edit=True)
+    celebration = get_object_or_404(BirthdayCelebration, pk=pk, ministry=ministry)
+    celebration.delete()
+    messages.success(request, "Birthday celebration removed.")
+    return redirect("ministries:birthday_list")
+
+
+@login_required
+@require_POST
+def birthday_wish(request, pk):
+    celebration, _ = _birthday_for_member(request, pk)
+    form = BirthdayWishForm(request.POST)
+    if form.is_valid():
+        wish = form.save(commit=False)
+        wish.celebration = celebration
+        wish.author = request.user
+        wish.save()
+        messages.success(request, "Your birthday wish was added.")
+    else:
+        messages.error(request, "Please write a birthday wish before posting.")
+    return redirect(f"{celebration.get_absolute_url()}#birthday-wishes")
+
+
+@login_required
+@require_POST
+def birthday_react(request, pk):
+    celebration, _ = _birthday_for_member(request, pk)
+    kind = request.POST.get("kind")
+    allowed = {value for value, _ in BirthdayReaction.Kind.choices}
+    if kind not in allowed:
+        raise Http404
+    existing = BirthdayReaction.objects.filter(celebration=celebration, user=request.user).first()
+    if existing and existing.kind == kind:
+        existing.delete()
+    else:
+        BirthdayReaction.objects.update_or_create(
+            celebration=celebration, user=request.user, defaults={"kind": kind},
+        )
+    return redirect(celebration)
+
+
+@login_required
+@require_POST
+def birthday_wish_delete(request, pk, wish_pk):
+    celebration, can_manage = _birthday_for_member(request, pk)
+    wish = get_object_or_404(BirthdayWish, pk=wish_pk, celebration=celebration)
+    if wish.author_id != request.user.pk and not can_manage:
+        raise PermissionDenied
+    wish.delete()
+    messages.success(request, "Birthday wish removed.")
+    return redirect(f"{celebration.get_absolute_url()}#birthday-wishes")
 
 
 @login_required

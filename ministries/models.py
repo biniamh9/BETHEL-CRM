@@ -170,6 +170,65 @@ class MinistryMemberSpotlight(models.Model):
         return reverse("public_ministries:member_image", args=[self.ministry.slug, self.pk])
 
 
+class BirthdayCelebration(models.Model):
+    """A private, consented birthday post visible only to signed-in members."""
+
+    ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="birthday_celebrations")
+    member_name = models.CharField(max_length=120)
+    celebration_date = models.DateField(
+        help_text="The celebration date for this post. The year is not shown to members as an age."
+    )
+    message = models.TextField(max_length=800, blank=True)
+    image_blob = models.BinaryField(editable=False, blank=True, default=b"")
+    image_content_type = models.CharField(max_length=30, editable=False, blank=True)
+    image_filename = models.CharField(max_length=180, editable=False, blank=True)
+    consent_confirmed = models.BooleanField(
+        default=False,
+        help_text="Confirm the member, or a parent/guardian for a child, approved the members-only post and social sharing reminder.",
+    )
+    is_active = models.BooleanField("Published to members", default=True, db_index=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="created_birthday_celebrations")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-celebration_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.member_name} — {self.celebration_date:%B %d}"
+
+    def get_absolute_url(self):
+        return reverse("ministries:birthday_detail", args=[self.pk])
+
+    def get_image_url(self):
+        return reverse("ministries:birthday_image", args=[self.pk])
+
+
+class BirthdayWish(models.Model):
+    celebration = models.ForeignKey(BirthdayCelebration, on_delete=models.CASCADE, related_name="wishes")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="birthday_wishes")
+    message = models.TextField(max_length=600)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+
+class BirthdayReaction(models.Model):
+    class Kind(models.TextChoices):
+        LOVE = "love", "Love"
+        CELEBRATE = "celebrate", "Celebrate"
+        BLESSING = "blessing", "Blessing"
+
+    celebration = models.ForeignKey(BirthdayCelebration, on_delete=models.CASCADE, related_name="reactions")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="birthday_reactions")
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("celebration", "user"), name="one_birthday_reaction_per_member")]
+
+
 class Activity(models.Model):
     """One record of what a ministry did: a rehearsal, a class, a visit, an outreach."""
 

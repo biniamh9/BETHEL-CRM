@@ -7,7 +7,7 @@ from django.urls import reverse
 from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
-from .models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight
+from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight
 
 
 def test_jpeg(name="IMG_1234.jpg", size=(3000, 2200)):
@@ -221,6 +221,102 @@ class PublicMinistryTests(TestCase):
         self.assertEqual(MinistryInquiry.objects.filter(ministry=self.ministry).count(), 2)
         self.assertEqual(set(MinistryInquiry.objects.values_list("status", flat=True)), {"pending"})
         self.assertEqual(MinistryInquiry.objects.get(kind="join").area_interest, "Community service")
+
+
+class BirthdayWallTests(TestCase):
+    def setUp(self):
+        self.ministry = Ministry.objects.create(name="Youth & Kids Ministry", slug="youth-kids-ministry")
+        self.other_ministry = Ministry.objects.create(name="Choir Ministry", slug="choir-ministry")
+        self.leader = User.objects.create_user("youthleader", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        self.leader.led_ministries.add(self.ministry)
+        self.member = User.objects.create_user("churchmember", password="Valid-Test-Pass-42", role=User.Role.MEMBER)
+        self.other_leader = User.objects.create_user("choirleader", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        self.other_leader.led_ministries.add(self.other_ministry)
+        self.celebration = BirthdayCelebration.objects.create(
+            ministry=self.ministry, member_name="Miriam T.", celebration_date="2026-11-08",
+            message="May God bless your new year of life.", consent_confirmed=True, created_by=self.leader,
+        )
+
+    def test_birthday_wall_requires_membership_login(self):
+        for url in (
+            reverse("ministries:birthday_list"),
+            reverse("ministries:birthday_detail", args=[self.celebration.pk]),
+            reverse("ministries:birthday_image", args=[self.celebration.pk]),
+        ):
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 302)
+            self.assertIn(reverse("accounts:login"), response.url)
+
+    def test_member_can_wish_react_and_share_but_cannot_manage(self):
+        self.client.force_login(self.member)
+        detail = self.client.get(self.celebration.get_absolute_url())
+        self.assertContains(detail, "Happy Birthday")
+        self.assertContains(detail, "Share on WhatsApp")
+        self.assertContains(detail, "Share on Facebook")
+        self.assertEqual(
+            self.client.get(reverse("ministries:birthday_edit", args=[self.ministry.slug, self.celebration.pk])).status_code,
+            403,
+        )
+        self.client.post(reverse("ministries:birthday_wish", args=[self.celebration.pk]), {"message": "Wishing you joy and blessings!"})
+        self.assertTrue(BirthdayWish.objects.filter(celebration=self.celebration, author=self.member).exists())
+        self.client.post(reverse("ministries:birthday_react", args=[self.celebration.pk]), {"kind": "celebrate"})
+        self.assertEqual(BirthdayReaction.objects.get(user=self.member, celebration=self.celebration).kind, "celebrate")
+        self.client.post(reverse("ministries:birthday_react", args=[self.celebration.pk]), {"kind": "love"})
+        self.assertEqual(BirthdayReaction.objects.get(user=self.member, celebration=self.celebration).kind, "love")
+
+    def test_ministry_leader_can_publish_optimized_photo_only_for_own_ministry(self):
+        self.client.force_login(self.leader)
+        response = self.client.post(reverse("ministries:birthday_new", args=[self.ministry.slug]), {
+            "member_name": "Samuel B.", "celebration_date": "2026-11-12",
+            "message": "We celebrate you!", "consent_confirmed": "on", "is_active": "on",
+            "image": test_jpeg("samuel-birthday.jpg"),
+        })
+        created = BirthdayCelebration.objects.get(member_name="Samuel B.")
+        self.assertRedirects(response, created.get_absolute_url())
+        self.assertLess(len(created.image_blob), 1024 * 1024)
+        self.assertEqual(created.image_content_type, "image/jpeg")
+        self.assertEqual(self.client.get(created.get_image_url()).status_code, 200)
+        self.assertEqual(
+            self.client.get(reverse("ministries:birthday_new", args=[self.other_ministry.slug])).status_code,
+            403,
+        )
+
+    def test_consent_is_required_and_photo_is_private(self):
+        self.client.force_login(self.leader)
+        response = self.client.post(reverse("ministries:birthday_new", args=[self.ministry.slug]), {
+            "member_name": "No Consent", "celebration_date": "2026-11-12", "is_active": "on",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Consent is required")
+        self.assertFalse(BirthdayCelebration.objects.filter(member_name="No Consent").exists())
+        self.client.logout()
+        self.assertEqual(self.client.get(self.celebration.get_image_url()).status_code, 302)
+
+    def test_only_author_or_ministry_manager_can_remove_wish(self):
+        wish = BirthdayWish.objects.create(celebration=self.celebration, author=self.member, message="Happy birthday!")
+        self.client.force_login(self.other_leader)
+        self.assertEqual(
+            self.client.post(reverse("ministries:birthday_wish_delete", args=[self.celebration.pk, wish.pk])).status_code,
+            403,
+        )
+        self.client.force_login(self.leader)
+        self.client.post(reverse("ministries:birthday_wish_delete", args=[self.celebration.pk, wish.pk]))
+        self.assertFalse(BirthdayWish.objects.filter(pk=wish.pk).exists())
+
+    def test_unpublished_celebration_is_hidden_from_members_but_visible_to_manager(self):
+        self.celebration.is_active = False
+        self.celebration.save(update_fields=["is_active"])
+        self.client.force_login(self.member)
+        self.assertEqual(self.client.get(self.celebration.get_absolute_url()).status_code, 404)
+        self.client.force_login(self.leader)
+        self.assertEqual(self.client.get(self.celebration.get_absolute_url()).status_code, 200)
+
+
+class PublicMinistryWorkflowTests(TestCase):
+    def setUp(self):
+        self.ministry = Ministry.objects.create(
+            name="Youth & Kids Ministry", slug="youth-kids-ministry", description="Faith and discipleship."
+        )
 
     def test_only_published_announcements_are_public(self):
         MinistryAnnouncement.objects.create(

@@ -33,6 +33,7 @@
 
       <a href="{% url 'events:calendar' %}" class="{% if '/portal/calendar/' in path %}on{% endif %}">{% include "partials/icon.html" with i="calendar" %}Calendar</a>
       <a href="{% url 'events:upcoming' %}" class="{% if '/portal/events/' in path %}on{% endif %}">{% include "partials/icon.html" with i="events" %}Upcoming events</a>
+      <a href="{% url 'ministries:birthday_list' %}" class="{% if '/portal/ministries/birthdays/' in path %}on{% endif %}">{% include "partials/icon.html" with i="events" %}Birthday wall</a>
       <a href="{% url 'resources:list' %}" class="{% if '/portal/resources/' in path %}on{% endif %}">{% include "partials/icon.html" with i="resources" %}Resources</a>
 
       {% if user.can_view_fund_totals %}

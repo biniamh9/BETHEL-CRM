@@ -6,6 +6,15 @@ app_name = "ministries"
 
 urlpatterns = [
     path("", views.ministry_list, name="list"),
+    path("birthdays/", views.birthday_list, name="birthday_list"),
+    path("birthdays/<int:pk>/", views.birthday_detail, name="birthday_detail"),
+    path("birthdays/<int:pk>/image/", views.birthday_image, name="birthday_image"),
+    path("birthdays/<int:pk>/wish/", views.birthday_wish, name="birthday_wish"),
+    path("birthdays/<int:pk>/react/", views.birthday_react, name="birthday_react"),
+    path("birthdays/<int:pk>/wishes/<int:wish_pk>/delete/", views.birthday_wish_delete, name="birthday_wish_delete"),
+    path("<slug:slug>/birthdays/new/", views.birthday_edit, name="birthday_new"),
+    path("<slug:slug>/birthdays/<int:pk>/edit/", views.birthday_edit, name="birthday_edit"),
+    path("<slug:slug>/birthdays/<int:pk>/delete/", views.birthday_delete, name="birthday_delete"),
     path("photos/", views.gallery_hub, name="gallery_hub"),
     path("photos/batch-upload/", views.gallery_batch_upload, name="gallery_batch_upload"),
     path("photos/albums/new/", views.gallery_album_edit, name="gallery_album_new"),

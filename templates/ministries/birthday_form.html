@@ -1,0 +1,11 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}{% if celebration %}Edit{% else %}Add{% endif %} birthday celebration{% endblock %}
+{% block content %}
+<div class="page-head c-{{ ministry.color }}"><div><a class="back" href="{% url 'ministries:birthday_list' %}">← Birthday wall</a><span class="eyebrow" style="color:var(--c)">{{ ministry.name }}</span><h1>{% if celebration %}Edit birthday celebration{% else %}Add birthday celebration{% endif %}</h1><p class="muted">Only signed-in members will see this post. Birth years and ages are never displayed.</p></div></div>
+<form method="post" enctype="multipart/form-data" class="form-panel">{% csrf_token %}
+  {% if celebration.image_blob %}<div class="panel"><div class="birthday-form-preview"><img src="{{ celebration.get_image_url }}" alt="Current birthday photo"></div></div>{% endif %}
+  <div class="panel"><div class="panel-body">{% form_fields form %}</div></div>
+  <div class="form-actions"><button class="btn btn-primary">Save celebration</button><a class="btn btn-ghost" href="{% url 'ministries:birthday_list' %}">Cancel</a></div>
+</form>
+{% if celebration %}<form method="post" action="{% url 'ministries:birthday_delete' ministry.slug celebration.pk %}" onsubmit="return confirm('Remove this birthday celebration and all wishes?')" style="margin-top:16px">{% csrf_token %}<button class="btn btn-danger btn-sm">Remove celebration</button></form>{% endif %}
+{% endblock %}
