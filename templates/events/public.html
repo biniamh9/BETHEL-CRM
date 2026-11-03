@@ -1,7 +1,7 @@
 {% extends "base_public.html" %}
 {% block title %}Events · {{ church.short_name }}{% endblock %}
 {% block content %}
-<section class="hero" style="padding-bottom:28px">
+<section class="public-page-hero{% if hero_images.events %} custom-page-hero{% endif %}"{% if hero_images.events %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.95),rgba(7,12,24,.45)),url('{{ hero_images.events.image_url }}');background-position:{{ hero_images.events.position }}"{% endif %}>
   <div class="wrap"><span class="eyebrow">Join us</span><h1>Upcoming events</h1><p class="lead">Worship, fellowship and community events at {{ church.short_name }}. Everyone is welcome.</p></div>
 </section>
 <section class="wrap" style="padding-bottom:72px">

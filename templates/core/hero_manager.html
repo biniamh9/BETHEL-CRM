@@ -1,0 +1,13 @@
+{% extends "base_portal.html" %}
+{% block page_title %}Hero images{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Hero images</h1><p class="muted">Replace the large image at the top of each public page. Uploads are automatically resized and optimized.</p></div></div>
+<div class="hero-admin-grid">
+  {% for slot in slots %}
+  <article class="panel hero-admin-card">
+    {% if slot.hero %}<img src="{{ slot.hero.image_url }}" alt="{{ slot.hero.alt_text }}">{% else %}<div class="hero-admin-placeholder"><span>Original design</span></div>{% endif %}
+    <div class="panel-body"><h2>{{ slot.label }}</h2><p>{{ slot.description }}</p>{% if slot.hero %}<small>Updated {{ slot.hero.updated_at|date:"M j, Y" }}</small>{% endif %}<a class="btn btn-primary btn-sm" href="{% url 'core:hero_edit' slot.key %}">{% if slot.hero %}Replace or remove{% else %}Upload image{% endif %}</a></div>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

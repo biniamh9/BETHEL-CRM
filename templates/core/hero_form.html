@@ -1,0 +1,12 @@
+{% extends "base_portal.html" %}
+{% block page_title %}Edit hero image{% endblock %}
+{% block content %}
+<div class="page-head"><div><a class="back" href="{% url 'core:hero_manager' %}">← Hero images</a><h1>{{ slot.1 }}</h1><p class="muted">{{ slot.2 }}</p></div></div>
+<div class="panel form-panel"><div class="panel-body">
+  {% if hero %}<div class="hero-form-preview"><img src="{{ hero.image_url }}" alt="{{ hero.alt_text }}"></div>{% endif %}
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    {% include "partials/form_fields.html" with fields=form show_errors=True %}
+    <div class="actions"><button class="btn btn-primary" type="submit">Save hero image</button><a class="btn btn-ghost" href="{% url 'core:hero_manager' %}">Cancel</a></div>
+  </form>
+</div></div>
+{% endblock %}

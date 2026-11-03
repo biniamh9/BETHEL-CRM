@@ -32,8 +32,10 @@ def public_ministry_list(request):
 def public_ministry_detail(request, slug):
     ministry = get_object_or_404(Ministry.objects.filter(is_public=True), slug=slug)
     from events.models import Event
+    from core.models import HeroImage
     return render(request, "ministries/public_detail.html", {
         "ministry": ministry,
+        "page_hero": HeroImage.objects.filter(placement=f"ministry:{ministry.slug}").first(),
         "upcoming": Event.occurrences_between(
             date.today(), date.today() + timedelta(days=90), ministry.events.filter(is_public=True)
         )[:6],

@@ -3,15 +3,43 @@ import logging
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
+from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.http import Http404, HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.models import User
 from events.models import Event
 from fundraising.models import Campaign, Donation
 from ministries.models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry
+from accounts.decorators import admin_required
+from .forms import HeroImageForm
+from .image_processing import ImageProcessingError, optimize_image_upload, validate_image_upload
+from .models import HeroImage
 
 logger = logging.getLogger(__name__)
+
+GLOBAL_HERO_SLOTS = (
+    ("home_primary", "Homepage — first slideshow image", "The main homepage photograph."),
+    ("home_secondary", "Homepage — second slideshow image", "The alternate homepage photograph."),
+    ("about", "About page", "The image behind the About page introduction."),
+    ("visit", "Plan your visit page", "The image behind visitor information."),
+    ("ministries", "Ministries page", "The image above the ministry directory."),
+    ("activities", "Activities page", "The image above church-life galleries."),
+    ("events", "Events page", "The image above upcoming events."),
+    ("resources", "Resources page", "The image above teachings and downloads."),
+    ("archive", "Event archive", "The image above past events and photo stories."),
+    ("campaign", "Building fund page", "The image above the church building campaign."),
+)
+
+
+def _hero_slots():
+    slots = list(GLOBAL_HERO_SLOTS)
+    slots.extend(
+        (f"ministry:{ministry.slug}", f"{ministry.name} — ministry page", "The ministry page hero photograph.")
+        for ministry in Ministry.objects.filter(is_public=True).only("name", "slug")
+    )
+    return slots
 
 
 def csrf_failure(request, reason=""):
@@ -72,6 +100,66 @@ def gallery_image(request, pk):
     response["Content-Disposition"] = f'inline; filename="{photo.filename.replace(chr(34), "")}"'
     response["Cache-Control"] = "public, max-age=86400" if photo.is_public else "private, no-store"
     return response
+
+
+def hero_image(request, pk):
+    hero = get_object_or_404(HeroImage, pk=pk)
+    if hero.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = HttpResponse(bytes(hero.image_blob), content_type=hero.content_type)
+    response["Content-Disposition"] = f'inline; filename="{hero.filename.replace(chr(34), "")}"'
+    response["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@admin_required
+def hero_manager(request):
+    current = {item.placement: item for item in HeroImage.objects.all()}
+    slots = [
+        {"key": key, "label": label, "description": description, "hero": current.get(key)}
+        for key, label, description in _hero_slots()
+    ]
+    return render(request, "core/hero_manager.html", {"slots": slots})
+
+
+@admin_required
+def hero_edit(request, placement):
+    slot = next((item for item in _hero_slots() if item[0] == placement), None)
+    if slot is None:
+        raise Http404
+    hero = HeroImage.objects.filter(placement=placement).first()
+    initial = {"alt_text": hero.alt_text if hero else "", "position": hero.position if hero else "center center"}
+    form = HeroImageForm(request.POST or None, request.FILES or None, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        if form.cleaned_data["remove_image"]:
+            if hero:
+                hero.delete()
+            messages.success(request, f"{slot[1]} now uses its original image or background.")
+            return redirect("core:hero_manager")
+        upload = form.cleaned_data.get("image")
+        if not upload and not hero:
+            form.add_error("image", "Choose an image to upload.")
+        else:
+            if upload:
+                try:
+                    validate_image_upload(upload)
+                    data, filename, content_type = optimize_image_upload(upload)
+                except ImageProcessingError as exc:
+                    form.add_error("image", str(exc))
+                else:
+                    hero, _ = HeroImage.objects.get_or_create(
+                        placement=placement,
+                        defaults={"image_blob": data, "filename": filename, "content_type": content_type},
+                    )
+                    hero.image_blob, hero.filename, hero.content_type = data, filename, content_type
+            if not form.errors:
+                hero.alt_text = form.cleaned_data["alt_text"]
+                hero.position = form.cleaned_data["position"]
+                hero.updated_by = request.user
+                hero.save()
+                messages.success(request, f"{slot[1]} was updated.")
+                return redirect("core:hero_manager")
+    return render(request, "core/hero_form.html", {"form": form, "hero": hero, "slot": slot})
 
 
 @login_required

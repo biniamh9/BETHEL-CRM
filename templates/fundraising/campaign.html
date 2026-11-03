@@ -2,7 +2,7 @@
 {% block title %}{{ campaign.name }} · {{ church.short_name }}{% endblock %}
 {% block description %}{{ campaign.tagline }}{% endblock %}
 {% block content %}
-<section class="hero" style="padding-bottom:32px">
+<section class="public-page-hero{% if hero_images.campaign %} custom-page-hero{% endif %}"{% if hero_images.campaign %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.95),rgba(7,12,24,.45)),url('{{ hero_images.campaign.image_url }}');background-position:{{ hero_images.campaign.position }}"{% endif %}>
   <div class="wrap">
     <span class="eyebrow">{{ church.short_name }} · Atlanta</span>
     <h1>{{ campaign.name }}</h1>

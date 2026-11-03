@@ -1,7 +1,7 @@
 {% extends "base_public.html" %}{% load static %}
 {% block title %}Church Life · {{ church.short_name }}{% endblock %}
 {% block content %}
-<section class="public-page-hero"><div class="wrap"><span class="eyebrow">Life together</span><h1>Faith in motion.</h1><p>Worship, fellowship, service, and the moments that shape our church family.</p></div></section>
+<section class="public-page-hero{% if hero_images.activities %} custom-page-hero{% endif %}"{% if hero_images.activities %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.95),rgba(7,12,24,.45)),url('{{ hero_images.activities.image_url }}');background-position:{{ hero_images.activities.position }}"{% endif %}><div class="wrap"><span class="eyebrow">Life together</span><h1>Faith in motion.</h1><p>Worship, fellowship, service, and the moments that shape our church family.</p></div></section>
 {% if farm_day_photos %}
 <section class="farm-day-story">
   <div class="wrap farm-day-intro">

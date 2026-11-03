@@ -1,7 +1,7 @@
 {% extends "base_public.html" %}{% load static %}
 {% block title %}Ministries · {{ church.short_name }}{% endblock %}
 {% block content %}
-<section class="public-page-hero">
+<section class="public-page-hero{% if hero_images.ministries %} custom-page-hero{% endif %}"{% if hero_images.ministries %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.95),rgba(7,12,24,.45)),url('{{ hero_images.ministries.image_url }}');background-position:{{ hero_images.ministries.position }}"{% endif %}>
   <div class="wrap"><span class="eyebrow">Belong · Grow · Serve</span><h1>There is a place for you here.</h1><p>Explore the ministries that nurture faith, strengthen families, and serve our community.</p></div>
 </section>
 <section class="wrap public-section">

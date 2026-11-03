@@ -1,6 +1,9 @@
 import os
+from io import BytesIO
 from unittest import mock
 
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase, override_settings
@@ -8,6 +11,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from core.middleware import DatabaseConfigCheck
+from core.models import HeroImage
 
 
 class DeploymentTest(TestCase):
@@ -74,6 +78,55 @@ class DeploymentTest(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertIn(b"Reload the form", response.content)
         self.assertNotIn(b"test failure", response.content)
+
+
+class HeroImageManagementTest(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="site-admin", password="Strong-Test-2026", role=User.Role.ADMIN
+        )
+        self.member = User.objects.create_user(
+            username="ordinary-member", password="Strong-Test-2026", role=User.Role.MEMBER
+        )
+
+    @staticmethod
+    def image_upload(name="hero.png"):
+        output = BytesIO()
+        Image.new("RGB", (1800, 1200), "#31504c").save(output, "PNG")
+        return SimpleUploadedFile(name, output.getvalue(), content_type="image/png")
+
+    def test_only_administrators_can_manage_hero_images(self):
+        self.client.force_login(self.member)
+        self.assertEqual(self.client.get(reverse("core:hero_manager")).status_code, 403)
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("core:hero_manager"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Homepage — first slideshow image")
+
+    def test_admin_uploads_optimized_hero_and_public_page_uses_it(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse("core:hero_edit", args=["about"]), {
+            "image": self.image_upload(), "alt_text": "Church family worshipping", "position": "center top",
+        })
+        self.assertRedirects(response, reverse("core:hero_manager"))
+        hero = HeroImage.objects.get(placement="about")
+        self.assertLess(len(hero.image_blob), 1024 * 1024)
+        self.assertEqual(hero.content_type, "image/jpeg")
+        public = self.client.get(reverse("core:about"))
+        self.assertContains(public, hero.image_url)
+        image = self.client.get(hero.image_url)
+        self.assertEqual(image.status_code, 200)
+        self.assertEqual(image["Content-Type"], "image/jpeg")
+
+    def test_removing_upload_restores_original_design(self):
+        HeroImage.objects.create(
+            placement="visit", image_blob=b"image", filename="visit.jpg", content_type="image/jpeg"
+        )
+        self.client.force_login(self.admin)
+        self.client.post(reverse("core:hero_edit", args=["visit"]), {
+            "position": "center center", "remove_image": "on",
+        })
+        self.assertFalse(HeroImage.objects.filter(placement="visit").exists())
 
 
 class SupabaseConnectionStringTest(TestCase):

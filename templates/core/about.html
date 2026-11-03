@@ -1,6 +1,6 @@
 {% extends "base_public.html" %}{% load static %}
 {% block content %}
-<section class="public-page-hero about-page-hero">
+<section class="public-page-hero about-page-hero{% if hero_images.about %} custom-page-hero{% endif %}"{% if hero_images.about %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.96),rgba(7,12,24,.48)),url('{{ hero_images.about.image_url }}');background-position:{{ hero_images.about.position }}"{% endif %}>
   <div class="wrap"><span class="eyebrow gold">About Bethel</span><h1>A place of faith,<br>hope &amp; love.</h1><p>We are an Eritrean church family in Metro Atlanta seeking to love God, live by His Word, and welcome every generation into a life of faith.</p></div>
 </section>
 
