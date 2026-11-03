@@ -22,6 +22,17 @@
   <div class="hero-lower-bar"><span>Sunday worship · Metro Atlanta</span><a href="#story">Discover Bethel <b>↓</b></a><span>Faith · Family · Future</span></div>
 </section>
 
+{% if birthday_celebrations %}
+<section class="home-birthday-celebrations" aria-labelledby="birthday-celebrations-title">
+  <div class="wrap">
+    <header class="home-birthday-heading"><div><span class="eyebrow gold">Celebrating our church family</span><h2 id="birthday-celebrations-title">A joyful day deserves<br>a joyful blessing.</h2></div><p>Join us in celebrating the lives God has placed in our Bethel family. Signed-in members can leave a warm wish or reaction.</p></header>
+    <div class="home-birthday-grid">
+      {% for celebration in birthday_celebrations %}<a class="home-birthday-card" href="{{ celebration.get_public_url }}"><div>{% if celebration.image_blob %}<img src="{{ celebration.get_public_image_url }}" alt="Birthday portrait of {{ celebration.member_name }}" loading="lazy">{% else %}<span class="birthday-photo-placeholder"><i>🎂</i><b>{{ celebration.member_name|first }}</b></span>{% endif %}<span class="birthday-date"><b>{{ celebration.celebration_date|date:"d" }}</b>{{ celebration.celebration_date|date:"M" }}</span></div><section><span class="eyebrow">{{ celebration.ministry.name }}</span><h3>Happy Birthday,<br>{{ celebration.member_name }}!</h3><p>{{ celebration.message|default:"Wishing you joy, grace, and abundant blessings."|truncatewords:22 }}</p><span class="home-birthday-meta">♥ {{ celebration.reaction_count }} · 💬 {{ celebration.wish_count }} wishes</span><strong>Open celebration →</strong></section></a>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 {% if featured_event %}
 <section class="featured-event" aria-labelledby="featured-event-title">
   <div class="featured-event-art{% if not featured_event.event.banner_image_url %} generated c-{{ featured_event.event.color }}{% endif %}"{% if featured_event.event.banner_image_url %} style="background-image:url('{{ featured_event.event.banner_image_url }}')"{% endif %} role="img" aria-label="{{ featured_event.event.title }} event flyer"></div>

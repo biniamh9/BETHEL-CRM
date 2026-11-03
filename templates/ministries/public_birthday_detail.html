@@ -1,0 +1,18 @@
+{% extends "base_public.html" %}
+{% block title %}Happy Birthday, {{ celebration.member_name }} · {{ church.short_name }}{% endblock %}
+{% block content %}
+<section class="public-birthday-page">
+  <div class="wrap public-birthday-feature">
+    <div class="public-birthday-photo">{% if celebration.image_blob %}<img src="{{ celebration.get_public_image_url }}" alt="Birthday portrait of {{ celebration.member_name }}">{% else %}<span class="birthday-photo-placeholder"><i>🎂</i><b>{{ celebration.member_name|first }}</b></span>{% endif %}</div>
+    <div class="public-birthday-copy"><span class="eyebrow gold">{{ celebration.ministry.name }} · {{ celebration.celebration_date|date:"F j" }}</span><h1>Happy Birthday,<br>{{ celebration.member_name }}!</h1><p>{{ celebration.message|default:"May this new year of life be filled with God’s grace, abundant joy, and the love of your Bethel church family." }}</p>
+      <div class="public-birthday-counts"><span>♥ {{ celebration.reaction_count }} reactions</span><span>💬 {{ celebration.wish_count }} wishes</span></div>
+      <div class="hero-actions">{% if user.is_authenticated %}<a class="btn btn-gold" href="{{ celebration.get_absolute_url }}">React or leave a wish</a>{% else %}<a class="btn btn-gold" href="{% url 'accounts:login' %}?next={{ celebration.get_absolute_url|urlencode }}">Sign in to celebrate</a>{% endif %}<a class="btn btn-outline-light" href="{% url 'core:home' %}">Return home</a></div>
+      <div class="birthday-share public-share"><span>Share this celebration</span><button type="button" id="native-share" class="social-share" aria-label="Share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.7 10.7l6.6-4.1M8.7 13.3l6.6 4.1"/></svg></button><a class="social-share" href="https://wa.me/?text={{ share_text|add:' '|add:share_url|urlencode }}" target="_blank" rel="noopener" aria-label="Share on WhatsApp">WA</a><a class="social-share" href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|urlencode }}" target="_blank" rel="noopener" aria-label="Share on Facebook">f</a><a class="social-share" href="mailto:?subject={{ share_text|urlencode }}&body={{ share_url|urlencode }}" aria-label="Share by email">✉</a></div>
+      <p class="public-birthday-privacy">Personal details, ages, and birth years are never displayed. Wishes and reactions are available only to signed-in church members.</p>
+    </div>
+  </div>
+</section>
+<script>
+(() => { const button=document.getElementById('native-share'); if(!button)return; button.addEventListener('click',async()=>{const data={title:'Happy Birthday, {{ celebration.member_name|escapejs }}',text:'{{ share_text|escapejs }}',url:'{{ share_url|escapejs }}'};if(navigator.share){try{await navigator.share(data)}catch(e){}}else{await navigator.clipboard.writeText(data.url);button.classList.add('copied')}}) })();
+</script>
+{% endblock %}

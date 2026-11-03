@@ -1,4 +1,5 @@
 from io import BytesIO
+from datetime import date, timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -268,7 +269,7 @@ class BirthdayWallTests(TestCase):
         self.client.force_login(self.leader)
         response = self.client.post(reverse("ministries:birthday_new", args=[self.ministry.slug]), {
             "member_name": "Samuel B.", "celebration_date": "2026-11-12",
-            "message": "We celebrate you!", "consent_confirmed": "on", "is_active": "on",
+            "message": "We celebrate you!", "visibility": "members", "consent_confirmed": "on", "is_active": "on",
             "image": test_jpeg("samuel-birthday.jpg"),
         })
         created = BirthdayCelebration.objects.get(member_name="Samuel B.")
@@ -284,7 +285,7 @@ class BirthdayWallTests(TestCase):
     def test_consent_is_required_and_photo_is_private(self):
         self.client.force_login(self.leader)
         response = self.client.post(reverse("ministries:birthday_new", args=[self.ministry.slug]), {
-            "member_name": "No Consent", "celebration_date": "2026-11-12", "is_active": "on",
+            "member_name": "No Consent", "celebration_date": "2026-11-12", "visibility": "public", "is_active": "on",
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Consent is required")
@@ -310,6 +311,37 @@ class BirthdayWallTests(TestCase):
         self.assertEqual(self.client.get(self.celebration.get_absolute_url()).status_code, 404)
         self.client.force_login(self.leader)
         self.assertEqual(self.client.get(self.celebration.get_absolute_url()).status_code, 200)
+
+    def test_members_only_celebration_never_appears_publicly(self):
+        self.assertEqual(self.celebration.visibility, BirthdayCelebration.Visibility.MEMBERS)
+        self.assertEqual(self.client.get(self.celebration.get_public_url()).status_code, 404)
+        self.assertNotContains(self.client.get(reverse("core:home")), self.celebration.member_name)
+
+    def test_consented_public_celebration_appears_on_homepage_and_share_page(self):
+        self.celebration.visibility = BirthdayCelebration.Visibility.PUBLIC
+        self.celebration.celebration_date = date.today() + timedelta(days=2)
+        upload = test_jpeg("miriam-birthday.jpg")
+        from core.image_processing import optimize_image_upload
+        self.celebration.image_blob, self.celebration.image_filename, self.celebration.image_content_type = optimize_image_upload(upload)
+        self.celebration.save()
+        BirthdayWish.objects.create(celebration=self.celebration, author=self.member, message="A private member wish")
+        homepage = self.client.get(reverse("core:home"))
+        self.assertContains(homepage, self.celebration.member_name)
+        self.assertContains(homepage, self.celebration.get_public_url())
+        public = self.client.get(self.celebration.get_public_url())
+        self.assertContains(public, "Sign in to celebrate")
+        self.assertContains(public, "Share on WhatsApp")
+        self.assertNotContains(public, "A private member wish")
+        image = self.client.get(self.celebration.get_public_image_url())
+        self.assertEqual(image.status_code, 200)
+        self.assertEqual(image["Cache-Control"], "public, max-age=3600")
+
+    def test_public_celebration_leaves_homepage_after_short_window(self):
+        self.celebration.visibility = BirthdayCelebration.Visibility.PUBLIC
+        self.celebration.celebration_date = date.today() - timedelta(days=4)
+        self.celebration.save(update_fields=["visibility", "celebration_date"])
+        self.assertNotContains(self.client.get(reverse("core:home")), self.celebration.member_name)
+        self.assertEqual(self.client.get(self.celebration.get_public_url()).status_code, 200)
 
 
 class PublicMinistryWorkflowTests(TestCase):

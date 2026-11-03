@@ -126,16 +126,19 @@ class BirthdayCelebrationForm(forms.ModelForm):
 
     class Meta:
         model = BirthdayCelebration
-        fields = ("member_name", "celebration_date", "message", "consent_confirmed", "is_active")
+        fields = ("member_name", "celebration_date", "message", "visibility", "consent_confirmed", "is_active")
         widgets = {
             "celebration_date": DateInput(),
             "message": forms.Textarea(attrs={"rows": 5, "maxlength": 800}),
         }
-        labels = {"message": "Birthday message from the ministry"}
+        labels = {"message": "Birthday message from the ministry", "visibility": "Who can see the celebration?"}
+        help_texts = {
+            "visibility": "Public celebrations may appear on the homepage and can be opened from shared links. Wishes and reactions still require sign-in.",
+        }
 
     def clean_consent_confirmed(self):
         if not self.cleaned_data.get("consent_confirmed"):
-            raise forms.ValidationError("Consent is required before a birthday post can be shared with members.")
+            raise forms.ValidationError("Consent is required for the selected visibility and social sharing.")
         return True
 
     def clean_image(self):

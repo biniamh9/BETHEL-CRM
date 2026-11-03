@@ -55,6 +55,33 @@ def public_member_spotlight_image(request, slug, pk):
     return HttpResponse(bytes(spotlight.image_blob), content_type=spotlight.image_content_type or "image/jpeg")
 
 
+def public_birthday_detail(request, pk):
+    celebration = get_object_or_404(
+        BirthdayCelebration.objects.select_related("ministry").annotate(
+            reaction_count=Count("reactions", distinct=True), wish_count=Count("wishes", distinct=True),
+        ),
+        pk=pk, is_active=True, visibility=BirthdayCelebration.Visibility.PUBLIC,
+    )
+    return render(request, "ministries/public_birthday_detail.html", {
+        "celebration": celebration,
+        "share_url": request.build_absolute_uri(celebration.get_public_url()),
+        "share_text": f"Join Bethel Eritrean Church in wishing {celebration.member_name} a happy birthday!",
+    })
+
+
+def public_birthday_image(request, pk):
+    celebration = get_object_or_404(
+        BirthdayCelebration,
+        pk=pk, is_active=True, visibility=BirthdayCelebration.Visibility.PUBLIC,
+    )
+    if not celebration.image_blob or celebration.image_content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = HttpResponse(bytes(celebration.image_blob), content_type=celebration.image_content_type)
+    response["Content-Disposition"] = f'inline; filename="{celebration.image_filename.replace(chr(34), "")}"'
+    response["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
 def public_ministry_inquiry(request, slug, kind):
     ministry = get_object_or_404(Ministry.objects.filter(is_public=True), slug=slug)
     if kind not in {MinistryInquiry.Kind.CONTACT, MinistryInquiry.Kind.JOIN}:
@@ -475,6 +502,7 @@ def birthday_detail(request, pk):
     reactions = {kind: celebration.reactions.filter(kind=kind).count() for kind, _ in BirthdayReaction.Kind.choices}
     mine = celebration.reactions.filter(user=request.user).values_list("kind", flat=True).first()
     emojis = {"love": "♥", "celebrate": "🎉", "blessing": "🙏"}
+    share_target = celebration.get_public_url() if celebration.visibility == BirthdayCelebration.Visibility.PUBLIC else celebration.get_absolute_url()
     return render(request, "ministries/birthday_detail.html", {
         "celebration": celebration,
         "wish_form": BirthdayWishForm(),
@@ -485,7 +513,7 @@ def birthday_detail(request, pk):
         ],
         "my_reaction": mine,
         "can_manage": can_manage,
-        "share_url": request.build_absolute_uri(celebration.get_absolute_url()),
+        "share_url": request.build_absolute_uri(share_target),
         "share_text": f"Join our Bethel church family in wishing {celebration.member_name} a happy birthday!",
     })
 

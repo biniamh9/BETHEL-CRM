@@ -171,7 +171,11 @@ class MinistryMemberSpotlight(models.Model):
 
 
 class BirthdayCelebration(models.Model):
-    """A private, consented birthday post visible only to signed-in members."""
+    """A consented birthday post with explicit public or members-only visibility."""
+
+    class Visibility(models.TextChoices):
+        MEMBERS = "members", "Members only"
+        PUBLIC = "public", "Public celebration"
 
     ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="birthday_celebrations")
     member_name = models.CharField(max_length=120)
@@ -184,9 +188,10 @@ class BirthdayCelebration(models.Model):
     image_filename = models.CharField(max_length=180, editable=False, blank=True)
     consent_confirmed = models.BooleanField(
         default=False,
-        help_text="Confirm the member, or a parent/guardian for a child, approved the members-only post and social sharing reminder.",
+        help_text="Confirm the member, or a parent/guardian for a child, approved the selected visibility and social sharing.",
     )
-    is_active = models.BooleanField("Published to members", default=True, db_index=True)
+    visibility = models.CharField(max_length=12, choices=Visibility.choices, default=Visibility.MEMBERS, db_index=True)
+    is_active = models.BooleanField("Published", default=True, db_index=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="created_birthday_celebrations")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -200,8 +205,14 @@ class BirthdayCelebration(models.Model):
     def get_absolute_url(self):
         return reverse("ministries:birthday_detail", args=[self.pk])
 
+    def get_public_url(self):
+        return reverse("public_ministries:birthday_detail", args=[self.pk])
+
     def get_image_url(self):
         return reverse("ministries:birthday_image", args=[self.pk])
+
+    def get_public_image_url(self):
+        return reverse("public_ministries:birthday_image", args=[self.pk])
 
 
 class BirthdayWish(models.Model):

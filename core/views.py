@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from accounts.models import User
 from events.models import Event
 from fundraising.models import Campaign, Donation
-from ministries.models import Activity, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry
+from ministries.models import Activity, BirthdayCelebration, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry
 from accounts.decorators import admin_required
 from .forms import HeroImageForm
 from .image_processing import ImageProcessingError, optimize_image_upload, validate_image_upload
@@ -50,6 +50,8 @@ def csrf_failure(request, reason=""):
 
 def home(request):
     today = date.today()
+    birthday_window_start = today - timedelta(days=3)
+    birthday_window_end = today + timedelta(days=7)
     upcoming = Event.occurrences_between(
         today, today + timedelta(days=45), Event.objects.filter(is_public=True)
     )
@@ -65,6 +67,12 @@ def home(request):
             if not featured_event or occurrence.event.pk != featured_event.event.pk
         ][:6],
         "campaign": Campaign.objects.filter(is_active=True, is_public=True).first(),
+        "birthday_celebrations": BirthdayCelebration.objects.filter(
+            is_active=True, visibility=BirthdayCelebration.Visibility.PUBLIC,
+            celebration_date__range=(birthday_window_start, birthday_window_end),
+        ).select_related("ministry").annotate(
+            reaction_count=Count("reactions", distinct=True), wish_count=Count("wishes", distinct=True),
+        ).order_by("celebration_date")[:3],
         "ministries": Ministry.objects.all(),
         "elders": User.objects.filter(is_active=True, role__in=[User.Role.ADMIN, User.Role.ELDER]).order_by("role", "first_name"),
     })
