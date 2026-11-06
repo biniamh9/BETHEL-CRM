@@ -8,6 +8,13 @@
     {% form_fields form "title" %}
     <div class="form-row">{% form_fields form "kind,ministry" %}</div>
     {% form_fields form "location,description" %}
+    {% if event and event.banner_image_url %}
+      <div class="current-event-image">
+        <span class="small muted">Current flyer or banner</span>
+        <img src="{{ event.banner_image_url }}" alt="Current image for {{ event.title }}">
+        <p class="small muted">Choose a new image below to replace this one.</p>
+      </div>
+    {% endif %}
     {% form_fields form "banner,flyer_upload,banner_url" %}
   </div></div>
   <div class="panel"><div class="panel-head"><h3>When</h3></div><div class="panel-body">

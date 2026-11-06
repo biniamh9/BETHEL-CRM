@@ -134,6 +134,25 @@ class EventPagesTest(SeededTestCase):
         self.assertContains(response, "Featured upcoming event")
         self.assertContains(response, "View event details")
 
+    def test_event_manager_has_direct_edit_action_and_image_preview(self):
+        event = Event.objects.create(
+            title="Christmas Skit",
+            kind=Event.Kind.HOLIDAY,
+            start=aware(date.today() + timedelta(days=50), 18),
+            banner_url="https://images.example.org/christmas-skit.jpg",
+            is_public=True,
+        )
+        self.login("abraham")
+
+        upcoming = self.client.get(reverse("events:upcoming"))
+        self.assertContains(upcoming, reverse("events:edit", args=[event.pk]))
+        self.assertContains(upcoming, "Edit event")
+
+        edit = self.client.get(reverse("events:edit", args=[event.pk]))
+        self.assertContains(edit, "Current flyer or banner")
+        self.assertContains(edit, event.banner_url)
+        self.assertContains(edit, "Choose a new image below to replace this one")
+
     def test_public_christmas_event_is_visible_more_than_45_days_ahead(self):
         christmas_skit = Event.objects.create(
             title="Kids Christmas Skit",

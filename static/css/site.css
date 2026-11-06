@@ -273,6 +273,10 @@ tbody tr:hover { background: #fcfaf6; }
 
 .form-panel { max-width: 760px; }
 .form-actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.current-event-image { margin: 18px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fdfbf7; }
+.current-event-image > span { display: block; margin-bottom: 8px; font-weight: 600; }
+.current-event-image img { display: block; width: min(100%, 420px); max-height: 280px; object-fit: contain; object-position: left center; border-radius: 9px; background: var(--navy); }
+.current-event-image p { margin: 8px 0 0; }
 
 /* ---------- printable receipt ---------- */
 .receipt { max-width: 760px; margin: 0 auto; background: #fff; padding: 48px; border: 1px solid var(--line); }

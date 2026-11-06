@@ -5,5 +5,9 @@
     <div class="small muted"><span class="dot"></span>{{ occ.event.ministry.name|default:"Church-wide" }} · {{ occ.event.get_kind_display }}{% if occ.event.location %} · {{ occ.event.location }}{% endif %}{% if occ.event.repeat != 'none' %} · <span title="Repeats">↻ {{ occ.event.get_repeat_display|lower }}</span>{% endif %}</div>
     {% if public and occ.event.description %}<p class="small" style="margin:.4em 0 0">{{ occ.event.description|truncatewords:40 }}</p>{% endif %}
   </div>
-  {% if public %}<a class="btn btn-ghost btn-sm" href="{% url 'events:public_detail' occ.event.pk %}">View event</a>{% endif %}
+  {% if public %}
+    <a class="btn btn-ghost btn-sm" href="{% url 'events:public_detail' occ.event.pk %}">View event</a>
+  {% elif occ.can_edit %}
+    <a class="btn btn-ghost btn-sm" href="{% url 'events:edit' occ.event.pk %}">Edit event</a>
+  {% endif %}
 </li>

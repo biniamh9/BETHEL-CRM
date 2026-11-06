@@ -79,6 +79,7 @@ def upcoming(request):
     today = date.today()
     grouped = defaultdict(list)
     for occ in Event.occurrences_between(today, today + timedelta(days=days), qs):
+        occ.can_edit = request.user.can_edit_event(occ.event)
         grouped[occ.date].append(occ)
     return render(request, "events/upcoming.html", {
         "groups": sorted(grouped.items()), "ministries": Ministry.objects.all(), "slug": slug, "days": days,
