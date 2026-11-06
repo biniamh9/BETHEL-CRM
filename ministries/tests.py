@@ -112,6 +112,12 @@ class PublicMinistryTests(TestCase):
         })
         self.assertRedirects(response, reverse("ministries:gallery", args=[self.ministry.slug]))
         photo = GalleryPhoto.objects.get(caption="Youth conference worship")
+        management = self.client.get(reverse("ministries:gallery", args=[self.ministry.slug]))
+        self.assertContains(
+            management,
+            reverse("ministries:gallery_photo_edit", args=[self.ministry.slug, photo.pk]),
+        )
+        self.assertContains(management, "Edit photo")
         public = self.client.get(reverse("core:public_activities"))
         self.assertContains(public, "Conference")
         self.assertContains(public, "2026")

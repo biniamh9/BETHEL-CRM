@@ -70,6 +70,18 @@ class DeploymentTest(TestCase):
         self.assertEqual(response["Cache-Control"], "private, no-store, max-age=0")
         self.assertContains(response, "csrfmiddlewaretoken")
 
+    def test_leadership_dashboard_has_central_content_management(self):
+        call_command("seed_church", password="Bethel-Test-2026", stdout=open(os.devnull, "w"))
+        self.client.login(username="abraham", password="Bethel-Test-2026")
+        response = self.client.get(reverse("core:portal"))
+        self.assertContains(response, "Manage church content")
+        self.assertContains(response, reverse("events:upcoming"))
+        self.assertContains(response, reverse("activities"))
+        self.assertContains(response, reverse("ministries:gallery_hub"))
+        self.assertContains(response, reverse("ministries:birthday_list"))
+        self.assertContains(response, reverse("resources:list"))
+        self.assertContains(response, reverse("core:hero_manager"))
+
     def test_csrf_failure_page_offers_safe_retry(self):
         from core.views import csrf_failure
 

@@ -24,7 +24,7 @@
       <div class="res-actions">
         {% if r.file %}<a class="btn btn-ghost btn-sm" href="{% url 'resources:download' r.pk %}?view=1" target="_blank">Open</a><a class="btn btn-ghost btn-sm" href="{% url 'resources:download' r.pk %}">Download</a>{% endif %}
         {% if r.url %}<a class="btn btn-ghost btn-sm" href="{{ r.url }}" target="_blank" rel="noopener">Open link ↗</a>{% endif %}
-        {% if r.editable %}<a class="small" href="{% url 'resources:edit' r.pk %}">Edit</a>{% endif %}
+        {% if r.editable %}<a class="btn btn-ghost btn-sm" href="{% url 'resources:edit' r.pk %}">Manage resource</a>{% endif %}
       </div>
     </li>
     {% empty %}<li class="empty" style="display:block">No resources yet.{% if can_add %} <a href="{% url 'resources:new' %}">Add the first one.</a>{% endif %}</li>{% endfor %}

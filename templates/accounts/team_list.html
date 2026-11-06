@@ -10,7 +10,7 @@
   <tbody>{% for u in users %}
     <tr><td><b>{{ u }}</b>{% if u.title %}<div class="small muted">{{ u.title }}</div>{% endif %}</td><td>{{ u.username }}{% if not u.has_usable_password %} <span class="badge pending">no password</span>{% endif %}{% if not u.is_active %} <span class="badge cancelled">disabled</span>{% endif %}</td>
     <td>{{ u.get_role_display }}</td><td class="small">{{ u.led_ministries.all|join:", "|default:"—" }}</td><td class="small muted">{{ u.last_login|date:"M j, Y"|default:"never" }}</td>
-    <td class="num"><a href="{% url 'accounts:team_edit' u.pk %}">Edit</a></td></tr>
+    <td class="num"><a class="btn btn-ghost btn-sm" href="{% url 'accounts:team_edit' u.pk %}">Manage account</a></td></tr>
   {% endfor %}</tbody>
 </table></div></div>
 <div class="panel"><div class="panel-body small">

@@ -125,6 +125,17 @@ class PermissionTest(SeededTestCase):
 
 
 class WorkflowTest(SeededTestCase):
+    def test_ministry_leader_has_direct_activity_management_action(self):
+        self.login("kibrom")
+        choir = Ministry.objects.get(name="Choir Ministry")
+        activity = choir.activities.first()
+        response = self.client.get(reverse("activities") + "?period=all")
+        self.assertContains(
+            response,
+            reverse("ministries:activity_edit", args=[choir.slug, activity.pk]),
+        )
+        self.assertContains(response, "Edit activity")
+
     def test_leader_records_activity(self):
         self.login("kibrom")
         choir = Ministry.objects.get(name="Choir Ministry")

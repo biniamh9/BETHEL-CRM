@@ -61,6 +61,7 @@
           </div>
           {% if a.follow_up %}<div class="activity-follow-up"><b>Follow-up</b>{{ a.follow_up|truncatewords:20 }}</div>{% endif %}
           {% if a.created_by %}<div class="activity-byline">Recorded by {{ a.created_by }}</div>{% endif %}
+          {% if a.can_manage %}<div class="record-actions"><a class="btn btn-ghost btn-sm" href="{% url 'ministries:activity_edit' a.ministry.slug a.pk %}">Edit activity</a></div>{% endif %}
         </div>
       </article>
     {% empty %}

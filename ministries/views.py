@@ -159,6 +159,9 @@ def all_activities(request):
     if request.GET.get("export") == "csv":
         return _activities_csv(qs, "all-activities")
     activities = list(qs[:200])
+    editable_ministry_ids = set(request.user.editable_ministries().values_list("pk", flat=True))
+    for activity in activities:
+        activity.can_manage = activity.ministry_id in editable_ministry_ids
     images = _activity_image_paths()
     if images:
         for activity in activities:

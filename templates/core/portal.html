@@ -32,6 +32,20 @@
 
 {% if my_gifts_total %}<p>Thank you — you've given <b>{{ my_gifts_total|usd:True }}</b>. See the details on <a href="{% url 'accounts:profile' %}">your profile</a>.</p>{% endif %}
 
+{% if user.is_leadership %}
+<section class="panel manage-content-panel" aria-labelledby="manage-content-title">
+  <div class="panel-head"><div><span class="eyebrow">Quick management</span><h2 id="manage-content-title">Manage church content</h2></div><span class="small muted">Create, review, and update published information</span></div>
+  <div class="manage-content-grid">
+    {% if user.can_create_events %}<a href="{% url 'events:upcoming' %}"><b>Events</b><span>Edit dates, flyers, visibility, and registrations</span><strong>Manage events →</strong></a>{% endif %}
+    {% if my_ministries or user.is_church_admin %}<a href="{% url 'activities' %}"><b>Activities</b><span>Review records, attendance, and follow-ups</span><strong>Manage activities →</strong></a>{% endif %}
+    {% if my_ministries or user.is_church_admin %}<a href="{% url 'ministries:gallery_hub' %}"><b>Photos &amp; albums</b><span>Edit captions, albums, visibility, and images</span><strong>Manage gallery →</strong></a>{% endif %}
+    {% if my_ministries or user.is_church_admin %}<a href="{% url 'ministries:birthday_list' %}"><b>Birthday wall</b><span>Manage celebrations, photos, and visibility</span><strong>Manage birthdays →</strong></a>{% endif %}
+    <a href="{% url 'resources:list' %}"><b>Resources</b><span>Manage teachings, files, links, and archives</span><strong>Manage resources →</strong></a>
+    {% if user.can_manage_users %}<a href="{% url 'core:hero_manager' %}"><b>Website hero images</b><span>Replace the main image for every public page</span><strong>Manage page images →</strong></a>{% endif %}
+  </div>
+</section>
+{% endif %}
+
 <div class="panel">
   <div class="panel-head"><h3>Next two weeks</h3><span><a class="small" href="{% url 'events:calendar' %}">Calendar</a> · <a class="small" href="{% url 'events:upcoming' %}">All upcoming →</a></span></div>
   {% if upcoming %}
