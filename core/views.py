@@ -52,8 +52,11 @@ def home(request):
     today = date.today()
     birthday_window_start = today - timedelta(days=3)
     birthday_window_end = today + timedelta(days=7)
+    # Keep seasonal and other advance-planning events visible. A 45-day window
+    # hid Christmas events entered in early November even though they were
+    # correctly marked public.
     upcoming = Event.occurrences_between(
-        today, today + timedelta(days=45), Event.objects.filter(is_public=True)
+        today, today + timedelta(days=120), Event.objects.filter(is_public=True)
     )
     one_time = [occurrence for occurrence in upcoming if occurrence.event.repeat == Event.Repeat.NONE]
     featured_event = next(

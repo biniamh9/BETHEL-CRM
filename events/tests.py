@@ -134,6 +134,23 @@ class EventPagesTest(SeededTestCase):
         self.assertContains(response, "Featured upcoming event")
         self.assertContains(response, "View event details")
 
+    def test_public_christmas_event_is_visible_more_than_45_days_ahead(self):
+        christmas_skit = Event.objects.create(
+            title="Kids Christmas Skit",
+            kind=Event.Kind.HOLIDAY,
+            start=aware(date.today() + timedelta(days=50), 18),
+            repeat=Event.Repeat.NONE,
+            banner_url="https://images.example.org/christmas-skit.jpg",
+            is_public=True,
+        )
+
+        home = self.client.get(reverse("core:home"))
+        self.assertEqual(home.context["featured_event"].event, christmas_skit)
+        self.assertContains(home, christmas_skit.title)
+
+        public_events = self.client.get(reverse("events:public"))
+        self.assertContains(public_events, christmas_skit.title)
+
     def test_parent_registration_notifies_youth_ministry_portal(self):
         cache.clear()
         youth = Ministry.objects.get(slug="youth-kids-ministry")

@@ -135,7 +135,7 @@ def delete(request, pk):
 def public_events(request):
     today = date.today()
     grouped = defaultdict(list)
-    for occ in Event.occurrences_between(today, today + timedelta(days=90), Event.objects.filter(is_public=True)):
+    for occ in Event.occurrences_between(today, today + timedelta(days=180), Event.objects.filter(is_public=True)):
         grouped[occ.date].append(occ)
     return render(request, "events/public.html", {"groups": sorted(grouped.items())})
 
