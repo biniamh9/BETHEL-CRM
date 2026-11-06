@@ -8,7 +8,7 @@ from django.urls import reverse
 from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
-from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight
+from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, StudentAchievement
 
 
 def test_jpeg(name="IMG_1234.jpg", size=(3000, 2200)):
@@ -71,6 +71,54 @@ class PublicMinistryTests(TestCase):
         response = self.client.get(self.ministry.get_public_url())
         self.assertContains(response, "Meet the ministry")
         self.assertContains(response, "Our ministry family", count=3)
+
+    def test_leader_publishes_guardian_approved_student_recognition(self):
+        leader = User.objects.create_user("achievementlead", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        self.client.force_login(leader)
+        response = self.client.post(reverse("ministries:achievement_new", args=[self.ministry.slug]), {
+            "student_name": "Sara T.", "kind": "academic",
+            "recognition_title": "Principal’s List", "recognition_date": "2026-11-05",
+            "academic_year": "2026–2027", "message": "We celebrate your faithful work and perseverance.",
+            "visibility": "public", "consent_confirmed": "on", "is_active": "on",
+            "image": test_jpeg("student-recognition.jpg"),
+        })
+        achievement = StudentAchievement.objects.get(student_name="Sara T.")
+        self.assertRedirects(response, reverse("ministries:achievement_list"))
+        self.assertTrue(achievement.image_blob)
+        self.assertLess(len(achievement.image_blob), 1024 * 1024)
+
+        public = self.client.get(reverse("public_ministries:achievement_list"))
+        self.assertContains(public, "Sara T.")
+        self.assertContains(public, "Principal’s List")
+        self.assertNotContains(public, "school name: ")
+        self.assertContains(self.client.get(reverse("core:home")), "Kids Achievement Corner")
+        image = self.client.get(achievement.get_public_image_url())
+        self.assertEqual(image.status_code, 200)
+        self.assertEqual(image["Content-Type"], "image/jpeg")
+
+    def test_student_recognition_requires_consent_and_respects_members_only_visibility(self):
+        leader = User.objects.create_user("privateachievementlead", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        leader.led_ministries.add(self.ministry)
+        self.client.force_login(leader)
+        url = reverse("ministries:achievement_new", args=[self.ministry.slug])
+        base = {
+            "student_name": "Noah B.", "kind": "character", "recognition_title": "Kindness Award",
+            "recognition_date": "2026-11-04", "visibility": "members", "is_active": "on",
+        }
+        rejected = self.client.post(url, base)
+        self.assertEqual(rejected.status_code, 200)
+        self.assertContains(rejected, "Parent or legal guardian consent is required")
+        self.assertFalse(StudentAchievement.objects.exists())
+
+        self.client.post(url, {**base, "consent_confirmed": "on", "image": test_jpeg("private.jpg")})
+        achievement = StudentAchievement.objects.get()
+        portal = self.client.get(reverse("ministries:achievement_list"))
+        self.assertContains(portal, "Noah B.")
+        self.client.logout()
+        public = self.client.get(reverse("public_ministries:achievement_list"))
+        self.assertNotContains(public, "Noah B.")
+        self.assertEqual(self.client.get(achievement.get_public_image_url()).status_code, 404)
 
     def test_leader_creates_public_member_spotlight_with_optional_photo(self):
         leader = User.objects.create_user("spotlightlead", password="Valid-Test-Pass-42", role=User.Role.LEADER)

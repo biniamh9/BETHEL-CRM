@@ -12,6 +12,7 @@
         <summary>Ministries <span class="nav-caret" aria-hidden="true"></span></summary>
         <div class="nav-dropdown-menu">
           <a href="{% url 'public_ministries:list' %}"><strong>All ministries</strong></a>
+          <a href="{% url 'public_ministries:achievement_list' %}"><strong>Kids Achievement Corner</strong></a>
           {% for ministry in navigation_ministries %}
             <a class="c-{{ ministry.color }}" href="{{ ministry.get_public_url }}"><span class="dot"></span>{{ ministry.name }}</a>
           {% empty %}
@@ -48,6 +49,7 @@
           <summary>Ministries <span class="nav-caret" aria-hidden="true"></span></summary>
           <div>
             <a href="{% url 'public_ministries:list' %}"><strong>All ministries</strong></a>
+            <a href="{% url 'public_ministries:achievement_list' %}"><strong>Kids Achievement Corner</strong></a>
             {% for ministry in navigation_ministries %}
               <a class="c-{{ ministry.color }}" href="{{ ministry.get_public_url }}"><span class="dot"></span>{{ ministry.name }}</a>
             {% empty %}
@@ -87,7 +89,7 @@
   <div class="wrap footer-grid">
     <div class="footer-brand"><img src="{% static 'img/logo-mark.png' %}" alt=""><div><strong>{{ church.short_name }}</strong><span class="ethiopic">{{ church.tigrinya_name }}</span></div></div>
     <div><span class="footer-label">Visit</span><p>{{ church.address }}<br>Sunday · 10:30 AM–1:00 PM</p><a href="{% url 'core:visit' %}">Plan your visit →</a></div>
-    <div><span class="footer-label">Explore</span><a href="{% url 'core:about' %}">About us</a><a href="{% url 'public_ministries:list' %}">Ministries</a><a href="{% url 'core:public_activities' %}">Activities</a><a href="{% url 'public_resources:list' %}">Resources</a></div>
+    <div><span class="footer-label">Explore</span><a href="{% url 'core:about' %}">About us</a><a href="{% url 'public_ministries:list' %}">Ministries</a><a href="{% url 'public_ministries:achievement_list' %}">Kids Achievement Corner</a><a href="{% url 'core:public_activities' %}">Activities</a><a href="{% url 'public_resources:list' %}">Resources</a></div>
     <div><span class="footer-label">Connect</span><a href="{% url 'events:public' %}">Upcoming events</a><a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch on YouTube</a><a href="{% url 'accounts:login' %}">Sign In</a><a href="{% url 'fundraising:give' %}">Give</a></div>
   </div>
   <div class="wrap footer-bottom"><span>© {% now "Y" %} {{ church.short_name }}</span><span>Faith · Family · Future</span><span>501(c)(3){% if church.ein %} · EIN {{ church.ein }}{% endif %}</span></div>

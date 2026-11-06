@@ -40,6 +40,7 @@
     {% if my_ministries or user.is_church_admin %}<a href="{% url 'activities' %}"><b>Activities</b><span>Review records, attendance, and follow-ups</span><strong>Manage activities →</strong></a>{% endif %}
     {% if my_ministries or user.is_church_admin %}<a href="{% url 'ministries:gallery_hub' %}"><b>Photos &amp; albums</b><span>Edit captions, albums, visibility, and images</span><strong>Manage gallery →</strong></a>{% endif %}
     {% if my_ministries or user.is_church_admin %}<a href="{% url 'ministries:birthday_list' %}"><b>Birthday wall</b><span>Manage celebrations, photos, and visibility</span><strong>Manage birthdays →</strong></a>{% endif %}
+    {% if my_ministries or user.is_church_admin %}<a href="{% url 'ministries:achievement_list' %}"><b>Kids achievements</b><span>Celebrate school recognition with guardian consent</span><strong>Manage recognitions →</strong></a>{% endif %}
     <a href="{% url 'resources:list' %}"><b>Resources</b><span>Manage teachings, files, links, and archives</span><strong>Manage resources →</strong></a>
     {% if user.can_manage_users %}<a href="{% url 'core:hero_manager' %}"><b>Website hero images</b><span>Replace the main image for every public page</span><strong>Manage page images →</strong></a>{% endif %}
   </div>

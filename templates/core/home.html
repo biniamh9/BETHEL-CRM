@@ -52,6 +52,25 @@
 </section>
 {% endif %}
 
+{% if student_achievements %}
+<section class="home-achievement-corner" aria-labelledby="home-achievement-title">
+  <div class="wrap">
+    <header class="home-achievement-heading">
+      <div><span class="eyebrow gold">Kids Achievement Corner</span><h2 id="home-achievement-title">Hard work deserves<br><em>to be celebrated.</em></h2></div>
+      <div><p>Honoring the character, creativity, leadership, and school achievements of the children in our Bethel family.</p><a class="text-link" href="{% url 'public_ministries:achievement_list' %}">Visit the Achievement Corner <span>→</span></a></div>
+    </header>
+    <div class="home-achievement-grid">
+      {% for achievement in student_achievements %}
+      <article>
+        <div class="achievement-card-photo">{% if achievement.image_blob %}<img src="{{ achievement.get_public_image_url }}" alt="Recognition photo of {{ achievement.student_name }}" loading="lazy">{% else %}<span class="achievement-placeholder"><i>★</i><b>{{ achievement.student_name|first }}</b></span>{% endif %}<span class="achievement-star">★</span></div>
+        <div><span class="eyebrow">{{ achievement.get_kind_display }}</span><h3>{{ achievement.student_name }}</h3><strong>{{ achievement.recognition_title }}</strong><p>{{ achievement.message|default:"We celebrate your hard work and the gifts God has given you."|truncatewords:24 }}</p><small>{{ achievement.recognition_date|date:"F Y" }}</small></div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <section class="gathering-ribbon" aria-label="Weekly gathering times">
   <div class="wrap gathering-ribbon-grid">
     <div><span>Sunday</span><strong>Worship Service</strong><small>10:30 AM–1:00 PM</small></div>

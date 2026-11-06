@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Activity, Ministry, MinistryAnnouncement, MinistryInquiry, Participant
+from .models import Activity, Ministry, MinistryAnnouncement, MinistryInquiry, Participant, StudentAchievement
 
 
 @admin.register(Ministry)
@@ -37,3 +37,11 @@ class MinistryInquiryAdmin(admin.ModelAdmin):
     list_display = ("name", "ministry", "kind", "status", "created_at")
     list_filter = ("kind", "status", "ministry")
     search_fields = ("name", "email", "message")
+
+
+@admin.register(StudentAchievement)
+class StudentAchievementAdmin(admin.ModelAdmin):
+    list_display = ("student_name", "recognition_title", "kind", "recognition_date", "ministry", "visibility", "is_active")
+    list_filter = ("kind", "visibility", "is_active", "ministry")
+    search_fields = ("student_name", "recognition_title", "message")
+    date_hierarchy = "recognition_date"

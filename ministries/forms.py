@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import date
 
 from core.image_processing import ImageProcessingError, optimize_image_upload, validate_image_upload
-from .models import Activity, BirthdayCelebration, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, Participant
+from .models import Activity, BirthdayCelebration, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, Participant, StudentAchievement
 
 
 class DateInput(forms.DateInput):
@@ -171,6 +171,63 @@ class BirthdayWishForm(forms.ModelForm):
         fields = ("message",)
         labels = {"message": "Write a warm birthday wish"}
         widgets = {"message": forms.Textarea(attrs={"rows": 3, "maxlength": 600, "placeholder": "Share a kind message…"})}
+
+
+class StudentAchievementForm(forms.ModelForm):
+    image = forms.FileField(
+        required=False, label="Student recognition photo",
+        help_text="Optional JPG, PNG, or WebP. It will be automatically resized below 1 MB.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp", "data-optimize-image": "1"}),
+    )
+    remove_image = forms.BooleanField(required=False, label="Remove the current photo and use the achievement placeholder")
+
+    class Meta:
+        model = StudentAchievement
+        fields = (
+            "student_name", "kind", "recognition_title", "recognition_date",
+            "academic_year", "message", "visibility", "consent_confirmed", "is_active",
+        )
+        widgets = {
+            "recognition_date": DateInput(),
+            "message": forms.Textarea(attrs={"rows": 5, "maxlength": 1000}),
+        }
+        labels = {
+            "student_name": "Student display name",
+            "kind": "Recognition type",
+            "recognition_title": "Award or recognition",
+            "visibility": "Who can see this recognition?",
+        }
+        help_texts = {
+            "visibility": "Public recognitions may appear on the homepage and Achievement Corner. Members-only recognitions stay inside the portal.",
+        }
+
+    def clean_consent_confirmed(self):
+        if not self.cleaned_data.get("consent_confirmed"):
+            raise forms.ValidationError("Parent or legal guardian consent is required before saving this recognition.")
+        return True
+
+    def clean_image(self):
+        upload = self.cleaned_data.get("image")
+        if not upload:
+            return upload
+        upload = validate_gallery_image(upload)
+        try:
+            self.optimized_image = optimize_image_upload(upload)
+        except ImageProcessingError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+        return upload
+
+    def save(self, commit=True):
+        achievement = super().save(commit=False)
+        if self.cleaned_data.get("remove_image"):
+            achievement.image_blob = b""
+            achievement.image_content_type = ""
+            achievement.image_filename = ""
+        if self.cleaned_data.get("image"):
+            achievement.image_blob, achievement.image_filename, achievement.image_content_type = self.optimized_image
+        if commit:
+            achievement.save()
+        return achievement
 
 
 class MinistryContactForm(forms.ModelForm):

@@ -1,0 +1,19 @@
+{% extends "base_portal.html" %}
+{% block page_title %}Kids Achievement Corner{% endblock %}
+{% block content %}
+<div class="page-head achievement-page-head">
+  <div><span class="eyebrow">Encourage · Celebrate · Inspire</span><h1>Kids Achievement Corner</h1><p class="muted">Celebrate guardian-approved school recognitions without publishing ages, grades, school names, or contact information.</p></div>
+  {% if editable_ministries %}<details class="birthday-add-menu"><summary class="btn btn-primary">+ Add recognition</summary><div>{% for ministry in editable_ministries %}<a href="{% url 'ministries:achievement_new' ministry.slug %}">{{ ministry.name }}</a>{% endfor %}</div></details>{% endif %}
+</div>
+<div class="privacy-note"><b>Child privacy comes first</b><p>Only publish a child’s approved display name, recognition, photo, and message after a parent or legal guardian has consented.</p></div>
+<div class="achievement-admin-grid">
+  {% for achievement in achievements %}
+  <article class="achievement-admin-card">
+    <div class="achievement-card-photo">
+      {% if achievement.image_blob %}<img src="{{ achievement.get_image_url }}" alt="Recognition photo of {{ achievement.student_name }}" loading="lazy">{% else %}<span class="achievement-placeholder"><i>★</i><b>{{ achievement.student_name|first }}</b></span>{% endif %}
+    </div>
+    <div><span class="eyebrow">{{ achievement.ministry.name }} · {{ achievement.get_visibility_display }}</span><h2>{{ achievement.student_name }}</h2><h3>{{ achievement.recognition_title }}</h3><p>{{ achievement.message|default:"We celebrate your hard work and the gifts God has given you." }}</p><div class="small muted">{{ achievement.get_kind_display }} · {{ achievement.recognition_date|date:"M j, Y" }}{% if achievement.academic_year %} · {{ achievement.academic_year }}{% endif %}{% if not achievement.is_active %} · Draft{% endif %}</div>{% if achievement.can_manage %}<div class="record-actions"><a class="btn btn-ghost btn-sm" href="{% url 'ministries:achievement_edit' achievement.ministry.slug achievement.pk %}">Manage recognition</a></div>{% endif %}</div>
+  </article>
+  {% empty %}<div class="empty achievement-empty"><span>★</span><h2>Ready to celebrate great work.</h2><p>Ministry leaders can add the first guardian-approved school recognition.</p></div>{% endfor %}
+</div>
+{% endblock %}

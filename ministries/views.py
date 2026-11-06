@@ -16,8 +16,9 @@ from django.views.decorators.http import require_POST
 from .forms import (
     ActivityForm, GalleryAlbumForm, GalleryPhotoForm, GalleryPhotoMetadataForm, MinistryContactForm, MinistryJoinForm,
     BirthdayCelebrationForm, BirthdayWishForm, MinistryMemberSpotlightForm, MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
+    StudentAchievementForm,
 )
-from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, Participant
+from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, Participant, StudentAchievement
 from .forms import validate_gallery_image
 from core.image_processing import ImageProcessingError, automatic_caption, optimize_image_upload
 
@@ -78,6 +79,26 @@ def public_birthday_image(request, pk):
         raise Http404
     response = HttpResponse(bytes(celebration.image_blob), content_type=celebration.image_content_type)
     response["Content-Disposition"] = f'inline; filename="{celebration.image_filename.replace(chr(34), "")}"'
+    response["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+def public_achievement_list(request):
+    achievements = StudentAchievement.objects.filter(
+        is_active=True, visibility=StudentAchievement.Visibility.PUBLIC,
+    ).select_related("ministry")
+    return render(request, "ministries/public_achievement_list.html", {"achievements": achievements})
+
+
+def public_achievement_image(request, pk):
+    achievement = get_object_or_404(
+        StudentAchievement,
+        pk=pk, is_active=True, visibility=StudentAchievement.Visibility.PUBLIC,
+    )
+    if not achievement.image_blob or achievement.image_content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = HttpResponse(bytes(achievement.image_blob), content_type=achievement.image_content_type)
+    response["Content-Disposition"] = f'inline; filename="{achievement.image_filename.replace(chr(34), "")}"'
     response["Cache-Control"] = "public, max-age=3600"
     return response
 
@@ -604,6 +625,69 @@ def birthday_wish_delete(request, pk, wish_pk):
     wish.delete()
     messages.success(request, "Birthday wish removed.")
     return redirect(f"{celebration.get_absolute_url()}#birthday-wishes")
+
+
+def _achievement_for_member(request, pk, manage=False):
+    achievement = get_object_or_404(StudentAchievement.objects.select_related("ministry", "created_by"), pk=pk)
+    can_manage = request.user.can_edit_ministry(achievement.ministry)
+    if manage and not can_manage:
+        raise PermissionDenied
+    if not achievement.is_active and not can_manage:
+        raise Http404
+    return achievement, can_manage
+
+
+@login_required
+def achievement_list(request):
+    editable = request.user.editable_ministries()
+    achievements = StudentAchievement.objects.select_related("ministry").filter(
+        Q(is_active=True) | Q(ministry__in=editable)
+    ).distinct()
+    items = list(achievements)
+    for item in items:
+        item.can_manage = request.user.can_edit_ministry(item.ministry)
+    return render(request, "ministries/achievement_list.html", {
+        "achievements": items, "editable_ministries": editable,
+    })
+
+
+@login_required
+def achievement_image(request, pk):
+    achievement, _ = _achievement_for_member(request, pk)
+    if not achievement.image_blob or achievement.image_content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = HttpResponse(bytes(achievement.image_blob), content_type=achievement.image_content_type)
+    response["Content-Disposition"] = f'inline; filename="{achievement.image_filename.replace(chr(34), "")}"'
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required
+def achievement_edit(request, slug, pk=None):
+    ministry = _get_ministry(request, slug, edit=True)
+    achievement = get_object_or_404(StudentAchievement, pk=pk, ministry=ministry) if pk else None
+    form = StudentAchievementForm(request.POST or None, request.FILES or None, instance=achievement)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.ministry = ministry
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj.save()
+        messages.success(request, f"School recognition for {obj.student_name} was saved.")
+        return redirect("ministries:achievement_list")
+    return render(request, "ministries/achievement_form.html", {
+        "form": form, "ministry": ministry, "achievement": achievement,
+    })
+
+
+@login_required
+@require_POST
+def achievement_delete(request, slug, pk):
+    ministry = _get_ministry(request, slug, edit=True)
+    achievement = get_object_or_404(StudentAchievement, pk=pk, ministry=ministry)
+    achievement.delete()
+    messages.success(request, "Student recognition removed.")
+    return redirect("ministries:achievement_list")
 
 
 @login_required

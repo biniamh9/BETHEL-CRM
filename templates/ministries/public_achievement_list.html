@@ -1,0 +1,16 @@
+{% extends "base_public.html" %}
+{% block title %}Kids Achievement Corner · {{ church.short_name }}{% endblock %}
+{% block content %}
+<section class="achievement-public-hero"><div class="wrap"><span class="eyebrow gold">Encourage · Celebrate · Inspire</span><h1>Kids Achievement<br>Corner.</h1><p>Celebrating the hard work, character, creativity, and God-given gifts of the children in our church family.</p></div></section>
+<section class="wrap achievement-public-section">
+  <header class="section-heading split-heading"><div><span class="eyebrow">Student recognition</span><h2>Faithful in the classroom.<br><em>Growing in every gift.</em></h2></div><p>These recognitions are shared with parent or guardian permission. For child safety, we do not publish ages, grades, school names, or contact details.</p></header>
+  <div class="achievement-public-grid">
+    {% for achievement in achievements %}
+    <article class="achievement-public-card">
+      <div class="achievement-card-photo">{% if achievement.image_blob %}<img src="{{ achievement.get_public_image_url }}" alt="Recognition photo of {{ achievement.student_name }}" loading="lazy">{% else %}<span class="achievement-placeholder"><i>★</i><b>{{ achievement.student_name|first }}</b></span>{% endif %}<span class="achievement-star">★</span></div>
+      <div><span class="eyebrow gold">{{ achievement.get_kind_display }}</span><h2>{{ achievement.student_name }}</h2><h3>{{ achievement.recognition_title }}</h3><p>{{ achievement.message|default:"We celebrate your hard work and the gifts God has given you." }}</p><small>{{ achievement.recognition_date|date:"F Y" }}{% if achievement.academic_year %} · {{ achievement.academic_year }}{% endif %}</small></div>
+    </article>
+    {% empty %}<div class="public-empty"><h2>Our Achievement Corner is ready.</h2><p>Guardian-approved student recognitions will be celebrated here.</p></div>{% endfor %}
+  </div>
+</section>
+{% endblock %}

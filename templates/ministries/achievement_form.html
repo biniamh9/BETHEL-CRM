@@ -1,0 +1,13 @@
+{% extends "base_portal.html" %}{% load church %}
+{% block page_title %}{% if achievement %}Edit{% else %}Add{% endif %} student recognition{% endblock %}
+{% block content %}
+<div class="page-head c-{{ ministry.color }}"><div><a class="back" href="{% url 'ministries:achievement_list' %}">← Achievement Corner</a><span class="eyebrow" style="color:var(--c)">{{ ministry.name }}</span><h1>{% if achievement %}Edit student recognition{% else %}Add student recognition{% endif %}</h1><p class="muted">Do not enter the child’s age, grade, school name, address, teacher, or contact information.</p></div></div>
+<form method="post" enctype="multipart/form-data" class="form-panel">{% csrf_token %}
+  <div class="panel"><div class="panel-head"><h3>Recognition</h3></div><div class="panel-body">
+    {% if achievement and achievement.image_blob %}<div class="current-event-image"><span class="small muted">Current recognition photo</span><img src="{{ achievement.get_image_url }}" alt="Current photo for {{ achievement.student_name }}"><p class="small muted">Choose a new image below to replace this one.</p></div>{% endif %}
+    {% form_fields form %}
+  </div></div>
+  <div class="form-actions"><button class="btn btn-primary">Save recognition</button><a class="btn btn-ghost" href="{% url 'ministries:achievement_list' %}">Cancel</a></div>
+</form>
+{% if achievement %}<form method="post" action="{% url 'ministries:achievement_delete' ministry.slug achievement.pk %}" onsubmit="return confirm('Remove this student recognition?')" style="margin-top:16px">{% csrf_token %}<button class="btn btn-danger btn-sm">Remove recognition</button></form>{% endif %}
+{% endblock %}

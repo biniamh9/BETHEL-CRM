@@ -11,6 +11,7 @@
       <a class="btn btn-primary btn-sm" href="{% url 'ministries:activity_new' ministry.slug %}">+ Record activity</a>
       <a class="btn btn-ghost btn-sm" href="{% url 'ministries:participant_new' ministry.slug %}">+ Add person</a>
       <a class="btn btn-ghost btn-sm" href="{% url 'ministries:birthday_new' ministry.slug %}">+ Birthday celebration</a>
+      <a class="btn btn-ghost btn-sm" href="{% url 'ministries:achievement_new' ministry.slug %}">+ Student recognition</a>
     {% endif %}
     <a class="btn btn-ghost btn-sm" href="{% url 'ministries:activity_export' ministry.slug %}">Export CSV</a>
   </div>

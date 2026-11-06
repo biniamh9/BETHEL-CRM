@@ -240,6 +240,66 @@ class BirthdayReaction(models.Model):
         constraints = [models.UniqueConstraint(fields=("celebration", "user"), name="one_birthday_reaction_per_member")]
 
 
+class StudentAchievement(models.Model):
+    """A guardian-approved school recognition shared without private student details."""
+
+    class Kind(models.TextChoices):
+        ACADEMIC = "academic", "Academic excellence"
+        HONOR_ROLL = "honor_roll", "Honor roll"
+        LEADERSHIP = "leadership", "Leadership"
+        ATTENDANCE = "attendance", "Attendance"
+        ARTS = "arts", "Arts / music"
+        STEM = "stem", "STEM"
+        SPORTS = "sports", "Sports"
+        CHARACTER = "character", "Character / service"
+        OTHER = "other", "Other recognition"
+
+    class Visibility(models.TextChoices):
+        MEMBERS = "members", "Members only"
+        PUBLIC = "public", "Public achievement corner"
+
+    ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="student_achievements")
+    student_name = models.CharField(
+        max_length=120,
+        help_text="Use the child’s approved display name. Do not include age, grade, or school name.",
+    )
+    kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.ACADEMIC)
+    recognition_title = models.CharField(max_length=180, help_text="For example: Principal’s List or Reading Award.")
+    recognition_date = models.DateField()
+    academic_year = models.CharField(max_length=20, blank=True, help_text="Optional, for example 2026–2027.")
+    message = models.TextField(
+        max_length=1000, blank=True,
+        help_text="A short congratulatory message from the church or Kids & Youth Ministry.",
+    )
+    image_blob = models.BinaryField(editable=False, blank=True, default=b"")
+    image_content_type = models.CharField(max_length=30, editable=False, blank=True)
+    image_filename = models.CharField(max_length=180, editable=False, blank=True)
+    consent_confirmed = models.BooleanField(
+        default=False,
+        help_text="Confirm a parent or legal guardian approved the name, photo, message, and selected visibility.",
+    )
+    visibility = models.CharField(max_length=12, choices=Visibility.choices, default=Visibility.MEMBERS, db_index=True)
+    is_active = models.BooleanField("Published", default=True, db_index=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="created_student_achievements")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-recognition_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.student_name} — {self.recognition_title}"
+
+    def get_absolute_url(self):
+        return reverse("ministries:achievement_list")
+
+    def get_image_url(self):
+        return reverse("ministries:achievement_image", args=[self.pk])
+
+    def get_public_image_url(self):
+        return reverse("public_ministries:achievement_image", args=[self.pk])
+
+
 class Activity(models.Model):
     """One record of what a ministry did: a rehearsal, a class, a visit, an outreach."""
 
