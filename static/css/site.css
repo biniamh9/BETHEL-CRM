@@ -327,15 +327,43 @@ tbody tr:hover { background: #fcfaf6; }
 .home-achievement-grid strong { color: var(--gold); }
 .home-achievement-grid p, .home-achievement-grid small { color: rgba(255,255,255,.68); }
 
+/* Compact homepage doorway to the dedicated Kids Achievement Corner. */
+.home-achievement-teaser { padding: 28px 0; color: #fff; background: #111c33; border-block: 1px solid rgba(255,255,255,.1); }
+.home-achievement-teaser > a { display: grid; grid-template-columns: 64px minmax(260px,1.2fr) minmax(250px,.8fr) auto; align-items: center; gap: 28px; color: #fff; text-decoration: none; }
+.achievement-teaser-mark { display: grid; place-items: center; width: 58px; height: 58px; border: 1px solid rgba(232,200,117,.45); border-radius: 50%; color: var(--gold); font-size: 1.35rem; transition: background .2s,color .2s,transform .2s; }
+.achievement-teaser-copy .eyebrow { margin-bottom: 7px; }
+.achievement-teaser-copy h2 { margin: 0; color: #fff; font-size: clamp(1.75rem,3vw,2.65rem); line-height: 1; }
+.achievement-teaser-copy p { margin: 7px 0 0; color: rgba(255,255,255,.6); font-size: .86rem; line-height: 1.5; }
+.achievement-teaser-latest { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 14px; min-width: 0; padding-left: 28px; border-left: 1px solid rgba(255,255,255,.16); }
+.achievement-teaser-latest > img,.achievement-teaser-latest > span { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
+.achievement-teaser-latest > span { display: grid; place-items: center; background: #263b62; color: #fff; font: 700 1.8rem var(--serif); }
+.achievement-teaser-latest small,.achievement-teaser-latest strong,.achievement-teaser-latest em { display: block; }
+.achievement-teaser-latest small { color: #e8c875; font-size: .58rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.achievement-teaser-latest strong { margin-top: 2px; color: #fff; font: 600 1.15rem var(--serif); }
+.achievement-teaser-latest em { overflow: hidden; color: rgba(255,255,255,.56); font-size: .72rem; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.achievement-teaser-action { display: flex; align-items: center; gap: 14px; white-space: nowrap; color: #fff; font-size: .76rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.achievement-teaser-action b { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.28); border-radius: 50%; transition: transform .2s,background .2s,color .2s; }
+.home-achievement-teaser > a:hover .achievement-teaser-mark { background: var(--gold); color: #111c33; transform: rotate(10deg); }
+.home-achievement-teaser > a:hover .achievement-teaser-action b { transform: translate(3px,-3px); background: #fff; color: #111c33; }
+
 @media (max-width: 900px) {
   .achievement-admin-grid, .achievement-public-grid, .home-achievement-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-achievement-heading { grid-template-columns: 1fr; gap: 22px; }
+  .home-achievement-teaser > a { grid-template-columns: 54px 1fr auto; }
+  .achievement-teaser-latest { display: none; }
 }
 @media (max-width: 620px) {
   .achievement-admin-grid, .achievement-public-grid, .home-achievement-grid { grid-template-columns: 1fr; }
   .achievement-admin-card { grid-template-columns: 1fr; }
   .achievement-card-photo { min-height: 280px; }
   .achievement-public-hero h1 { font-size: 4rem; }
+  .home-achievement-teaser { padding: 22px 0; }
+  .home-achievement-teaser > a { grid-template-columns: 44px 1fr; gap: 16px; }
+  .achievement-teaser-mark { width: 44px; height: 44px; }
+  .achievement-teaser-copy p { display: none; }
+  .achievement-teaser-copy h2 { font-size: 1.55rem; }
+  .achievement-teaser-action { grid-column: 2; margin-top: 2px; }
+  .achievement-teaser-action b { width: 30px; height: 30px; }
 }
 .current-event-image { margin: 18px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fdfbf7; }
 .current-event-image > span { display: block; margin-bottom: 8px; font-weight: 600; }

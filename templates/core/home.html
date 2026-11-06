@@ -53,22 +53,19 @@
 {% endif %}
 
 {% if student_achievements %}
-<section class="home-achievement-corner" aria-labelledby="home-achievement-title">
-  <div class="wrap">
-    <header class="home-achievement-heading">
-      <div><span class="eyebrow gold">Kids Achievement Corner</span><h2 id="home-achievement-title">Hard work deserves<br><em>to be celebrated.</em></h2></div>
-      <div><p>Honoring the character, creativity, leadership, and school achievements of the children in our Bethel family.</p><a class="text-link" href="{% url 'public_ministries:achievement_list' %}">Visit the Achievement Corner <span>→</span></a></div>
-    </header>
-    <div class="home-achievement-grid">
-      {% for achievement in student_achievements %}
-      <article>
-        <div class="achievement-card-photo">{% if achievement.image_blob %}<img src="{{ achievement.get_public_image_url }}" alt="Recognition photo of {{ achievement.student_name }}" loading="lazy">{% else %}<span class="achievement-placeholder"><i>★</i><b>{{ achievement.student_name|first }}</b></span>{% endif %}<span class="achievement-star">★</span></div>
-        <div><span class="eyebrow">{{ achievement.get_kind_display }}</span><h3>{{ achievement.student_name }}</h3><strong>{{ achievement.recognition_title }}</strong><p>{{ achievement.message|default:"We celebrate your hard work and the gifts God has given you."|truncatewords:24 }}</p><small>{{ achievement.recognition_date|date:"F Y" }}</small></div>
-      </article>
-      {% endfor %}
+{% with achievement=student_achievements.0 %}
+<aside class="home-achievement-teaser" aria-labelledby="home-achievement-title">
+  <a class="wrap" href="{% url 'public_ministries:achievement_list' %}" aria-label="Visit the Kids Achievement Corner">
+    <div class="achievement-teaser-mark" aria-hidden="true">★</div>
+    <div class="achievement-teaser-copy"><span class="eyebrow gold">Kids Achievement Corner</span><h2 id="home-achievement-title">Celebrating bright futures.</h2><p>Meet the Bethel students growing in character, creativity, leadership, and learning.</p></div>
+    <div class="achievement-teaser-latest">
+      {% if achievement.image_blob %}<img src="{{ achievement.get_public_image_url }}" alt="Recognition photo of {{ achievement.student_name }}" loading="lazy">{% else %}<span>{{ achievement.student_name|first }}</span>{% endif %}
+      <div><small>Latest recognition</small><strong>{{ achievement.student_name }}</strong><em>{{ achievement.recognition_title }}</em></div>
     </div>
-  </div>
-</section>
+    <span class="achievement-teaser-action">View all achievements <b>↗</b></span>
+  </a>
+</aside>
+{% endwith %}
 {% endif %}
 
 <section class="gathering-ribbon" aria-label="Weekly gathering times">
