@@ -282,6 +282,20 @@ class ChildProfileForm(forms.ModelForm):
             self.add_error("consent_recorded_on", "Record the date when the parent or guardian gave consent.")
         return cleaned
 
+    def validate_unique(self):
+        try:
+            super().validate_unique()
+        except forms.ValidationError as exc:
+            if "__all__" in exc.error_dict:
+                self.add_error(
+                    None,
+                    "A child or youth with this name and birth date already exists. "
+                    "Return to the roster and edit the existing profile instead.",
+                )
+            for field, errors in exc.error_dict.items():
+                if field != "__all__":
+                    self.add_error(field, errors)
+
     def clean_photo(self):
         upload = self.cleaned_data.get("photo")
         if not upload:

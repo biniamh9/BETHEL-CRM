@@ -466,7 +466,7 @@ def participant_edit(request, slug, pk=None):
     })
 
 
-def _get_children_ministry(request, slug, edit=True):
+def _get_children_ministry(request, slug, *, edit=True):
     ministry = _get_ministry(request, slug, edit=edit)
     if ministry.slug != "youth-kids-ministry" and not request.user.is_church_admin:
         raise PermissionDenied
@@ -475,7 +475,7 @@ def _get_children_ministry(request, slug, edit=True):
 
 @login_required
 def child_list(request, slug):
-    ministry = _get_children_ministry(request, slug)
+    ministry = _get_children_ministry(request, slug, edit=True)
     children = ministry.child_profiles.all()
     if request.GET.get("inactive") != "1":
         children = children.filter(is_active=True)
@@ -490,7 +490,7 @@ def child_list(request, slug):
 
 @login_required
 def child_edit(request, slug, pk=None):
-    ministry = _get_children_ministry(request, slug)
+    ministry = _get_children_ministry(request, slug, edit=True)
     child = get_object_or_404(ChildProfile, pk=pk, ministry=ministry) if pk else None
     form = ChildProfileForm(request.POST or None, request.FILES or None, instance=child)
     if request.method == "POST" and form.is_valid():
@@ -501,6 +501,8 @@ def child_edit(request, slug, pk=None):
         obj.save()
         messages.success(request, f"Private profile saved for {obj.full_name}.")
         return redirect("ministries:child_list", slug=ministry.slug)
+    if request.method == "POST":
+        messages.error(request, "The profile was not saved. Please review the highlighted fields below.")
     return render(request, "ministries/children/form.html", {"ministry": ministry, "child": child, "form": form})
 
 

@@ -3,5 +3,9 @@
 {% block content %}
 <div class="page-head"><div><span class="eyebrow">Confidential Kids &amp; Youth record</span><h1>{% if child %}Edit {{ child.full_name }}{% else %}Add child or youth{% endif %}</h1><p class="muted">Collect only information needed for safe ministry care and communication.</p></div><a class="btn btn-ghost" href="{% url 'ministries:child_list' ministry.slug %}">Back to roster</a></div>
 <div class="privacy-note"><b>Guardian permission required</b><p>Record communication and photo consent separately. A private profile never grants permission to publish a child publicly.</p></div>
-<div class="panel"><div class="panel-body"><form method="post" enctype="multipart/form-data">{% csrf_token %}{% include "partials/form_fields.html" %}<button class="btn btn-primary">Save private profile</button></form></div></div>
+<div class="panel"><div class="panel-body"><form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+{% if form.errors %}<div class="form-error-summary" role="alert"><strong>The profile could not be saved.</strong><p>Correct the highlighted fields and submit the form again.</p>{{ form.non_field_errors }}</div>{% endif %}
+{% include "partials/form_fields.html" with fields=form show_errors=True %}
+<div class="actions"><button class="btn btn-primary" type="submit">{% if child %}Save changes{% else %}Add child or youth{% endif %}</button><a class="btn btn-ghost" href="{% url 'ministries:child_list' ministry.slug %}">Cancel</a></div>
+</form></div></div>
 {% endblock %}

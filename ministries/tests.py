@@ -538,6 +538,29 @@ class ChildYouthRecordsTests(TestCase):
         self.assertEqual(child.ministry_group, "K–2nd grade")
         self.assertTrue(child.photo_consent)
 
+    def test_invalid_child_profile_shows_actionable_errors(self):
+        self.client.force_login(self.leader)
+        response = self.client.post(
+            reverse("ministries:child_new", args=[self.ministry.slug]),
+            self.child_data(first_name="", consent_recorded_on=""),
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The profile could not be saved")
+        self.assertContains(response, "This field is required")
+
+    def test_duplicate_child_profile_explains_how_to_continue(self):
+        ChildProfile.objects.create(
+            ministry=self.ministry, first_name="Miriam", last_name="Tesfay",
+            birth_date=date(2018, 6, 3), gender="female", grade="2",
+            primary_phone="+14045550123",
+        )
+        self.client.force_login(self.leader)
+        response = self.client.post(
+            reverse("ministries:child_new", args=[self.ministry.slug]), self.child_data()
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already exists")
+
     def test_annual_transfer_references_private_profile(self):
         child = ChildProfile.objects.create(
             ministry=self.ministry, first_name="Miriam", last_name="Tesfay", birth_date=date(2018, 6, 3),
