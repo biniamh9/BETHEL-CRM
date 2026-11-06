@@ -11,16 +11,18 @@ from django.db.models import Count, Q, Sum
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import (
     ActivityForm, GalleryAlbumForm, GalleryPhotoForm, GalleryPhotoMetadataForm, MinistryContactForm, MinistryJoinForm,
     BirthdayCelebrationForm, BirthdayWishForm, MinistryMemberSpotlightForm, MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
-    StudentAchievementForm,
+    ChildProfileForm, ParentMessageForm, PromotionRecognitionForm, StudentAchievementForm,
 )
-from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, Participant, StudentAchievement
+from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, ParentMessage, Participant, PromotionRecognition, StudentAchievement
 from .forms import validate_gallery_image
 from core.image_processing import ImageProcessingError, automatic_caption, optimize_image_upload
+from .sms import send_sms, sms_is_configured
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
 
@@ -465,6 +467,138 @@ def participant_edit(request, slug, pk=None):
     })
 
 
+def _get_children_ministry(request, slug, edit=True):
+    ministry = _get_ministry(request, slug, edit=edit)
+    if ministry.slug != "youth-kids-ministry" and not request.user.is_church_admin:
+        raise PermissionDenied
+    return ministry
+
+
+@login_required
+def child_list(request, slug):
+    ministry = _get_children_ministry(request, slug)
+    children = ministry.child_profiles.all()
+    if request.GET.get("inactive") != "1":
+        children = children.filter(is_active=True)
+    q = request.GET.get("q", "").strip()
+    if q:
+        children = children.filter(Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(mother_name__icontains=q) | Q(father_or_guardian_name__icontains=q))
+    return render(request, "ministries/children/list.html", {
+        "ministry": ministry, "children": children, "q": q,
+        "birthdays_this_month": ministry.child_profiles.filter(is_active=True, birth_date__month=timezone.localdate().month),
+        "sms_consent_count": ministry.child_profiles.filter(is_active=True, sms_consent=True).count(),
+    })
+
+
+@login_required
+def child_edit(request, slug, pk=None):
+    ministry = _get_children_ministry(request, slug)
+    child = get_object_or_404(ChildProfile, pk=pk, ministry=ministry) if pk else None
+    form = ChildProfileForm(request.POST or None, request.FILES or None, instance=child)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.ministry = ministry
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj.save()
+        messages.success(request, f"Private profile saved for {obj.full_name}.")
+        return redirect("ministries:child_list", slug=ministry.slug)
+    return render(request, "ministries/children/form.html", {"ministry": ministry, "child": child, "form": form})
+
+
+@login_required
+def child_image(request, pk):
+    child = get_object_or_404(ChildProfile.objects.select_related("ministry"), pk=pk)
+    if not request.user.can_edit_ministry(child.ministry):
+        raise PermissionDenied
+    if not child.photo_blob or child.photo_content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    response = HttpResponse(bytes(child.photo_blob), content_type=child.photo_content_type)
+    response["Cache-Control"] = "private, no-store"
+    response["Content-Disposition"] = f'inline; filename="{child.photo_filename.replace(chr(34), "")}"'
+    return response
+
+
+@login_required
+def promotion_list(request, slug):
+    ministry = _get_children_ministry(request, slug)
+    recognitions = PromotionRecognition.objects.filter(child__ministry=ministry).select_related("child")
+    return render(request, "ministries/children/promotions.html", {"ministry": ministry, "recognitions": recognitions})
+
+
+@login_required
+def promotion_edit(request, slug, pk=None):
+    ministry = _get_children_ministry(request, slug)
+    recognition = get_object_or_404(PromotionRecognition, pk=pk, child__ministry=ministry) if pk else None
+    form = PromotionRecognitionForm(request.POST or None, instance=recognition, ministry=ministry)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj.save()
+        messages.success(request, f"Transfer recognition saved for {obj.child.full_name}.")
+        return redirect("ministries:promotion_list", slug=ministry.slug)
+    return render(request, "ministries/children/promotion_form.html", {"ministry": ministry, "recognition": recognition, "form": form})
+
+
+@login_required
+def parent_messages(request, slug):
+    ministry = _get_children_ministry(request, slug)
+    records = ministry.parent_messages.prefetch_related("recipients")[:50]
+    return render(request, "ministries/children/messages.html", {
+        "ministry": ministry, "records": records, "sms_configured": sms_is_configured(),
+    })
+
+
+@login_required
+def parent_message_compose(request, slug):
+    ministry = _get_children_ministry(request, slug)
+    form = ParentMessageForm(request.POST or None, ministry=ministry)
+    if request.method == "POST" and form.is_valid():
+        record = form.save(commit=False)
+        record.ministry = ministry
+        record.created_by = request.user
+        record.save()
+        form.save_m2m()
+        if "send" in request.POST:
+            if not sms_is_configured():
+                messages.warning(request, "Message saved as a draft. Add the three Twilio environment variables in Vercel before sending.")
+            else:
+                sent, failed, seen_numbers = 0, [], set()
+                sms_body = f"Bethel Eritrean Church: {record.body}\nReply STOP to opt out. Reply HELP for help."
+                for child in record.recipients.filter(is_active=True, sms_consent=True):
+                    normalized_phone = "".join(character for character in child.primary_phone if character.isdigit() or character == "+")
+                    if not normalized_phone or normalized_phone in seen_numbers:
+                        continue
+                    seen_numbers.add(normalized_phone)
+                    try:
+                        send_sms(normalized_phone, sms_body)
+                        sent += 1
+                    except RuntimeError:
+                        failed.append(child.full_name)
+                record.status = ParentMessage.Status.SENT if sent and not failed else (ParentMessage.Status.PARTIAL if sent else ParentMessage.Status.FAILED)
+                record.delivery_summary = f"Sent to {sent}; failed: {', '.join(failed) or 'none'}"
+                record.sent_at = timezone.now()
+                record.save(update_fields=("status", "delivery_summary", "sent_at"))
+                messages.success(request, f"Text delivery finished: {sent} sent, {len(failed)} failed.")
+        else:
+            messages.success(request, "Parent message saved as a draft.")
+        return redirect("ministries:parent_messages", slug=ministry.slug)
+    return render(request, "ministries/children/message_form.html", {"ministry": ministry, "form": form, "sms_configured": sms_is_configured()})
+
+
+@login_required
+def child_export(request, slug):
+    ministry = _get_children_ministry(request, slug)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="kids-youth-private-roster.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Full name", "Birth date", "Gender", "Grade", "Group", "Mother", "Father/guardian", "Primary phone", "Email", "Allergies", "Address", "SMS consent"])
+    for child in ministry.child_profiles.filter(is_active=True):
+        writer.writerow([child.full_name, child.birth_date, child.get_gender_display(), child.get_grade_display(), child.ministry_group, child.mother_name, child.father_or_guardian_name, child.primary_phone, child.parent_email, child.allergy_notes, ", ".join(filter(None, (child.address_line, child.city, child.state, child.postal_code))), "Yes" if child.sms_consent else "No"])
+    return response
+
+
 @login_required
 def member_spotlight_edit(request, slug, pk=None):
     ministry = _get_ministry(request, slug, edit=True)
@@ -557,7 +691,7 @@ def birthday_image(request, pk):
 def birthday_edit(request, slug, pk=None):
     ministry = _get_ministry(request, slug, edit=True)
     celebration = get_object_or_404(BirthdayCelebration, pk=pk, ministry=ministry) if pk else None
-    form = BirthdayCelebrationForm(request.POST or None, request.FILES or None, instance=celebration)
+    form = BirthdayCelebrationForm(request.POST or None, request.FILES or None, instance=celebration, ministry=ministry)
     if request.method == "POST" and form.is_valid():
         obj = form.save(commit=False)
         obj.ministry = ministry
@@ -666,7 +800,7 @@ def achievement_image(request, pk):
 def achievement_edit(request, slug, pk=None):
     ministry = _get_ministry(request, slug, edit=True)
     achievement = get_object_or_404(StudentAchievement, pk=pk, ministry=ministry) if pk else None
-    form = StudentAchievementForm(request.POST or None, request.FILES or None, instance=achievement)
+    form = StudentAchievementForm(request.POST or None, request.FILES or None, instance=achievement, ministry=ministry)
     if request.method == "POST" and form.is_valid():
         obj = form.save(commit=False)
         obj.ministry = ministry

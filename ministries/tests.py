@@ -8,7 +8,7 @@ from django.urls import reverse
 from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
-from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, StudentAchievement
+from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, ParentMessage, PromotionRecognition, StudentAchievement
 
 
 def test_jpeg(name="IMG_1234.jpg", size=(3000, 2200)):
@@ -501,3 +501,72 @@ class PublicMinistryWorkflowTests(TestCase):
         response = self.client.get(reverse("core:public_activities"))
         self.assertContains(response, "Community gathering")
         self.assertNotContains(response, "Private notes")
+
+
+class ChildYouthRecordsTests(TestCase):
+    def setUp(self):
+        self.ministry = Ministry.objects.create(name="Youth & Kids Ministry", slug="youth-kids-ministry")
+        self.leader = User.objects.create_user("kidsadmin", password="Valid-Test-Pass-42", role=User.Role.LEADER)
+        self.leader.led_ministries.add(self.ministry)
+        self.member = User.objects.create_user("regularmember", password="Valid-Test-Pass-42", role=User.Role.MEMBER)
+
+    def child_data(self, **overrides):
+        data = {
+            "first_name": "Miriam", "middle_name": "", "last_name": "Tesfay",
+            "birth_date": "2018-06-03", "gender": "female", "grade": "2",
+            "mother_name": "Sara Tesfay", "father_or_guardian_name": "Dawit Tesfay",
+            "primary_phone": "+14045550123", "secondary_phone": "", "parent_email": "parent@example.com",
+            "address_line": "", "city": "", "state": "GA", "postal_code": "",
+            "allergy_notes": "Peanut allergy", "emergency_contact": "", "emergency_phone": "",
+            "sms_consent": "on", "email_consent": "on", "photo_consent": "on",
+            "consent_recorded_on": "2026-01-10", "is_active": "on", "notes": "",
+        }
+        data.update(overrides)
+        return data
+
+    def test_records_are_hidden_from_ordinary_members(self):
+        self.client.force_login(self.member)
+        response = self.client.get(reverse("ministries:child_list", args=[self.ministry.slug]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_ministry_leader_can_create_private_child_profile(self):
+        self.client.force_login(self.leader)
+        response = self.client.post(reverse("ministries:child_new", args=[self.ministry.slug]), self.child_data())
+        self.assertRedirects(response, reverse("ministries:child_list", args=[self.ministry.slug]))
+        child = ChildProfile.objects.get()
+        self.assertEqual(child.full_name, "Miriam Tesfay")
+        self.assertEqual(child.ministry_group, "K–2nd grade")
+        self.assertTrue(child.sms_consent)
+
+    def test_annual_transfer_references_private_profile(self):
+        child = ChildProfile.objects.create(
+            ministry=self.ministry, first_name="Miriam", last_name="Tesfay", birth_date=date(2018, 6, 3),
+            gender="female", grade="2", primary_phone="+14045550123", sms_consent=True,
+        )
+        self.client.force_login(self.leader)
+        response = self.client.post(reverse("ministries:promotion_new", args=[self.ministry.slug]), {
+            "child": child.pk, "ceremony_date": "2027-06-06", "academic_year": "2026–2027",
+            "from_group": "K–2nd grade", "to_group": "3rd–5th grade", "certificate_prepared": "on",
+        })
+        self.assertRedirects(response, reverse("ministries:promotion_list", args=[self.ministry.slug]))
+        record = PromotionRecognition.objects.get()
+        self.assertEqual(record.child, child)
+        self.assertTrue(record.certificate_prepared)
+
+    def test_parent_message_only_offers_sms_opted_in_profiles(self):
+        consented = ChildProfile.objects.create(
+            ministry=self.ministry, first_name="Miriam", last_name="Tesfay", birth_date=date(2018, 6, 3),
+            gender="female", grade="2", primary_phone="+14045550123", sms_consent=True,
+        )
+        ChildProfile.objects.create(
+            ministry=self.ministry, first_name="Noah", last_name="Tekle", birth_date=date(2017, 7, 2),
+            gender="male", grade="3", primary_phone="+14045550456", sms_consent=False,
+        )
+        self.client.force_login(self.leader)
+        response = self.client.post(reverse("ministries:parent_message_new", args=[self.ministry.slug]), {
+            "subject": "Sunday reminder", "body": "Please arrive by 10:00 AM.", "recipients": [consented.pk], "draft": "1",
+        })
+        self.assertRedirects(response, reverse("ministries:parent_messages", args=[self.ministry.slug]))
+        message = ParentMessage.objects.get()
+        self.assertEqual(list(message.recipients.all()), [consented])
+        self.assertEqual(message.status, ParentMessage.Status.DRAFT)

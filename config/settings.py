@@ -210,6 +210,12 @@ STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
+# Optional parent SMS delivery. Profiles must also have explicit sms_consent.
+# Leave these blank to keep messages as reviewable drafts in the portal.
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
+
 # Church details shown on receipts and the public giving page.
 CHURCH = {
     "name": os.environ.get("CHURCH_NAME", "Bethel Eritrean Alliance Church Atlanta"),

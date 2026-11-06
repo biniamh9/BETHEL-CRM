@@ -1,0 +1,7 @@
+{% extends "base_portal.html" %}
+{% block page_title %}Parent Messages{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Consent-aware communication</span><h1>Parent Messages</h1><p class="muted">Only active profiles with explicit SMS consent can receive texts.</p></div><div class="actions"><a class="btn btn-primary" href="{% url 'ministries:parent_message_new' ministry.slug %}">+ Compose message</a><a class="btn btn-ghost" href="{% url 'ministries:child_list' ministry.slug %}">Manage contacts</a></div></div>
+{% if not sms_configured %}<div class="privacy-note"><b>SMS delivery is not connected yet</b><p>Drafts are safe to prepare. To send, add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER as secret Vercel environment variables.</p></div>{% endif %}
+<div class="panel"><div class="table-wrap"><table><thead><tr><th>Created</th><th>Message</th><th>Recipients</th><th>Status</th></tr></thead><tbody>{% for record in records %}<tr><td>{{ record.created_at|date:"M j, Y" }}</td><td><b>{{ record.subject }}</b><div class="small muted">{{ record.body|truncatewords:24 }}</div></td><td>{{ record.recipients.count }}</td><td><span class="badge">{{ record.get_status_display }}</span>{% if record.delivery_summary %}<div class="small muted">{{ record.delivery_summary }}</div>{% endif %}</td></tr>{% empty %}<tr><td colspan="4" class="empty">No parent messages have been prepared.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

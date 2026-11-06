@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import date
 
 from core.image_processing import ImageProcessingError, optimize_image_upload, validate_image_upload
-from .models import Activity, BirthdayCelebration, BirthdayWish, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, Participant, StudentAchievement
+from .models import Activity, BirthdayCelebration, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, ParentMessage, Participant, PromotionRecognition, StudentAchievement
 
 
 class DateInput(forms.DateInput):
@@ -126,15 +126,20 @@ class BirthdayCelebrationForm(forms.ModelForm):
 
     class Meta:
         model = BirthdayCelebration
-        fields = ("member_name", "celebration_date", "message", "visibility", "consent_confirmed", "is_active")
+        fields = ("child_profile", "member_name", "celebration_date", "message", "visibility", "consent_confirmed", "is_active")
         widgets = {
             "celebration_date": DateInput(),
             "message": forms.Textarea(attrs={"rows": 5, "maxlength": 800}),
         }
         labels = {"message": "Birthday message from the ministry", "visibility": "Who can see the celebration?"}
         help_texts = {
+            "child_profile": "Optional. Select a protected Kids & Youth profile to reuse the approved name and photo.",
             "visibility": "Public celebrations may appear on the homepage and can be opened from shared links. Wishes and reactions still require sign-in.",
         }
+
+    def __init__(self, *args, ministry=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["child_profile"].queryset = ministry.child_profiles.filter(is_active=True) if ministry else ChildProfile.objects.none()
 
     def clean_consent_confirmed(self):
         if not self.cleaned_data.get("consent_confirmed"):
@@ -154,6 +159,13 @@ class BirthdayCelebrationForm(forms.ModelForm):
 
     def save(self, commit=True):
         celebration = super().save(commit=False)
+        child = self.cleaned_data.get("child_profile")
+        if child:
+            celebration.member_name = child.full_name
+            if not self.cleaned_data.get("image") and not celebration.image_blob and child.photo_blob and child.photo_consent:
+                celebration.image_blob = child.photo_blob
+                celebration.image_content_type = child.photo_content_type
+                celebration.image_filename = child.photo_filename
         if self.cleaned_data.get("remove_image"):
             celebration.image_blob = b""
             celebration.image_content_type = ""
@@ -184,7 +196,7 @@ class StudentAchievementForm(forms.ModelForm):
     class Meta:
         model = StudentAchievement
         fields = (
-            "student_name", "kind", "recognition_title", "recognition_date",
+            "child_profile", "student_name", "kind", "recognition_title", "recognition_date",
             "academic_year", "message", "visibility", "consent_confirmed", "is_active",
         )
         widgets = {
@@ -198,8 +210,13 @@ class StudentAchievementForm(forms.ModelForm):
             "visibility": "Who can see this recognition?",
         }
         help_texts = {
+            "child_profile": "Optional. Select a protected Kids & Youth profile to reuse the approved name and photo.",
             "visibility": "Public recognitions may appear on the homepage and Achievement Corner. Members-only recognitions stay inside the portal.",
         }
+
+    def __init__(self, *args, ministry=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["child_profile"].queryset = ministry.child_profiles.filter(is_active=True) if ministry else ChildProfile.objects.none()
 
     def clean_consent_confirmed(self):
         if not self.cleaned_data.get("consent_confirmed"):
@@ -219,6 +236,13 @@ class StudentAchievementForm(forms.ModelForm):
 
     def save(self, commit=True):
         achievement = super().save(commit=False)
+        child = self.cleaned_data.get("child_profile")
+        if child:
+            achievement.student_name = child.full_name
+            if not self.cleaned_data.get("image") and not achievement.image_blob and child.photo_blob and child.photo_consent:
+                achievement.image_blob = child.photo_blob
+                achievement.image_content_type = child.photo_content_type
+                achievement.image_filename = child.photo_filename
         if self.cleaned_data.get("remove_image"):
             achievement.image_blob = b""
             achievement.image_content_type = ""
@@ -228,6 +252,88 @@ class StudentAchievementForm(forms.ModelForm):
         if commit:
             achievement.save()
         return achievement
+
+
+class ChildProfileForm(forms.ModelForm):
+    photo = forms.FileField(
+        required=False, label="Private profile photo",
+        help_text="Stored privately and resized below 1 MB. It is never published automatically.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp", "data-optimize-image": "1"}),
+    )
+    remove_photo = forms.BooleanField(required=False, label="Remove current photo")
+
+    class Meta:
+        model = ChildProfile
+        fields = (
+            "first_name", "middle_name", "last_name", "birth_date", "gender", "grade",
+            "mother_name", "father_or_guardian_name", "primary_phone", "secondary_phone", "parent_email",
+            "address_line", "city", "state", "postal_code", "allergy_notes", "emergency_contact",
+            "emergency_phone", "sms_consent", "email_consent", "photo_consent", "consent_recorded_on",
+            "is_active", "notes",
+        )
+        widgets = {
+            "birth_date": DateInput(), "consent_recorded_on": DateInput(),
+            "allergy_notes": forms.Textarea(attrs={"rows": 3}), "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        if any(cleaned.get(name) for name in ("sms_consent", "email_consent", "photo_consent")) and not cleaned.get("consent_recorded_on"):
+            self.add_error("consent_recorded_on", "Record the date when the parent or guardian gave consent.")
+        return cleaned
+
+    def clean_photo(self):
+        upload = self.cleaned_data.get("photo")
+        if not upload:
+            return upload
+        upload = validate_gallery_image(upload)
+        try:
+            self.optimized_photo = optimize_image_upload(upload)
+        except ImageProcessingError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+        return upload
+
+    def save(self, commit=True):
+        child = super().save(commit=False)
+        if self.cleaned_data.get("remove_photo"):
+            child.photo_blob = b""
+            child.photo_content_type = ""
+            child.photo_filename = ""
+        if self.cleaned_data.get("photo"):
+            child.photo_blob, child.photo_filename, child.photo_content_type = self.optimized_photo
+        if commit:
+            child.save()
+        return child
+
+
+class PromotionRecognitionForm(forms.ModelForm):
+    class Meta:
+        model = PromotionRecognition
+        fields = (
+            "child", "ceremony_date", "academic_year", "from_group", "to_group",
+            "certificate_prepared", "gift_prepared", "presented", "notes",
+        )
+        widgets = {"ceremony_date": DateInput(), "notes": forms.Textarea(attrs={"rows": 3})}
+
+    def __init__(self, *args, ministry=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["child"].queryset = ministry.child_profiles.filter(is_active=True) if ministry else ChildProfile.objects.none()
+
+
+class ParentMessageForm(forms.ModelForm):
+    recipients = forms.ModelMultipleChoiceField(
+        queryset=ChildProfile.objects.none(), widget=forms.CheckboxSelectMultiple,
+        help_text="Only active profiles with recorded SMS consent are available.",
+    )
+
+    class Meta:
+        model = ParentMessage
+        fields = ("subject", "body", "recipients")
+        widgets = {"body": forms.Textarea(attrs={"rows": 7, "placeholder": "Write a concise message to parents…"})}
+
+    def __init__(self, *args, ministry=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["recipients"].queryset = ministry.child_profiles.filter(is_active=True, sms_consent=True).order_by("first_name", "last_name") if ministry else ChildProfile.objects.none()
 
 
 class MinistryContactForm(forms.ModelForm):

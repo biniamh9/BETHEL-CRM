@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
 
@@ -178,6 +179,10 @@ class BirthdayCelebration(models.Model):
         PUBLIC = "public", "Public celebration"
 
     ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="birthday_celebrations")
+    child_profile = models.ForeignKey(
+        "ChildProfile", null=True, blank=True, on_delete=models.PROTECT, related_name="birthday_celebrations",
+        help_text="Optional private roster profile used to prefill the celebration.",
+    )
     member_name = models.CharField(max_length=120)
     celebration_date = models.DateField(
         help_text="The celebration date for this post. The year is not shown to members as an age."
@@ -259,6 +264,10 @@ class StudentAchievement(models.Model):
         PUBLIC = "public", "Public achievement corner"
 
     ministry = models.ForeignKey(Ministry, on_delete=models.CASCADE, related_name="student_achievements")
+    child_profile = models.ForeignKey(
+        "ChildProfile", null=True, blank=True, on_delete=models.PROTECT, related_name="student_achievements",
+        help_text="Optional private roster profile used to prefill the approved display name and photo.",
+    )
     student_name = models.CharField(
         max_length=120,
         help_text="Use the child’s approved display name. Do not include age, grade, or school name.",
@@ -298,6 +307,141 @@ class StudentAchievement(models.Model):
 
     def get_public_image_url(self):
         return reverse("public_ministries:achievement_image", args=[self.pk])
+
+
+class ChildProfile(models.Model):
+    """Private pastoral record for a child or youth; never exposed on public pages."""
+
+    class Gender(models.TextChoices):
+        MALE = "male", "Male"
+        FEMALE = "female", "Female"
+
+    class Grade(models.TextChoices):
+        INFANT = "infant", "Infant / nursery"
+        PREK = "prek", "Pre-K"
+        K = "k", "Kindergarten"
+        G1 = "1", "1st grade"
+        G2 = "2", "2nd grade"
+        G3 = "3", "3rd grade"
+        G4 = "4", "4th grade"
+        G5 = "5", "5th grade"
+        G6 = "6", "6th grade"
+        G7 = "7", "7th grade"
+        G8 = "8", "8th grade"
+        G9 = "9", "9th grade"
+        G10 = "10", "10th grade"
+        G11 = "11", "11th grade"
+        G12 = "12", "12th grade"
+        GRADUATED = "graduated", "Graduated"
+
+    ministry = models.ForeignKey(Ministry, on_delete=models.PROTECT, related_name="child_profiles")
+    first_name = models.CharField(max_length=80)
+    middle_name = models.CharField(max_length=80, blank=True)
+    last_name = models.CharField(max_length=80)
+    birth_date = models.DateField(db_index=True)
+    gender = models.CharField(max_length=8, choices=Gender.choices)
+    grade = models.CharField(max_length=12, choices=Grade.choices, db_index=True)
+    mother_name = models.CharField(max_length=160, blank=True)
+    father_or_guardian_name = models.CharField("Father or guardian name", max_length=160, blank=True)
+    primary_phone = models.CharField(max_length=30, help_text="Parent or guardian mobile number.")
+    secondary_phone = models.CharField(max_length=30, blank=True)
+    parent_email = models.EmailField(blank=True)
+    address_line = models.CharField("Street address", max_length=220, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=40, blank=True, default="GA")
+    postal_code = models.CharField(max_length=15, blank=True)
+    allergy_notes = models.TextField(blank=True, help_text="Allergies, emergency considerations, or 'None known'.")
+    emergency_contact = models.CharField(max_length=160, blank=True)
+    emergency_phone = models.CharField(max_length=30, blank=True)
+    photo_blob = models.BinaryField(editable=False, blank=True, default=b"")
+    photo_content_type = models.CharField(max_length=30, editable=False, blank=True)
+    photo_filename = models.CharField(max_length=180, editable=False, blank=True)
+    sms_consent = models.BooleanField(
+        default=False,
+        help_text="Parent/guardian expressly opted in to occasional Bethel Kids & Youth SMS updates; message/data rates may apply; reply STOP to opt out or HELP for help.",
+    )
+    email_consent = models.BooleanField(default=False)
+    photo_consent = models.BooleanField(default=False, help_text="Photo may be used for approved church purposes.")
+    consent_recorded_on = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    notes = models.TextField(blank=True, help_text="Private ministry notes. Do not add unnecessary sensitive information.")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="created_child_profiles")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["first_name", "last_name"]
+        constraints = [models.UniqueConstraint(fields=("first_name", "last_name", "birth_date"), name="unique_child_identity")]
+
+    def __str__(self):
+        return self.full_name
+
+    @property
+    def full_name(self):
+        return " ".join(part for part in (self.first_name, self.middle_name, self.last_name) if part)
+
+    @property
+    def age(self):
+        today = timezone.localdate()
+        return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+
+    @property
+    def ministry_group(self):
+        if self.grade in {self.Grade.INFANT, self.Grade.PREK}:
+            return "Infant–Pre-K"
+        if self.grade in {self.Grade.K, self.Grade.G1, self.Grade.G2}:
+            return "K–2nd grade"
+        if self.grade in {self.Grade.G3, self.Grade.G4, self.Grade.G5}:
+            return "3rd–5th grade"
+        if self.grade in {self.Grade.G6, self.Grade.G7, self.Grade.G8}:
+            return "Middle school (6th–8th)"
+        return "Youth Ministry / high school"
+
+    def get_image_url(self):
+        return reverse("ministries:child_image", args=[self.pk])
+
+
+class PromotionRecognition(models.Model):
+    """Annual June transfer recognition for children advancing ministry groups."""
+
+    child = models.ForeignKey(ChildProfile, on_delete=models.PROTECT, related_name="promotion_recognitions")
+    ceremony_date = models.DateField(help_text="Usually the first Sunday in June.")
+    academic_year = models.CharField(max_length=20, help_text="For example 2026–2027.")
+    from_group = models.CharField(max_length=80)
+    to_group = models.CharField(max_length=80)
+    certificate_prepared = models.BooleanField(default=False)
+    gift_prepared = models.BooleanField(default=False)
+    presented = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="created_promotion_recognitions")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-ceremony_date", "child__first_name"]
+        constraints = [models.UniqueConstraint(fields=("child", "ceremony_date"), name="one_promotion_per_child_ceremony")]
+
+
+class ParentMessage(models.Model):
+    """Consent-aware communication record; delivery requires configured SMS credentials."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SENT = "sent", "Sent"
+        PARTIAL = "partial", "Partially sent"
+        FAILED = "failed", "Failed"
+
+    ministry = models.ForeignKey(Ministry, on_delete=models.PROTECT, related_name="parent_messages")
+    subject = models.CharField(max_length=140)
+    body = models.TextField(max_length=1200)
+    recipients = models.ManyToManyField(ChildProfile, related_name="parent_messages", blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT, db_index=True)
+    delivery_summary = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="created_parent_messages")
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
 
 class Activity(models.Model):
