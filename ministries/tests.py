@@ -8,7 +8,7 @@ from django.urls import reverse
 from accounts.models import MinistryAccessRequest, User
 from resources.models import Resource
 
-from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, ParentMessage, PromotionRecognition, StudentAchievement
+from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, PromotionRecognition, StudentAchievement
 
 
 def test_jpeg(name="IMG_1234.jpg", size=(3000, 2200)):
@@ -518,7 +518,7 @@ class ChildYouthRecordsTests(TestCase):
             "primary_phone": "+14045550123", "secondary_phone": "", "parent_email": "parent@example.com",
             "address_line": "", "city": "", "state": "GA", "postal_code": "",
             "allergy_notes": "Peanut allergy", "emergency_contact": "", "emergency_phone": "",
-            "sms_consent": "on", "email_consent": "on", "photo_consent": "on",
+            "email_consent": "on", "photo_consent": "on",
             "consent_recorded_on": "2026-01-10", "is_active": "on", "notes": "",
         }
         data.update(overrides)
@@ -536,12 +536,12 @@ class ChildYouthRecordsTests(TestCase):
         child = ChildProfile.objects.get()
         self.assertEqual(child.full_name, "Miriam Tesfay")
         self.assertEqual(child.ministry_group, "K–2nd grade")
-        self.assertTrue(child.sms_consent)
+        self.assertTrue(child.photo_consent)
 
     def test_annual_transfer_references_private_profile(self):
         child = ChildProfile.objects.create(
             ministry=self.ministry, first_name="Miriam", last_name="Tesfay", birth_date=date(2018, 6, 3),
-            gender="female", grade="2", primary_phone="+14045550123", sms_consent=True,
+            gender="female", grade="2", primary_phone="+14045550123",
         )
         self.client.force_login(self.leader)
         response = self.client.post(reverse("ministries:promotion_new", args=[self.ministry.slug]), {
@@ -552,21 +552,3 @@ class ChildYouthRecordsTests(TestCase):
         record = PromotionRecognition.objects.get()
         self.assertEqual(record.child, child)
         self.assertTrue(record.certificate_prepared)
-
-    def test_parent_message_only_offers_sms_opted_in_profiles(self):
-        consented = ChildProfile.objects.create(
-            ministry=self.ministry, first_name="Miriam", last_name="Tesfay", birth_date=date(2018, 6, 3),
-            gender="female", grade="2", primary_phone="+14045550123", sms_consent=True,
-        )
-        ChildProfile.objects.create(
-            ministry=self.ministry, first_name="Noah", last_name="Tekle", birth_date=date(2017, 7, 2),
-            gender="male", grade="3", primary_phone="+14045550456", sms_consent=False,
-        )
-        self.client.force_login(self.leader)
-        response = self.client.post(reverse("ministries:parent_message_new", args=[self.ministry.slug]), {
-            "subject": "Sunday reminder", "body": "Please arrive by 10:00 AM.", "recipients": [consented.pk], "draft": "1",
-        })
-        self.assertRedirects(response, reverse("ministries:parent_messages", args=[self.ministry.slug]))
-        message = ParentMessage.objects.get()
-        self.assertEqual(list(message.recipients.all()), [consented])
-        self.assertEqual(message.status, ParentMessage.Status.DRAFT)

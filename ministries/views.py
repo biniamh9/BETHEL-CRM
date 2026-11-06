@@ -17,12 +17,11 @@ from django.views.decorators.http import require_POST
 from .forms import (
     ActivityForm, GalleryAlbumForm, GalleryPhotoForm, GalleryPhotoMetadataForm, MinistryContactForm, MinistryJoinForm,
     BirthdayCelebrationForm, BirthdayWishForm, MinistryMemberSpotlightForm, MinistryProfileForm, ParticipantForm, PortalGalleryPhotoForm,
-    ChildProfileForm, ParentMessageForm, PromotionRecognitionForm, StudentAchievementForm,
+    ChildProfileForm, PromotionRecognitionForm, StudentAchievementForm,
 )
-from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, ParentMessage, Participant, PromotionRecognition, StudentAchievement
+from .models import Activity, BirthdayCelebration, BirthdayReaction, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryAnnouncement, MinistryInquiry, MinistryMemberSpotlight, Participant, PromotionRecognition, StudentAchievement
 from .forms import validate_gallery_image
 from core.image_processing import ImageProcessingError, automatic_caption, optimize_image_upload
-from .sms import send_sms, sms_is_configured
 
 ACTIVITY_IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
 
@@ -486,7 +485,6 @@ def child_list(request, slug):
     return render(request, "ministries/children/list.html", {
         "ministry": ministry, "children": children, "q": q,
         "birthdays_this_month": ministry.child_profiles.filter(is_active=True, birth_date__month=timezone.localdate().month),
-        "sms_consent_count": ministry.child_profiles.filter(is_active=True, sms_consent=True).count(),
     })
 
 
@@ -542,60 +540,14 @@ def promotion_edit(request, slug, pk=None):
 
 
 @login_required
-def parent_messages(request, slug):
-    ministry = _get_children_ministry(request, slug)
-    records = ministry.parent_messages.prefetch_related("recipients")[:50]
-    return render(request, "ministries/children/messages.html", {
-        "ministry": ministry, "records": records, "sms_configured": sms_is_configured(),
-    })
-
-
-@login_required
-def parent_message_compose(request, slug):
-    ministry = _get_children_ministry(request, slug)
-    form = ParentMessageForm(request.POST or None, ministry=ministry)
-    if request.method == "POST" and form.is_valid():
-        record = form.save(commit=False)
-        record.ministry = ministry
-        record.created_by = request.user
-        record.save()
-        form.save_m2m()
-        if "send" in request.POST:
-            if not sms_is_configured():
-                messages.warning(request, "Message saved as a draft. Add the three Twilio environment variables in Vercel before sending.")
-            else:
-                sent, failed, seen_numbers = 0, [], set()
-                sms_body = f"Bethel Eritrean Church: {record.body}\nReply STOP to opt out. Reply HELP for help."
-                for child in record.recipients.filter(is_active=True, sms_consent=True):
-                    normalized_phone = "".join(character for character in child.primary_phone if character.isdigit() or character == "+")
-                    if not normalized_phone or normalized_phone in seen_numbers:
-                        continue
-                    seen_numbers.add(normalized_phone)
-                    try:
-                        send_sms(normalized_phone, sms_body)
-                        sent += 1
-                    except RuntimeError:
-                        failed.append(child.full_name)
-                record.status = ParentMessage.Status.SENT if sent and not failed else (ParentMessage.Status.PARTIAL if sent else ParentMessage.Status.FAILED)
-                record.delivery_summary = f"Sent to {sent}; failed: {', '.join(failed) or 'none'}"
-                record.sent_at = timezone.now()
-                record.save(update_fields=("status", "delivery_summary", "sent_at"))
-                messages.success(request, f"Text delivery finished: {sent} sent, {len(failed)} failed.")
-        else:
-            messages.success(request, "Parent message saved as a draft.")
-        return redirect("ministries:parent_messages", slug=ministry.slug)
-    return render(request, "ministries/children/message_form.html", {"ministry": ministry, "form": form, "sms_configured": sms_is_configured()})
-
-
-@login_required
 def child_export(request, slug):
     ministry = _get_children_ministry(request, slug)
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="kids-youth-private-roster.csv"'
     writer = csv.writer(response)
-    writer.writerow(["Full name", "Birth date", "Gender", "Grade", "Group", "Mother", "Father/guardian", "Primary phone", "Email", "Allergies", "Address", "SMS consent"])
+    writer.writerow(["Full name", "Birth date", "Gender", "Grade", "Group", "Mother", "Father/guardian", "Primary phone", "Email", "Allergies", "Address"])
     for child in ministry.child_profiles.filter(is_active=True):
-        writer.writerow([child.full_name, child.birth_date, child.get_gender_display(), child.get_grade_display(), child.ministry_group, child.mother_name, child.father_or_guardian_name, child.primary_phone, child.parent_email, child.allergy_notes, ", ".join(filter(None, (child.address_line, child.city, child.state, child.postal_code))), "Yes" if child.sms_consent else "No"])
+        writer.writerow([child.full_name, child.birth_date, child.get_gender_display(), child.get_grade_display(), child.ministry_group, child.mother_name, child.father_or_guardian_name, child.primary_phone, child.parent_email, child.allergy_notes, ", ".join(filter(None, (child.address_line, child.city, child.state, child.postal_code)))])
     return response
 
 

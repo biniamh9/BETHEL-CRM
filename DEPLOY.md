@@ -140,12 +140,6 @@ Until then, the giving page shows Zelle / check / cash instructions and the pled
 **Email (receipts and password resets)** — from Gmail (app password), SendGrid, Resend, etc.:
 `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`.
 
-**Parent text messages (Twilio)** — the Kids & Youth portal works in draft mode until this is configured:
-1. Obtain separate, written parent/guardian SMS consent. Consent must be optional and the portal checkbox must match the signed record.
-2. Register the church and messaging use case with Twilio (U.S. local numbers generally require A2P 10DLC registration). Configure Twilio's default or Advanced Opt-Out handling.
-3. Add `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` as **Secret** Vercel environment variables, then redeploy.
-4. Send a small test first. Portal messages identify Bethel and append STOP/HELP instructions automatically. Never use the roster for unrelated outreach.
-
 **File uploads on the Resources page (Supabase Storage)** — until this is set, Resources accepts links only (Google Drive, YouTube...):
 1. Supabase → **Storage** → **New bucket**, name `resources`, leave **Public** off.
 2. Supabase → **Storage** → **S3 Configuration** (Settings): copy the **Endpoint** and **Region**, then **New access key**.

@@ -356,10 +356,6 @@ class ChildProfile(models.Model):
     photo_blob = models.BinaryField(editable=False, blank=True, default=b"")
     photo_content_type = models.CharField(max_length=30, editable=False, blank=True)
     photo_filename = models.CharField(max_length=180, editable=False, blank=True)
-    sms_consent = models.BooleanField(
-        default=False,
-        help_text="Parent/guardian expressly opted in to occasional Bethel Kids & Youth SMS updates; message/data rates may apply; reply STOP to opt out or HELP for help.",
-    )
     email_consent = models.BooleanField(default=False)
     photo_consent = models.BooleanField(default=False, help_text="Photo may be used for approved church purposes.")
     consent_recorded_on = models.DateField(null=True, blank=True)
@@ -419,29 +415,6 @@ class PromotionRecognition(models.Model):
     class Meta:
         ordering = ["-ceremony_date", "child__first_name"]
         constraints = [models.UniqueConstraint(fields=("child", "ceremony_date"), name="one_promotion_per_child_ceremony")]
-
-
-class ParentMessage(models.Model):
-    """Consent-aware communication record; delivery requires configured SMS credentials."""
-
-    class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        SENT = "sent", "Sent"
-        PARTIAL = "partial", "Partially sent"
-        FAILED = "failed", "Failed"
-
-    ministry = models.ForeignKey(Ministry, on_delete=models.PROTECT, related_name="parent_messages")
-    subject = models.CharField(max_length=140)
-    body = models.TextField(max_length=1200)
-    recipients = models.ManyToManyField(ChildProfile, related_name="parent_messages", blank=True)
-    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT, db_index=True)
-    delivery_summary = models.TextField(blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="created_parent_messages")
-    created_at = models.DateTimeField(auto_now_add=True)
-    sent_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        ordering = ["-created_at"]
 
 
 class Activity(models.Model):

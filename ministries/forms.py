@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import date
 
 from core.image_processing import ImageProcessingError, optimize_image_upload, validate_image_upload
-from .models import Activity, BirthdayCelebration, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, ParentMessage, Participant, PromotionRecognition, StudentAchievement
+from .models import Activity, BirthdayCelebration, BirthdayWish, ChildProfile, GalleryAlbum, GalleryPhoto, Ministry, MinistryInquiry, MinistryMemberSpotlight, Participant, PromotionRecognition, StudentAchievement
 
 
 class DateInput(forms.DateInput):
@@ -268,7 +268,7 @@ class ChildProfileForm(forms.ModelForm):
             "first_name", "middle_name", "last_name", "birth_date", "gender", "grade",
             "mother_name", "father_or_guardian_name", "primary_phone", "secondary_phone", "parent_email",
             "address_line", "city", "state", "postal_code", "allergy_notes", "emergency_contact",
-            "emergency_phone", "sms_consent", "email_consent", "photo_consent", "consent_recorded_on",
+            "emergency_phone", "email_consent", "photo_consent", "consent_recorded_on",
             "is_active", "notes",
         )
         widgets = {
@@ -278,7 +278,7 @@ class ChildProfileForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        if any(cleaned.get(name) for name in ("sms_consent", "email_consent", "photo_consent")) and not cleaned.get("consent_recorded_on"):
+        if any(cleaned.get(name) for name in ("email_consent", "photo_consent")) and not cleaned.get("consent_recorded_on"):
             self.add_error("consent_recorded_on", "Record the date when the parent or guardian gave consent.")
         return cleaned
 
@@ -318,22 +318,6 @@ class PromotionRecognitionForm(forms.ModelForm):
     def __init__(self, *args, ministry=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["child"].queryset = ministry.child_profiles.filter(is_active=True) if ministry else ChildProfile.objects.none()
-
-
-class ParentMessageForm(forms.ModelForm):
-    recipients = forms.ModelMultipleChoiceField(
-        queryset=ChildProfile.objects.none(), widget=forms.CheckboxSelectMultiple,
-        help_text="Only active profiles with recorded SMS consent are available.",
-    )
-
-    class Meta:
-        model = ParentMessage
-        fields = ("subject", "body", "recipients")
-        widgets = {"body": forms.Textarea(attrs={"rows": 7, "placeholder": "Write a concise message to parents…"})}
-
-    def __init__(self, *args, ministry=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["recipients"].queryset = ministry.child_profiles.filter(is_active=True, sms_consent=True).order_by("first_name", "last_name") if ministry else ChildProfile.objects.none()
 
 
 class MinistryContactForm(forms.ModelForm):
