@@ -5,6 +5,10 @@
   <div class="wrap"><span class="eyebrow">Belong · Grow · Serve</span><h1>There is a place for you here.</h1><p>Explore the ministries that nurture faith, strengthen families, and serve our community.</p></div>
 </section>
 <section class="wrap public-section">
+  <header class="directory-intro">
+    <div><span class="eyebrow">One church · many callings</span><h2>Find community for every season of life.</h2></div>
+    <p>Ministry is where Sunday becomes shared life. Meet people, grow in faith, use your gifts, and help the next generation flourish.</p>
+  </header>
   <div class="public-card-grid">
     {% for ministry in ministries %}
       <a class="public-ministry-card c-{{ ministry.color }}{% if ministry.slug == 'choir-ministry' or ministry.slug == 'youth-kids-ministry' or ministry.slug == 'women-service' %} has-photo{% endif %}" href="{{ ministry.get_public_url }}">
@@ -12,9 +16,10 @@
         {% if ministry.slug == 'youth-kids-ministry' %}<span class="ministry-card-photo" style="background-image:url('{% static 'activity-images/KidsYouth4.jpg' %}')" role="img" aria-label="Bethel children and youth ministry"></span>{% endif %}
         {% if ministry.slug == 'women-service' %}<span class="ministry-card-photo" style="background-image:url('{% static 'activity-images/women3.jpg' %}')" role="img" aria-label="Bethel Women’s Ministry"></span>{% endif %}
         <span class="ministry-number">{{ forloop.counter|stringformat:"02d" }}</span>
-        <div><span class="eyebrow">Ministry</span><h2>{{ ministry.name }}</h2><p>{{ ministry.description|default:"Learn about this ministry, its purpose, and ways to participate." }}</p><span class="text-link">Explore ministry →</span></div>
+        <div class="ministry-card-copy"><span class="eyebrow">Ministry</span><h2>{{ ministry.name }}</h2><p>{{ ministry.description|default:"Learn about this ministry, its purpose, and ways to participate." }}</p><span class="text-link">Explore ministry <b>↗</b></span></div>
       </a>
     {% empty %}<div class="public-empty"><h2>Ministry information is being prepared.</h2><p>Please check back soon.</p></div>{% endfor %}
   </div>
 </section>
+<section class="discovery-cta"><div class="wrap"><div><span class="eyebrow gold">Not sure where to begin?</span><h2>Come as you are. We will help you find your place.</h2></div><a class="btn btn-light" href="{% url 'core:visit' %}">Plan your first visit</a></div></section>
 {% endblock %}

@@ -4,13 +4,11 @@
 <section class="public-page-hero{% if hero_images.events %} custom-page-hero{% endif %}"{% if hero_images.events %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.95),rgba(7,12,24,.45)),url('{{ hero_images.events.image_url }}');background-position:{{ hero_images.events.position }}"{% endif %}>
   <div class="wrap"><span class="eyebrow">Join us</span><h1>Upcoming events</h1><p class="lead">Worship, fellowship and community events at {{ church.short_name }}. Everyone is welcome.</p></div>
 </section>
-<section class="wrap" style="padding-bottom:72px">
-  <div class="panel">
-    {% for day, occs in groups %}
-      <div class="day-group"><div class="day-label"><b>{{ day|date:"l" }}</b><span>{{ day|date:"F j" }}</span></div>
-        <ul class="event-list">{% for occ in occs %}{% include "events/_event_row.html" with public=True %}{% endfor %}</ul>
-      </div>
-    {% empty %}<div class="empty">No public events are scheduled right now. Please check back soon.</div>{% endfor %}
+<section class="wrap public-section event-discovery">
+  <header class="directory-intro"><div><span class="eyebrow">Life together</span><h2>Make room for what matters.</h2></div><p>From worship and discipleship to family celebrations, there is always a next moment to share. Everyone is welcome.</p></header>
+  <div class="public-event-days">
+    {% for day, occs in groups %}<section class="public-event-day"><header><span>{{ day|date:"M" }}</span><strong>{{ day|date:"j" }}</strong><small>{{ day|date:"l" }}</small></header><ul class="public-event-day-list">{% for occ in occs %}{% include "events/_event_row.html" with public=True %}{% endfor %}</ul></section>
+    {% empty %}<div class="public-empty"><span class="eyebrow">Stay connected</span><h2>New gatherings are coming soon.</h2><p>Check back shortly or join us this Sunday at 10:30 AM.</p><a class="btn btn-primary" href="{% url 'core:visit' %}">Plan a Sunday visit</a></div>{% endfor %}
   </div>
 </section>
 {% endblock %}

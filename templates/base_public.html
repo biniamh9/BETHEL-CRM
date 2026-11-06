@@ -1,5 +1,6 @@
 {% extends "base.html" %}{% load static %}
 {% block body %}
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <header class="site-head {% block header_class %}{% endblock %}">
   <div class="wrap">
     <a class="brand" href="{% url 'core:home' %}">
@@ -7,33 +8,33 @@
       <div><b>Bethel Eritrean Church</b><span>Alliance Church · Atlanta</span></div>
     </a>
     <nav class="nav nav-desktop" aria-label="Main navigation">
-      <a class="hide-md" href="{% url 'core:about' %}">About</a>
-      <details class="nav-dropdown">
-        <summary>Ministries <span class="nav-caret" aria-hidden="true"></span></summary>
-        <div class="nav-dropdown-menu">
-          <a href="{% url 'public_ministries:list' %}"><strong>All ministries</strong></a>
-          <a href="{% url 'public_ministries:achievement_list' %}"><strong>Kids Achievement Corner</strong></a>
-          {% for ministry in navigation_ministries %}
-            <a class="c-{{ ministry.color }}" href="{{ ministry.get_public_url }}"><span class="dot"></span>{{ ministry.name }}</a>
-          {% empty %}
-            <a href="{% url 'core:home' %}#ministries">Explore our ministries</a>
-          {% endfor %}
+      <a href="{% url 'core:about' %}">About</a>
+      <details class="nav-dropdown nav-mega">
+        <summary>Connect <span class="nav-caret" aria-hidden="true"></span></summary>
+        <div class="nav-dropdown-menu nav-mega-menu">
+          <div class="nav-mega-intro"><span>Find your place</span><strong>Faith grows in community.</strong><p>Explore ministries for every generation, celebrate our children, and discover life at Bethel.</p><a href="{% url 'public_ministries:list' %}">View all ministries <b>↗</b></a></div>
+          <div class="nav-mega-links">
+            <span class="nav-menu-label">Ministries</span>
+            {% for ministry in navigation_ministries %}<a class="c-{{ ministry.color }}" href="{{ ministry.get_public_url }}"><span class="dot"></span>{{ ministry.name }}</a>{% empty %}<a href="{% url 'public_ministries:list' %}">Explore ministries</a>{% endfor %}
+          </div>
+          <div class="nav-mega-featured"><span class="nav-menu-label">Community</span><a href="{% url 'public_ministries:achievement_list' %}"><strong>Kids Achievement Corner</strong><small>Celebrate students and their milestones</small></a><a href="{% url 'core:public_activities' %}"><strong>Activities & galleries</strong><small>See church life in pictures</small></a></div>
         </div>
       </details>
-      <a href="{% url 'core:public_activities' %}">Activities</a>
-      <a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener">Watch</a>
       <details class="nav-dropdown">
-        <summary>Resources <span class="nav-caret" aria-hidden="true"></span></summary>
+        <summary>Gather <span class="nav-caret" aria-hidden="true"></span></summary>
         <div class="nav-dropdown-menu">
-          <a href="{% url 'public_resources:list' %}"><strong>All resources</strong></a>
-          <a href="{% url 'public_resources:list' %}?category=teaching">Teachings</a>
-          <a href="{% url 'public_resources:list' %}?category=faith">Our faith</a>
-          <a href="{% url 'public_resources:archive' %}">Event archive</a>
-          <a href="{% url 'public_resources:list' %}?category=other">Other resources</a>
+          <a href="{% url 'core:visit' %}"><strong>Plan your visit</strong><small>What to expect this Sunday</small></a>
+          <a href="{% url 'events:public' %}"><strong>Events</strong><small>What is happening at Bethel</small></a>
+          <a href="https://www.youtube.com/@betheleritreanchurchatlanta" target="_blank" rel="noopener"><strong>Watch online</strong><small>Worship with us on YouTube</small></a>
         </div>
       </details>
-      <a class="hide-md" href="{% url 'events:public' %}">Events</a>
-      <a class="hide-md" href="{% url 'core:visit' %}">Visit</a>
+      <details class="nav-dropdown">
+        <summary>Grow <span class="nav-caret" aria-hidden="true"></span></summary>
+        <div class="nav-dropdown-menu">
+          <a href="{% url 'public_resources:list' %}"><strong>Resource library</strong><small>Teachings, faith and documents</small></a>
+          <a href="{% url 'public_resources:archive' %}"><strong>Stories & archive</strong><small>Remember where we have gathered</small></a>
+        </div>
+      </details>
       {% if user.is_authenticated %}
         <a href="{% url 'core:portal' %}">My portal</a>
       {% else %}
@@ -81,7 +82,7 @@
     </details>
   </div>
 </header>
-<main class="public-main">
+<main class="public-main" id="main-content">
   {% if messages %}<div class="wrap">{% include "partials/messages.html" %}</div>{% endif %}
   {% block content %}{% endblock %}
 </main>
