@@ -69,6 +69,7 @@ def month(request, year=None, month=None):
         "today_url": reverse("events:calendar") + (f"?{keep}" if keep else ""),
         "ministries": Ministry.objects.all(), "slug": slug, "show_activities": show_activities,
         "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+        "kids_2027_url": reverse("events:calendar_month", args=[2027, 1]) + "?ministry=youth-kids-ministry",
     })
 
 

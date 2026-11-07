@@ -4,6 +4,7 @@
 <div class="page-head">
   <div><span class="eyebrow">Calendar</span><h1>{{ month_start|date:"F Y" }}</h1></div>
   <div class="actions">
+    <a class="btn btn-ghost btn-sm" href="{{ kids_2027_url }}">2027 Kids &amp; Youth program</a>
     <a class="btn btn-ghost btn-sm" href="{{ prev_url }}" aria-label="Previous month">← Prev</a>
     <a class="btn btn-ghost btn-sm" href="{{ today_url }}">Today</a>
     <a class="btn btn-ghost btn-sm" href="{{ next_url }}" aria-label="Next month">Next →</a>
@@ -22,7 +23,7 @@
       <div class="cal-day{% if day.other %} other{% endif %}{% if day.today %} today{% endif %}">
         <div class="cal-num">
           <span>{{ day.date.day }}</span>
-          {% if user.can_create_events and not day.other %}<a class="cal-add" href="{% url 'events:new' %}?date={{ day.date|date:'Y-m-d' }}" title="Add event on {{ day.date|date:'M j' }}">+</a>{% endif %}
+          {% if user.can_create_events and not day.other %}<a class="cal-add" href="{% url 'events:new' %}?date={{ day.date|date:'Y-m-d' }}{% if slug and slug != 'church' %}&amp;ministry={{ slug }}{% endif %}" title="Add event on {{ day.date|date:'M j' }}">+</a>{% endif %}
         </div>
         {% for item in day.items %}
           {% if item.type == "event" %}

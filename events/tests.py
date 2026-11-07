@@ -50,6 +50,14 @@ class RepeatTest(SeededTestCase):
 
 
 class EventPagesTest(SeededTestCase):
+    def test_2027_kids_program_calendar_shortcut_and_admin_management(self):
+        self.login("abraham")
+        response = self.client.get(reverse("events:calendar_month", args=[2027, 1]), {
+            "ministry": "youth-kids-ministry",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "2027 Kids &amp; Youth program")
+
     def test_pages_render_for_each_role(self):
         e = Event.objects.first()
         urls = [reverse("events:calendar"), reverse("events:calendar") + "?activities=1",
