@@ -1,50 +1,57 @@
-{% extends "base_public.html" %}{% load static %}
-{% block title %}Church Life · {{ church.short_name }}{% endblock %}
+{% extends "base_public.html" %}
+{% block title %}Activities &amp; Galleries · {{ church.short_name }}{% endblock %}
 {% block content %}
-<section class="public-page-hero{% if hero_images.activities %} custom-page-hero{% endif %}"{% if hero_images.activities %} style="background-image:linear-gradient(90deg,rgba(7,12,24,.95),rgba(7,12,24,.45)),url('{{ hero_images.activities.image_url }}');background-position:{{ hero_images.activities.position }}"{% endif %}><div class="wrap"><span class="eyebrow">Life together</span><h1>Faith in motion.</h1><p>Worship, fellowship, service, and the moments that shape our church family.</p></div></section>
-{% if farm_day_photos %}
-<section class="farm-day-story">
-  <div class="wrap farm-day-intro">
-    <div><span class="eyebrow">{{ featured_album.ministry.name }} · {{ featured_album.event_date|date:"F j, Y" }}</span><h2>{{ featured_album.title }}</h2></div>
-    <p>{{ featured_album.description }}</p>
-  </div>
-  <div class="wrap farm-day-grid">
-    {% for photo in farm_day_photos %}
-    <button class="farm-day-photo{% if forloop.counter > 12 %} album-extra{% endif %}" type="button" data-gallery-image="{{ photo.get_image_url }}" data-gallery-caption="{{ photo.caption }}" data-gallery-meta="{{ featured_album.ministry.name }} · {{ featured_album.title }} · {{ featured_album.event_date|date:'F j, Y' }}">
-      <img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}" loading="lazy"><span>{{ photo.caption }}</span>
-    </button>
-    {% endfor %}
-  </div>
-  <div class="wrap farm-day-actions"><button class="btn btn-navy" type="button" id="show-farm-album">View all {{ farm_day_photos|length }} photos</button><a class="btn btn-ghost" href="{% url 'public_ministries:detail' 'youth-kids-ministry' %}">Explore Kids &amp; Youth Ministry</a></div>
+<section class="public-page-hero gallery-index-hero{% if hero_images.activities %} custom-page-hero{% endif %}"{% if hero_images.activities %} style="background-image:linear-gradient(90deg,rgba(15,29,52,.94),rgba(15,29,52,.48)),url('{{ hero_images.activities.image_url }}');background-position:{{ hero_images.activities.position }}"{% endif %}>
+  <div class="wrap"><span class="eyebrow">Life together</span><h1>Stories from our church family.</h1><p>Explore worship, fellowship, service, and special events through photo albums organized by gathering and date.</p></div>
 </section>
-{% endif %}
-{% if public_activities %}<section class="public-band"><div class="wrap public-section"><span class="eyebrow">Published activities</span><h2>What we’ve been doing</h2><div class="public-card-grid compact">{% for activity in public_activities %}<article class="info-card">{% with photo=activity.gallery_photos.all|first %}{% if photo %}<img class="public-activity-photo" src="{{ photo.get_image_url }}" alt="{{ photo.caption }}" loading="lazy">{% endif %}{% endwith %}<span>{{ activity.date|date:"M j, Y" }} · {{ activity.ministry.name }}</span><h3>{{ activity.title }}</h3><p>{{ activity.summary|truncatewords:30 }}</p></article>{% endfor %}</div></div></section>{% endif %}
-<section class="wrap public-section gallery-section">
-  <header class="section-heading split-heading compact"><div><span class="eyebrow">Photo archive</span><h2>Life at Bethel.</h2></div><p>Browse church moments by occasion and year. Select any photo to open the full gallery.</p></header>
-  {% regroup gallery_photos by get_occasion_display as occasion_groups %}
-  {% for occasion in occasion_groups %}
-    <section class="occasion-group"><h3>{{ occasion.grouper }}</h3>
-      {% regroup occasion.list by year as year_groups %}
-      {% for year in year_groups %}<div class="gallery-year"><h4>{{ year.grouper }}</h4><div class="managed-gallery-grid">
-        {% for photo in year.list %}<button class="gallery-photo" type="button" data-gallery-image="{{ photo.get_image_url }}" data-gallery-caption="{{ photo.caption }}" data-gallery-meta="{{ photo.ministry.name }} · {{ photo.get_occasion_display }} · {{ photo.year }}"><img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}" loading="lazy"><span><b>{{ photo.caption }}</b><small>{{ photo.ministry.name }}</small></span></button>{% endfor %}
-      </div></div>{% endfor %}
+
+<section class="gallery-browser">
+  <div class="wrap">
+    <div class="gallery-browser-heading">
+      <div><span class="eyebrow">Activities &amp; galleries</span><h2>Find a moment.</h2></div>
+      <div class="gallery-results-summary"><strong>{{ album_count }}</strong><span>event{{ album_count|pluralize }}</span><strong>{{ photo_count }}</strong><span>photo{{ photo_count|pluralize }}</span></div>
+    </div>
+
+    <form class="gallery-filter-panel" method="get" aria-label="Filter activity galleries">
+      <div class="gallery-search-field"><label for="gallery-q">Event or keyword</label><input id="gallery-q" type="search" name="q" value="{{ filters.q }}" placeholder="Search Farm Day, worship, conference…"></div>
+      <div><label for="gallery-ministry">Ministry</label><select id="gallery-ministry" name="ministry"><option value="">All ministries</option>{% for item in available_ministries %}<option value="{{ item.slug }}"{% if filters.ministry == item.slug %} selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+      <div><label for="gallery-occasion">Event type</label><select id="gallery-occasion" name="occasion"><option value="">All types</option>{% for value,label in occasion_choices %}<option value="{{ value }}"{% if filters.occasion == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div><label for="gallery-year">Year</label><select id="gallery-year" name="year"><option value="">Any year</option>{% for item in available_years %}<option value="{{ item }}"{% if filters.year == item|stringformat:'s' %} selected{% endif %}>{{ item }}</option>{% endfor %}</select></div>
+      <div><label for="gallery-from">From</label><input id="gallery-from" type="date" name="date_from" value="{{ filters.date_from }}"></div>
+      <div><label for="gallery-to">To</label><input id="gallery-to" type="date" name="date_to" value="{{ filters.date_to }}"></div>
+      <div><label for="gallery-sort">Sort by</label><select id="gallery-sort" name="sort"><option value="newest"{% if filters.sort == 'newest' %} selected{% endif %}>Newest first</option><option value="oldest"{% if filters.sort == 'oldest' %} selected{% endif %}>Oldest first</option><option value="title"{% if filters.sort == 'title' %} selected{% endif %}>Event name</option></select></div>
+      <div class="gallery-filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-ghost" href="{% url 'core:public_activities' %}">Clear</a></div>
+    </form>
+
+    {% if albums %}
+    <div class="event-album-grid">
+      {% for album in albums %}
+      <article class="event-album-card">
+        <a class="event-album-cover" href="{{ album.detail_url }}">
+          {% if album.cover_photo %}<img src="{{ album.cover_photo.get_image_url }}" alt="{{ album.cover_photo.caption }}" loading="lazy">{% else %}<span class="event-album-placeholder">{{ album.title|first }}</span>{% endif %}
+          <span class="event-album-count">{{ album.photo_count }} photo{{ album.photo_count|pluralize }}</span>
+        </a>
+        <div class="event-album-copy">
+          <div class="event-album-meta"><span>{{ album.date_label }}</span><span>{{ album.ministry.name }}</span></div>
+          <h2><a href="{{ album.detail_url }}">{{ album.title }}</a></h2>
+          {% if album.description %}<p>{{ album.description|truncatewords:24 }}</p>{% endif %}
+          <div class="event-album-footer"><div>{% for label in album.occasion_labels|slice:":2" %}<span class="gallery-tag">{{ label }}</span>{% endfor %}</div><a class="text-link" href="{{ album.detail_url }}">View all {{ album.photo_count }} photos →</a></div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% elif not activity_records %}
+    <div class="public-empty gallery-empty"><h2>No event albums match those filters.</h2><p>Try clearing one or more filters to explore the complete gallery.</p><a class="btn btn-primary" href="{% url 'core:public_activities' %}">View every event</a></div>
+    {% endif %}
+
+    {% if activity_records %}
+    <section class="recorded-activities" aria-labelledby="recorded-activities-title">
+      <header><span class="eyebrow">More church life</span><h2 id="recorded-activities-title">Recorded activities.</h2><p>Published ministry updates that do not yet have a photo album.</p></header>
+      <div class="recorded-activity-grid">
+        {% for activity in activity_records %}<article><time datetime="{{ activity.date|date:'Y-m-d' }}">{{ activity.date|date:"M j, Y" }}</time><span>{{ activity.ministry.name }}</span><h3>{{ activity.title }}</h3>{% if activity.summary %}<p>{{ activity.summary|truncatewords:28 }}</p>{% endif %}{% if activity.location %}<small>{{ activity.location }}</small>{% endif %}</article>{% endfor %}
+      </div>
     </section>
-  {% empty %}<div class="public-empty"><h2>Our gallery is being prepared.</h2><p>Ministry leaders can publish captioned photos from their portal.</p></div>{% endfor %}
+    {% endif %}
+  </div>
 </section>
-<dialog class="gallery-lightbox" aria-label="Photo viewer"><button class="lightbox-close" type="button" aria-label="Close">×</button><button class="lightbox-prev" type="button" aria-label="Previous photo">←</button><figure><img alt=""><figcaption><b></b><span></span></figcaption></figure><button class="lightbox-next" type="button" aria-label="Next photo">→</button></dialog>
-<script>
-(() => {
-  const albumButton = document.getElementById('show-farm-album');
-  if (albumButton) albumButton.addEventListener('click', () => { document.querySelectorAll('.album-extra').forEach(item => item.classList.add('shown')); albumButton.remove(); });
-  const items = [...document.querySelectorAll('[data-gallery-image]')], box = document.querySelector('.gallery-lightbox');
-  if (!box || !items.length) return;
-  const image = box.querySelector('img'), caption = box.querySelector('figcaption b'), meta = box.querySelector('figcaption span'); let index = 0;
-  const show = i => { index = (i + items.length) % items.length; const item = items[index]; image.src = item.dataset.galleryImage; image.alt = item.dataset.galleryCaption; caption.textContent = item.dataset.galleryCaption; meta.textContent = item.dataset.galleryMeta; };
-  items.forEach((item, i) => item.addEventListener('click', () => { show(i); box.showModal(); }));
-  box.querySelector('.lightbox-close').addEventListener('click', () => box.close());
-  box.querySelector('.lightbox-prev').addEventListener('click', () => show(index - 1)); box.querySelector('.lightbox-next').addEventListener('click', () => show(index + 1));
-  box.addEventListener('click', event => { if (event.target === box) box.close(); });
-  box.addEventListener('keydown', event => { if (event.key === 'ArrowLeft') show(index - 1); if (event.key === 'ArrowRight') show(index + 1); });
-})();
-</script>
 {% endblock %}

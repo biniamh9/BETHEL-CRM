@@ -3,7 +3,7 @@
 {% block content %}
 <section class="archive-album-hero">
   <div class="wrap">
-    <a class="archive-back-link" href="{% url 'public_resources:archive' %}">← Event archive</a>
+    {% if back_url %}<a class="archive-back-link" href="{% url back_url %}">← {{ back_label }}</a>{% else %}<a class="archive-back-link" href="{% url 'public_resources:archive' %}">← Event archive</a>{% endif %}
     <span class="eyebrow">{{ album.ministry.name }}{% if album.event_date %} · {{ album.event_date|date:"F j, Y" }}{% endif %}</span>
     <h1>{{ album.title }}</h1>
     {% if album.description %}<p>{{ album.description }}</p>{% endif %}

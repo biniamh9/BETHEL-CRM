@@ -52,6 +52,37 @@ class PublicMinistryTests(TestCase):
         self.assertContains(response, "October 24, 2026")
         self.assertContains(response, "farm-day-01.webp")
         self.assertContains(response, "View all 1 photos")
+        self.assertContains(response, reverse("core:public_activity_album", args=[album.slug]))
+
+    def test_activity_gallery_filters_event_albums(self):
+        choir = Ministry.objects.create(name="Choir Ministry", slug="choir-ministry")
+        farm = GalleryAlbum.objects.create(
+            ministry=self.ministry, title="Farm Day", event_date=date(2026, 10, 24), location="Pettit Creek",
+        )
+        worship = GalleryAlbum.objects.create(
+            ministry=choir, title="Christmas Worship", event_date=date(2025, 12, 21),
+        )
+        GalleryPhoto.objects.create(ministry=self.ministry, album=farm, caption="At the farm", occasion="outdoor", year=2026)
+        GalleryPhoto.objects.create(ministry=choir, album=worship, caption="Choir worship", occasion="worship", year=2025)
+
+        response = self.client.get(reverse("core:public_activities"), {
+            "ministry": self.ministry.slug, "occasion": "outdoor", "year": "2026",
+        })
+        self.assertContains(response, "Farm Day")
+        self.assertNotContains(response, "Christmas Worship")
+        self.assertContains(response, "<strong>1</strong><span>event</span>", html=True)
+        self.assertContains(response, "<strong>1</strong><span>photo</span>", html=True)
+
+    def test_public_activity_album_opens_only_public_photos(self):
+        album = GalleryAlbum.objects.create(ministry=self.ministry, title="Church Picnic", event_date=date(2026, 6, 6))
+        GalleryPhoto.objects.create(ministry=self.ministry, album=album, caption="Public picnic", occasion="fellowship", year=2026)
+        GalleryPhoto.objects.create(ministry=self.ministry, album=album, caption="Private picnic", occasion="fellowship", year=2026, is_public=False)
+
+        response = self.client.get(reverse("core:public_activity_album", args=[album.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Public picnic")
+        self.assertNotContains(response, "Private picnic")
+        self.assertContains(response, "Activities &amp; galleries")
 
     def test_choir_and_youth_photos_appear_on_public_pages(self):
         choir = Ministry.objects.create(name="Choir Ministry", slug="choir-ministry")
