@@ -101,7 +101,26 @@ class PublicMinistryTests(TestCase):
     def test_public_ministry_page_has_member_placeholders(self):
         response = self.client.get(self.ministry.get_public_url())
         self.assertContains(response, "Meet the ministry")
-        self.assertContains(response, "Our ministry family", count=3)
+        self.assertContains(response, "Our ministry family", count=2)
+
+    def test_ministry_page_uses_compact_event_album_previews(self):
+        album = GalleryAlbum.objects.create(
+            ministry=self.ministry, title="Youth Fellowship", event_date=date(2026, 9, 12),
+            description="A joyful ministry gathering.",
+        )
+        GalleryPhoto.objects.create(
+            ministry=self.ministry, album=album, caption="Friends gathering", occasion="youth", year=2026,
+        )
+        GalleryPhoto.objects.create(
+            ministry=self.ministry, album=album, caption="Worship together", occasion="youth", year=2026,
+        )
+
+        response = self.client.get(self.ministry.get_public_url())
+        self.assertContains(response, "Stories, organized by event.")
+        self.assertContains(response, "Youth Fellowship")
+        self.assertContains(response, "2 photos")
+        self.assertContains(response, reverse("core:public_activity_album", args=[album.slug]))
+        self.assertNotContains(response, "Worship together")
 
     def test_leader_publishes_guardian_approved_student_recognition(self):
         leader = User.objects.create_user("achievementlead", password="Valid-Test-Pass-42", role=User.Role.LEADER)

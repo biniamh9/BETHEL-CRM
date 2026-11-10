@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Prefetch, Q, Sum
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -35,6 +35,17 @@ def public_ministry_detail(request, slug):
     ministry = get_object_or_404(Ministry.objects.filter(is_public=True), slug=slug)
     from events.models import Event
     from core.models import HeroImage
+    public_photos = GalleryPhoto.objects.filter(is_public=True).order_by("created_at")
+    gallery_albums = list(ministry.gallery_albums.filter(
+        is_public=True, photos__is_public=True,
+    ).annotate(
+        photo_count=Count("photos", filter=Q(photos__is_public=True), distinct=True),
+    ).prefetch_related(Prefetch("photos", queryset=public_photos, to_attr="public_photos")).distinct()[:3])
+    for album in gallery_albums:
+        album.cover_photo = album.public_photos[0] if album.public_photos else None
+    feature_photo = ministry.gallery_photos.filter(
+        is_public=True, album__isnull=True,
+    ).order_by("-created_at").first()
     return render(request, "ministries/public_detail.html", {
         "ministry": ministry,
         "page_hero": HeroImage.objects.filter(placement=f"ministry:{ministry.slug}").first(),
@@ -42,8 +53,10 @@ def public_ministry_detail(request, slug):
             date.today(), date.today() + timedelta(days=90), ministry.events.filter(is_public=True)
         )[:6],
         "announcements": ministry.announcements.filter(status=MinistryAnnouncement.Status.PUBLISHED)[:6],
-        "gallery_photos": ministry.gallery_photos.filter(is_public=True)[:12],
-        "member_spotlights": ministry.member_spotlights.filter(is_public=True),
+        "gallery_albums": gallery_albums,
+        "feature_photo": feature_photo,
+        "has_gallery_content": bool(gallery_albums) or feature_photo is not None,
+        "member_spotlights": ministry.member_spotlights.filter(is_public=True)[:6],
     })
 
 
