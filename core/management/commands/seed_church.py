@@ -52,7 +52,7 @@ MINISTRIES = [
     ("Adult Bible Study", "purple", "Pitias", ["pitias"], "In-depth Bible study for adults."),
 ]
 
-STORY = """Since 2011, Bethel Eritrean Alliance Church has faithfully served Eritrean families and the broader community in the Atlanta, Georgia area.
+STORY = """Since 2011, Bethel Eritrean Church has faithfully served Eritrean families and the broader community in the Atlanta, Georgia area.
 
 For more than 15 years, our church has been more than a place of Sunday worship. It has been a spiritual home where families gather in faith, children learn biblical values, young people receive encouragement and mentorship, and generations come together in fellowship and service.
 
@@ -91,7 +91,7 @@ We are deeply grateful for every prayer, donation, and act of encouragement.
 Together, let us build a home where faith grows, families are strengthened, and future generations are inspired.
 
 With gratitude,
-Bethel Eritrean Alliance Church
+Bethel Eritrean Church
 Atlanta, Georgia"""
 
 

@@ -1,6 +1,6 @@
-# Bethel Eritrean Alliance Church — CRM & Building Fund
+# Bethel Eritrean Church — CRM & Building Fund
 
-A Django website for Bethel Eritrean Alliance Church Atlanta with three parts:
+A Django website for Bethel Eritrean Church with three parts:
 
 1. **Public website and giving page** — church story, ministries, eldership, and a live building fund page with a progress ring, online giving (Stripe), pledges, and Zelle / check instructions.
 2. **Building fund portal** for the Pastor and CFO — record every gift (cash, check, Zelle, online), track pledges, print tax receipts and year-end statements, export to CSV.

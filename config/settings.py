@@ -1,4 +1,4 @@
-"""Settings for the Bethel Eritrean Alliance Church CRM.
+"""Settings for the Bethel Eritrean Church CRM.
 
 All secrets come from environment variables (see .env.example).
 """
@@ -211,8 +211,21 @@ STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 # Church details shown on receipts and the public giving page.
+def _clean_church_name(value):
+    """Keep retired organization wording out of rendered copy and receipts."""
+    cleaned = value
+    for retired_name in (
+        "Bethel Eritrean Alliance Church Atlanta",
+        "Bethel Eritrean Alliance Church",
+        "Bethel Eritrean Church of Atlanta",
+        "Bethel Eritrean Church Atlanta",
+    ):
+        cleaned = cleaned.replace(retired_name, "Bethel Eritrean Church")
+    return cleaned.replace("Alliance", "").replace("  ", " ").strip()
+
+
 CHURCH = {
-    "name": os.environ.get("CHURCH_NAME", "Bethel Eritrean Alliance Church Atlanta"),
+    "name": _clean_church_name(os.environ.get("CHURCH_NAME", "Bethel Eritrean Church")),
     "short_name": "Bethel Eritrean Church",
     "tigrinya_name": "ቤትኤል ቤተክርስትያን ኤርትራውያን ኣትላንታ",
     "address": os.environ.get("CHURCH_ADDRESS", "5915 Lawrenceville Hwy, Tucker, GA 30084"),
@@ -220,7 +233,7 @@ CHURCH = {
     "phone": os.environ.get("CHURCH_PHONE", "404-723-4407"),
     "ein": os.environ.get("CHURCH_EIN", "20-0604532"),
     "zelle": os.environ.get("CHURCH_ZELLE", "678-974-6608"),
-    "check_payable_to": os.environ.get("CHURCH_CHECK_PAYABLE", "Bethel Eritrean Alliance Church"),
+    "check_payable_to": _clean_church_name(os.environ.get("CHURCH_CHECK_PAYABLE", "Bethel Eritrean Church")),
     "gofundme_url": os.environ.get(
         "GOFUNDME_URL",
         "https://www.gofundme.com/f/building-a-home-for-bethel-eritrean-church-in-atlanta",
