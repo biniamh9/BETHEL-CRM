@@ -2,7 +2,7 @@
 {% block title %}Create an account · {{ church.short_name }}{% endblock %}
 {% block content %}
 <div class="wrap"><div class="card auth-card" style="max-width:520px">
-  <h2>Create a member account</h2>
+  <h1>Create a member account</h1>
   <p class="muted small">Create a member account, or request ministry management access. Access requests are reviewed by a church administrator and never approved automatically.</p>
   <form method="post">{% csrf_token %}
     <div class="form-row">{% form_fields form "first_name,last_name" %}</div>

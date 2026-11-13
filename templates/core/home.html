@@ -121,7 +121,7 @@
         <span class="circle-arrow">↗</span>
       </a>
       {% empty %}
-      <a class="ministry-editorial" href="#"><span class="ministry-number">01</span><div><h3>Worship &amp; community</h3><p>Gather, grow and serve with our church family.</p></div><span class="circle-arrow">↗</span></a>
+      <a class="ministry-editorial" href="{% url 'public_ministries:list' %}"><span class="ministry-number">01</span><div><h3>Worship &amp; community</h3><p>Gather, grow and serve with our church family.</p></div><span class="circle-arrow">↗</span></a>
       {% endfor %}
     </div>
   </div>

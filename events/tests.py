@@ -58,6 +58,14 @@ class EventPagesTest(SeededTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "2027 Kids &amp; Youth program")
 
+    def test_portal_filters_have_accessible_names(self):
+        self.login("abraham")
+        upcoming = self.client.get(reverse("events:upcoming"))
+        self.assertContains(upcoming, 'aria-label="Filter events by ministry"')
+        self.assertContains(upcoming, 'aria-label="Filter events by date range"')
+        calendar = self.client.get(reverse("events:calendar"))
+        self.assertContains(calendar, 'aria-label="Filter calendar by ministry"')
+
     def test_pages_render_for_each_role(self):
         e = Event.objects.first()
         urls = [reverse("events:calendar"), reverse("events:calendar") + "?activities=1",

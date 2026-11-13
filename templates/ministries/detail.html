@@ -50,7 +50,7 @@
 <div class="cols">
   <div class="panel">
     <div class="panel-head"><h3>Activity log</h3>
-      <form method="get"><select name="kind" onchange="this.form.submit()" style="padding:.4em .7em"><option value="">All types</option>{% for v, l in kinds %}<option value="{{ v }}" {% if current_kind == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></form>
+      <form method="get"><select name="kind" aria-label="Filter activity log by type" onchange="this.form.submit()" style="padding:.4em .7em"><option value="">All types</option>{% for v, l in kinds %}<option value="{{ v }}" {% if current_kind == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></form>
     </div>
     <div class="table-wrap"><table>
       <thead><tr><th>Date</th><th>Activity</th><th class="num">Present</th><th></th></tr></thead>

@@ -18,12 +18,20 @@ class DeploymentTest(TestCase):
     def test_public_about_and_visit_pages(self):
         about = self.client.get(reverse("core:about"))
         self.assertEqual(about.status_code, 200)
+        self.assertContains(about, "<title>About · Bethel Eritrean Church</title>", html=True)
         self.assertContains(about, "Pastor Abraham Yosief")
         self.assertContains(about, "Our mission")
         visit = self.client.get(reverse("core:visit"))
         self.assertEqual(visit.status_code, 200)
+        self.assertContains(visit, "<title>Plan Your Visit · Bethel Eritrean Church</title>", html=True)
         self.assertContains(visit, "10:30 AM")
         self.assertContains(visit, "Get directions")
+
+    def test_public_auth_pages_have_one_primary_heading(self):
+        login = self.client.get(reverse("accounts:login"))
+        self.assertContains(login, "<h1>Sign In</h1>", html=True)
+        register = self.client.get(reverse("accounts:register"))
+        self.assertContains(register, "<h1>Create a member account</h1>", html=True)
 
     def test_setup_page_when_database_missing_on_vercel(self):
         sqlite = {"default": {"ENGINE": "django.db.backends.sqlite3"}}

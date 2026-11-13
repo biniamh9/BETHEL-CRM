@@ -72,12 +72,31 @@
     <div class="side-user"><b>{{ user.get_full_name|default:user.username }}</b>{{ user.title|default:user.get_role_display }}</div>
   </aside>
   <div class="main">
-    <button class="btn btn-ghost btn-sm menu-btn" onclick="document.getElementById('side').classList.toggle('open')">☰ Menu</button>
+    <button class="btn btn-ghost btn-sm menu-btn" type="button" aria-controls="side" aria-expanded="false">☰ Menu</button>
     {% include "partials/messages.html" %}
     {% block content %}{% endblock %}
   </div>
 </div>
 {% endwith %}
-<script>document.addEventListener('click',e=>{const s=document.getElementById('side');if(s.classList.contains('open')&&!s.contains(e.target)&&!e.target.closest('.menu-btn'))s.classList.remove('open')});</script>
+<script>
+(() => {
+  const side = document.getElementById('side');
+  const trigger = document.querySelector('.menu-btn');
+  const setOpen = open => {
+    side.classList.toggle('open', open);
+    trigger.setAttribute('aria-expanded', String(open));
+  };
+  trigger.addEventListener('click', () => setOpen(!side.classList.contains('open')));
+  document.addEventListener('click', event => {
+    if (side.classList.contains('open') && !side.contains(event.target) && !trigger.contains(event.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && side.classList.contains('open')) {
+      setOpen(false);
+      trigger.focus();
+    }
+  });
+})();
+</script>
 <script src="{% static 'js/image-upload.js' %}"></script>
 {% endblock %}
