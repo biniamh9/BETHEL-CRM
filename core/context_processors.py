@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.templatetags.static import static
 
 from ministries.models import Ministry
 from .models import HeroImage
@@ -19,3 +20,13 @@ def public_hero_images(request):
         "home_primary", "home_secondary", "about", "visit", "ministries", "activities",
         "events", "resources", "archive", "campaign",
     })}}
+
+
+def social_sharing(request):
+    """Canonical social-preview defaults and shared-link donation context."""
+    canonical_url = request.build_absolute_uri(request.path)
+    return {
+        "canonical_url": canonical_url,
+        "default_social_image": request.build_absolute_uri(static("img/logo-full.png")),
+        "arrived_via_share": request.GET.get("shared") == "1",
+    }

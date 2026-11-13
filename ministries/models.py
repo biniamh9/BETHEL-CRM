@@ -534,3 +534,6 @@ class GalleryPhoto(models.Model):
             from django.contrib.staticfiles.storage import staticfiles_storage
             return staticfiles_storage.url(self.static_path)
         return reverse("core:gallery_image", args=[self.pk])
+
+    def get_public_url(self):
+        return reverse("core:public_gallery_photo", args=[self.pk])

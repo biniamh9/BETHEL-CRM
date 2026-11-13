@@ -33,6 +33,16 @@ class DeploymentTest(TestCase):
         register = self.client.get(reverse("accounts:register"))
         self.assertContains(register, "<h1>Create a member account</h1>", html=True)
 
+    def test_public_pages_offer_sharing_and_shared_links_prompt_support(self):
+        home = self.client.get(reverse("core:home"))
+        self.assertContains(home, "Share the story")
+        self.assertContains(home, "data-share-facebook")
+        self.assertNotContains(home, "Someone shared this with you")
+        shared = self.client.get(reverse("core:home"), {"shared": "1"})
+        self.assertContains(shared, "Someone shared this with you")
+        self.assertContains(shared, reverse("fundraising:give"))
+        self.assertContains(shared, 'property="og:image"')
+
     def test_setup_page_when_database_missing_on_vercel(self):
         sqlite = {"default": {"ENGINE": "django.db.backends.sqlite3"}}
         with override_settings(ON_VERCEL=True, DATABASES=sqlite):

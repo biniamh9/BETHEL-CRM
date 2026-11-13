@@ -83,9 +83,11 @@
   </div>
 </header>
 <main class="public-main" id="main-content">
+  {% if arrived_via_share %}<aside class="shared-support-prompt" aria-label="Support Bethel"><div class="wrap"><div><span>Someone shared this with you</span><strong>Help Bethel create more moments of faith, family, and community.</strong></div><a class="btn btn-gold btn-sm" href="{% url 'fundraising:give' %}">Support our church</a></div></aside>{% endif %}
   {% if messages %}<div class="wrap">{% include "partials/messages.html" %}</div>{% endif %}
   {% block content %}{% endblock %}
 </main>
+{% include "partials/share_controls.html" %}
 <footer class="site-foot editorial-foot">
   <div class="wrap footer-grid">
     <div class="footer-brand"><img src="{% static 'img/logo-mark.png' %}" alt=""><div><strong>{{ church.short_name }}</strong><span class="ethiopic">{{ church.tigrinya_name }}</span></div></div>
@@ -95,6 +97,7 @@
   </div>
   <div class="wrap footer-bottom"><span>© {% now "Y" %} {{ church.short_name }}</span><span>Faith · Family · Future</span><span>501(c)(3){% if church.ein %} · EIN {{ church.ein }}{% endif %}</span></div>
 </footer>
+<script src="{% static 'js/social-share.js' %}"></script>
 <script>
 document.querySelectorAll('.nav-desktop .nav-dropdown').forEach(menu => {
   let closeTimer;

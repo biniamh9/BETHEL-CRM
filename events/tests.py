@@ -132,6 +132,9 @@ class EventPagesTest(SeededTestCase):
         detail = self.client.get(detail_url)
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, "Add to calendar")
+        self.assertContains(detail, 'property="og:title"')
+        self.assertContains(detail, event.banner_url)
+        self.assertContains(detail, "Donate to Bethel")
 
     def test_one_time_event_is_promoted_above_recurring_events(self):
         today = date.today()

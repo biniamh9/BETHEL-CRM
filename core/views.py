@@ -264,11 +264,14 @@ def public_activity_album(request, slug):
         slug=slug,
         is_public=True,
     )
+    photos = album.photos.filter(is_public=True)
+    cover = photos.first()
     return render(request, "resources/public_album_detail.html", {
         "album": album,
-        "photos": album.photos.filter(is_public=True),
+        "photos": photos,
         "back_url": "core:public_activities",
         "back_label": "Activities & galleries",
+        "social_image": request.build_absolute_uri(cover.get_image_url()) if cover else "",
     })
 
 
@@ -298,11 +301,57 @@ def public_activity_collection(request):
     return render(request, "resources/public_album_detail.html", {
         "album": album, "photos": photos,
         "back_url": "core:public_activities", "back_label": "Activities & galleries",
+        "social_image": request.build_absolute_uri(first.get_image_url()),
+    })
+
+
+def public_gallery_photo(request, pk):
+    photo = get_object_or_404(
+        GalleryPhoto.objects.select_related("ministry", "album", "activity"),
+        pk=pk, is_public=True,
+    )
+    if photo.album_id and not photo.album.is_public:
+        raise Http404
+    if photo.activity_id and not photo.activity.is_public:
+        raise Http404
+    siblings = GalleryPhoto.objects.filter(is_public=True)
+    if photo.album_id:
+        siblings = siblings.filter(album=photo.album)
+        back_url = reverse("core:public_activity_album", args=[photo.album.slug])
+        story_title = photo.album.title
+    elif photo.activity_id and photo.activity.is_public:
+        siblings = siblings.filter(album__isnull=True, activity=photo.activity)
+        back_url = f'{reverse("core:public_activity_collection")}?{urlencode({"ministry": photo.ministry.slug, "activity": photo.activity_id})}'
+        story_title = photo.activity.title
+    else:
+        siblings = siblings.filter(
+            album__isnull=True, activity__isnull=True, ministry=photo.ministry,
+            occasion=photo.occasion, year=photo.year,
+        )
+        back_url = f'{reverse("core:public_activity_collection")}?{urlencode({"ministry": photo.ministry.slug, "occasion": photo.occasion, "year": photo.year})}'
+        story_title = f"{photo.get_occasion_display()} · {photo.year}"
+    sibling_ids = list(siblings.values_list("pk", flat=True))
+    position = sibling_ids.index(photo.pk) if photo.pk in sibling_ids else 0
+    previous_photo = siblings.filter(pk=sibling_ids[position - 1]).first() if position > 0 else None
+    next_photo = siblings.filter(pk=sibling_ids[position + 1]).first() if position + 1 < len(sibling_ids) else None
+    return render(request, "core/public_gallery_photo.html", {
+        "photo": photo,
+        "story_title": story_title,
+        "back_url": back_url,
+        "previous_photo": previous_photo,
+        "next_photo": next_photo,
+        "social_image": request.build_absolute_uri(photo.get_image_url()),
     })
 
 
 def gallery_image(request, pk):
-    photo = get_object_or_404(GalleryPhoto.objects.select_related("ministry"), pk=pk)
+    photo = get_object_or_404(
+        GalleryPhoto.objects.select_related("ministry", "album", "activity"), pk=pk
+    )
+    if photo.is_public and photo.album_id and not photo.album.is_public:
+        raise Http404
+    if photo.is_public and photo.activity_id and not photo.activity.is_public:
+        raise Http404
     if not photo.is_public and (
         not request.user.is_authenticated or not request.user.can_view_ministry(photo.ministry)
     ):

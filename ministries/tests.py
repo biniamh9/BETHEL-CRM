@@ -84,6 +84,55 @@ class PublicMinistryTests(TestCase):
         self.assertNotContains(response, "Private picnic")
         self.assertContains(response, "Activities &amp; galleries")
 
+    def test_public_album_and_individual_photo_are_shareable(self):
+        album = GalleryAlbum.objects.create(
+            ministry=self.ministry, title="Church Picnic", event_date=date(2026, 6, 6),
+            description="A joyful day together.",
+        )
+        photo = GalleryPhoto.objects.create(
+            ministry=self.ministry, album=album, caption="Families enjoying the picnic",
+            occasion="fellowship", year=2026, image_blob=b"photo", content_type="image/jpeg",
+            filename="picnic.jpg",
+        )
+        album_page = self.client.get(reverse("core:public_activity_album", args=[album.slug]))
+        self.assertContains(album_page, photo.get_public_url())
+        self.assertContains(album_page, "Share this photo")
+        self.assertContains(album_page, "Donate to Bethel")
+        photo_page = self.client.get(photo.get_public_url())
+        self.assertEqual(photo_page.status_code, 200)
+        self.assertContains(photo_page, "Families enjoying the picnic")
+        self.assertContains(photo_page, 'property="og:image"')
+        self.assertContains(photo_page, photo.get_image_url())
+
+    def test_photo_in_private_album_cannot_be_shared_or_fetched_publicly(self):
+        album = GalleryAlbum.objects.create(ministry=self.ministry, title="Private album", is_public=False)
+        photo = GalleryPhoto.objects.create(
+            ministry=self.ministry, album=album, caption="Private photo", occasion="fellowship",
+            year=2026, image_blob=b"private", content_type="image/jpeg", filename="private.jpg",
+        )
+        self.assertEqual(self.client.get(photo.get_public_url()).status_code, 404)
+        self.assertEqual(self.client.get(photo.get_image_url()).status_code, 404)
+
+    def test_photo_in_private_activity_cannot_be_shared_or_fetched_publicly(self):
+        activity = Activity.objects.create(
+            ministry=self.ministry,
+            title="Private gathering",
+            date=date.today(),
+            is_public=False,
+        )
+        photo = GalleryPhoto.objects.create(
+            ministry=self.ministry,
+            activity=activity,
+            image_blob=b"private",
+            content_type="image/jpeg",
+            filename="private-activity.jpg",
+            occasion="fellowship",
+            year=2026,
+            is_public=True,
+        )
+        self.assertEqual(self.client.get(photo.get_public_url()).status_code, 404)
+        self.assertEqual(self.client.get(photo.get_image_url()).status_code, 404)
+
     def test_choir_and_youth_photos_appear_on_public_pages(self):
         choir = Ministry.objects.create(name="Choir Ministry", slug="choir-ministry")
         women = Ministry.objects.create(name="Women Service", slug="women-service")

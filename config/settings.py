@@ -107,6 +107,7 @@ TEMPLATES = [
                 "core.context_processors.church",
                 "core.context_processors.public_navigation",
                 "core.context_processors.public_hero_images",
+                "core.context_processors.social_sharing",
             ],
         },
     },

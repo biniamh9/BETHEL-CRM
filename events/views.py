@@ -147,11 +147,13 @@ def public_event_detail(request, pk):
     today = date.today()
     occurrences = event.occurrences(today, today + timedelta(days=365))
     occurrence = occurrences[0] if occurrences else None
+    banner_url = event.banner_image_url
     return render(request, "events/public_detail.html", {
         "event": event,
         "occurrence": occurrence,
         "gcal": event.google_calendar_url(occurrence),
         "today": today,
+        "social_image": request.build_absolute_uri(banner_url) if banner_url else "",
     })
 
 

@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ church.name }}{% endblock %}</title>
   <meta name="description" content="{% block description %}Bethel Eritrean Church — serving Eritrean families in Metro Atlanta since 2011.{% endblock %}">
+  <link rel="canonical" href="{{ canonical_url }}">
+  <meta property="og:site_name" content="{{ church.short_name }}">
+  <meta property="og:type" content="{% block social_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block social_title %}{{ church.name }}{% endblock %}">
+  <meta property="og:description" content="{% block social_description %}Faith, family, worship, and community at Bethel Eritrean Church.{% endblock %}">
+  <meta property="og:url" content="{{ canonical_url }}">
+  <meta property="og:image" content="{% block social_image %}{{ default_social_image }}{% endblock %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% block twitter_title %}{{ church.name }}{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}Faith, family, worship, and community at Bethel Eritrean Church.{% endblock %}">
+  <meta name="twitter:image" content="{% block twitter_image %}{{ default_social_image }}{% endblock %}">
   <link rel="icon" href="{% static 'img/favicon.png' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

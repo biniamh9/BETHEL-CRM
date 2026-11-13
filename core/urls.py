@@ -11,6 +11,7 @@ urlpatterns = [
     path("activities/", views.public_activities, name="public_activities"),
     path("activities/albums/<slug:slug>/", views.public_activity_album, name="public_activity_album"),
     path("activities/collections/", views.public_activity_collection, name="public_activity_collection"),
+    path("activities/photos/<int:pk>/", views.public_gallery_photo, name="public_gallery_photo"),
     path("activities/photos/<int:pk>/image/", views.gallery_image, name="gallery_image"),
     path("site/hero-images/<int:pk>/", views.hero_image, name="hero_image"),
     path("portal/", views.portal, name="portal"),

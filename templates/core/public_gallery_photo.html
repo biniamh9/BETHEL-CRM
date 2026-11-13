@@ -1,0 +1,18 @@
+{% extends "base_public.html" %}
+{% block title %}{{ photo.caption }} · {{ church.short_name }}{% endblock %}
+{% block description %}{{ photo.caption }} — {{ story_title }} from {{ photo.ministry.name }}.{% endblock %}
+{% block social_type %}article{% endblock %}
+{% block social_title %}{{ photo.caption }} · {{ church.short_name }}{% endblock %}
+{% block social_description %}{{ story_title }} — a moment shared by {{ photo.ministry.name }}.{% endblock %}
+{% block social_image %}{{ social_image }}{% endblock %}
+{% block twitter_title %}{{ photo.caption }} · {{ church.short_name }}{% endblock %}
+{% block twitter_description %}{{ story_title }} — a moment shared by {{ photo.ministry.name }}.{% endblock %}
+{% block twitter_image %}{{ social_image }}{% endblock %}
+{% block content %}
+<article class="single-photo-page">
+  <div class="wrap single-photo-nav"><a href="{{ back_url }}">← Back to {{ story_title }}</a><span>{{ photo.ministry.name }}</span></div>
+  <figure class="single-photo-figure"><img src="{{ photo.get_image_url }}" alt="{{ photo.caption }}"><figcaption><span class="eyebrow">{{ photo.get_occasion_display }} · {{ photo.year }}</span><h1>{{ photo.caption }}</h1><p>{{ story_title }} · {{ photo.ministry.name }}</p></figcaption></figure>
+  <nav class="wrap single-photo-pagination" aria-label="Photo navigation">{% if previous_photo %}<a href="{{ previous_photo.get_public_url }}">← Previous photo</a>{% else %}<span></span>{% endif %}{% if next_photo %}<a href="{{ next_photo.get_public_url }}">Next photo →</a>{% endif %}</nav>
+</article>
+<section class="photo-support-cta"><div class="wrap"><div><span class="eyebrow gold">Help the story continue</span><h2>Support faith, family, and the next generation.</h2><p>Your generosity helps Bethel create spaces where children, families, and ministries can keep growing together.</p></div><a class="btn btn-gold" href="{% url 'fundraising:give' %}">Donate to Bethel</a></div></section>
+{% endblock %}
